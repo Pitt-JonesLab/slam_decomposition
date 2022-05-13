@@ -11,6 +11,28 @@ qc.draw(output='mpl')
 """
 
 
+class CParitySwap(Gate):
+    r"""Yet to be determined 3Q gate"""
+
+    def __init__(self, _: ParameterValueType = None):
+        super().__init__("cpswap", 3, [], "TBD")
+
+    def __array__(self, dtype=None):
+        return np.array(
+            [
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 1],
+            ],
+            dtype=dtype,
+        )
+
+
 class RiSwapGate(Gate):
     r"""RiSWAP gate.
 
