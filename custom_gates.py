@@ -85,6 +85,9 @@ class CParitySwap(Gate):
 
     def __init__(self, _: ParameterValueType = None):
         super().__init__("cpswap", 3, [], "TBD")
+        nn= 3*np.sqrt(3)/2
+        params = [-np.pi/2, np.pi/2, -np.pi / 2, np.pi/nn, np.pi/nn, np.pi/nn]
+        self._array = build_circulator_U(*params)
 
     def __array__(self, dtype=None):
         return np.array(

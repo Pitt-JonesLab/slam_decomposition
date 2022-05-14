@@ -471,19 +471,20 @@ class TemplateOptimizer:
 
 
 # %%
+#TODO: it would be nice to improve the random selection, perhaps just structure into all permutations instead or is random preferred?
 import random
 import multiprocessing
 
-gate_list = [CCXGate, CXGate, SwapGate, iSwapGate, CSwapGate]#, Peres]
-edge_dict = {CCXGate:[(0,1,2)], CSwapGate:[(0,1,2)], CXGate:[(0,1), (0,2), (1,2)], SwapGate:[(0,1), (0,2), (1,2)], iSwapGate:[(0,1), (0,2), (1,2)]}
+gate_list = [CSwapGate]#, SwapGate]#, SwapGate]#[CCXGate, CXGate]#, SwapGate, iSwapGate, CSwapGate]#, Peres]
+edge_dict = {CCXGate:[(0,1,2),(0,2,1),(2,1,0)], CSwapGate:[(0,1,2),(0,2,1),(2,1,0)], CXGate:[(0,1), (0,2), (1,2)], SwapGate:[(0,1), (0,2), (1,2)], iSwapGate:[(0,1), (0,2), (1,2)]}
 
 best_result = None
 best_template = None
 best_Xk = None
 
 def random_template_test(N):
-    X=random.choice(range(11))
-    base_gate_class = [random.choice(gate_list) for _ in range(X)]
+    X=2#random.choice(range(2))
+    base_gate_class = [CSwapGate, CSwapGate]#[random.choice(gate_list) for _ in range(X)]
     edge_params = [random.choice(edge_dict[gate]) for gate in base_gate_class]
     template = TemplateCircuit(n_qubits=3, base_gate_class=base_gate_class, gate_2q_params=[None], edge_params=edge_params)
     optimizer = TemplateOptimizer(template, n_samples=1, unitary_sample_function="CParitySwap", template_iter_range=range(1,2), thread_id=N, no_save=True)
@@ -492,7 +493,7 @@ def random_template_test(N):
     return (result, base_gate_class,edge_params, Xk, cycles)
 
 if __name__ == "__main__":
-    multi_thread_repeat_count = 200
+    multi_thread_repeat_count = 256
     # pool_obj = multiprocessing.Pool()
     with multiprocessing.Pool() as p:
         answer = p.map(random_template_test,range(0,multi_thread_repeat_count))
@@ -500,6 +501,8 @@ if __name__ == "__main__":
     s = sorted(answer, key= lambda x: 1 if (x is None or x[0] is None) else x[0])
     from sys import stdout
     for i in range(len(s)):
+        if s[i] is None:
+            continue
         best_result, best_base_gate_class, best_edge_params, best_Xk, best_cycles = s[i]
         if best_result < 1e-9:
             print(best_result)
@@ -510,3 +513,19 @@ if __name__ == "__main__":
             print(result_circuit.draw(output='text'))
             stdout.flush()
             print("\n")
+
+# 4.6132964115486175e-10
+#      ┌─────────────────────────────────────────────────────────┐   ┌──────────────────────────────────────────────────────────┐    ┌──────────────────────────────────────────────────────┐   »
+# q_0: ┤ U(3.3844933176244e-5,4.99847687552002,2.32226265525574) ├─■─┤ U(-0.236649025804495,4.85080931843722,0.496397548490396) ├─X──┤ U(6.44048454723241,4.0519759434474,5.24972799609676) ├─X─»
+#      └┬────────────────────────────────────────────────────────┤ │ └┬───────────────────────────────────────────────────────┬─┘ │ ┌┴──────────────────────────────────────────────────────┤ │ »
+# q_1: ─┤ U(4.5203206947232,-0.522854661056527,2.32362597424714) ├─X──┤ U(3.50423341864694,3.33043628836768,5.10392352915538) ├───X─┤ U(4.14157575779863,1.68921366580331,4.43761289929974) ├─X─»
+#       ├───────────────────────────────────────────────────────┬┘ │  └┬──────────────────────────────────────────────────────┤     └───────────────────────────────────────────────────────┘ │ »
+# q_2: ─┤ U(4.90444009678939,2.61872853629591,4.80631456307294) ├──X───┤ U(4.90445709272882,1.8779730062686,6.80601822515001) ├───────────────────────────────────────────────────────────────■─»
+#       └───────────────────────────────────────────────────────┘      └──────────────────────────────────────────────────────┘                                                                 »
+# «      ┌─────────────────────────────────────────────────────┐     ┌─────────────────────────────────────────────────────────┐      ┌───────────────────────────────────────────────────────┐
+# «q_0: ─┤ U(4.3762952179078,6.54446607670712,1.4186393042608) ├───■─┤ U(0.669920777050112,4.84148094495864,0.765452677249713) ├─X────┤ U(2.47168562598555,4.73401437016179,7.72481031885594) ├───
+# «     ┌┴─────────────────────────────────────────────────────┴─┐ │ └┬────────────────────────────────────────────────────────┤ │   ┌┴───────────────────────────────────────────────────────┴─┐
+# «q_1: ┤ U(5.26866415590355,0.173658605067415,5.05175922804841) ├─X──┤ U(1.04497157241386,-1.00879649263508,2.32349255015102) ├─X───┤ U(-0.669924803759966,0.702408635644935,1.44166739927367) ├─
+# «     ├───────────────────────────────────────────────────────┬┘ │  ├───────────────────────────────────────────────────────┬┘ │ ┌─┴──────────────────────────────────────────────────────────┴┐
+# «q_2: ┤ U(6.77611253710733,1.40092229376439,1.16442814103968) ├──X──┤ U(3.63452417110915,2.99150402857734,1.74066115767031) ├──■─┤ U(-1.73954442248929e-6,4.34363215680226,-0.333178980957175) ├
+# «     └───────────────────────────────────────────────────────┘     └───────────────────────────────────────────────────────┘    └─────────────────────────────────────────────────────────────┘
