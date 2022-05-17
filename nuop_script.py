@@ -12,10 +12,11 @@ import hashlib
 
 # %%
 import matplotlib.pyplot as plt
+
 # plt.style.use(["science", "ieee"])
 # plt.plot([0,0], [1,1]);
 # plt.style.use(["science", "ieee"])
-#I'm not sure why but the styles don't get updated until after running twice, so monkey fix like this??
+# I'm not sure why but the styles don't get updated until after running twice, so monkey fix like this??
 
 # %%
 import logging
@@ -26,6 +27,7 @@ logger.setLevel(logging.INFO)
 
 # %%
 import h5py
+
 
 def h5py_load(filekey, *args):
     filename = f"data/{filekey}.h5"
@@ -55,7 +57,7 @@ def h5py_save(filekey, **kwargs):
 # we need some helper method to fix ragged arrays from training loss data
 # previously, I was padding values with -1, so data points could easily be deleted later,
 # I think it makes more sense to pad with the last remaining value, since training converges it just sits at that value
-#TODO: could rewrite for so functional handles deepcopying rather than caller like as is currently
+# TODO: could rewrite for so functional handles deepcopying rather than caller like as is currently
 def rag_to_pad(arr):
     max_len = max(len(arr[i]) for i in range(len(arr)))
     for i in range(len(arr)):
@@ -64,22 +66,24 @@ def rag_to_pad(arr):
             if j >= temp_len:
                 if j == 0:
                     raise ValueError("cant extend blank row")
-                arr[i].append(arr[i][j-1])
-                #arr[i].append(-1)
+                arr[i].append(arr[i][j - 1])
+                # arr[i].append(-1)
     return np.array(arr)
 
-#rewrite convert to ragged array by detecting when row is being extended
+
+# rewrite convert to ragged array by detecting when row is being extended
 def pad_to_rag(arr):
     arr = arr.tolist()
     for i in range(len(arr)):
         for j in range(len(arr[i])):
-            #if arr[i][j] == -1:
-            if arr[i][j] == arr[i][j-1]:
+            # if arr[i][j] == -1:
+            if arr[i][j] == arr[i][j - 1]:
                 arr[i] = arr[i][0:j]
                 break
     return arr
 
-#test
+
+# test
 # arr = [[1, 2, 3, 4], [1, 2], [1, 2, 3]]
 # arr = rag_to_pad(arr)
 # print(arr)
@@ -163,10 +167,11 @@ class TemplateCircuit:
         return np.random.random(len(self.circuit.parameters)) * 2 * np.pi
 
     def assign_Xk(self, Xk):
-        
+
         return self.circuit.assign_parameters(
-                {parameter: i for parameter, i in zip(self.circuit.parameters, Xk)}
-            )
+            {parameter: i for parameter, i in zip(self.circuit.parameters, Xk)}
+        )
+
     def eval(self, Xk):
         """returns an Operator after binding parameter array to template"""
         return Operator(self.assign_Xk(Xk)).data
@@ -195,7 +200,9 @@ class TemplateCircuit:
                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
         for _ in range(self.cycle_length):
             edge = next(self.gate_2q_edges)
-            self.circuit.append(next(self.gate_2q_base)(next(self.gate_2q_params)), edge)
+            self.circuit.append(
+                next(self.gate_2q_base)(next(self.gate_2q_params)), edge
+            )
             for qubit in edge:
                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
         self.cycles += 1
@@ -219,7 +226,7 @@ class TemplateOptimizer:
         n_samples=1,
         template_iter_range=range(2, 4),
         thread_id=0,
-        no_save=False
+        no_save=False,
     ):
         """Args:
         template: TemplateCircuit object
@@ -269,7 +276,9 @@ class TemplateOptimizer:
                 self.training_loss.append([])
                 target_unitary = self.sampler()
                 obj = self._objective_function(self.obj_f_name, target_unitary)
-                best_result, best_Xk, best_cycles = self.minimize(obj=obj, iter=i, t_range=self.template_iter_range)
+                best_result, best_Xk, best_cycles = self.minimize(
+                    obj=obj, iter=i, t_range=self.template_iter_range
+                )
         finally:
             # finally, save again
             if self.n_samples > offset and not self.no_save:
@@ -367,7 +376,7 @@ class TemplateOptimizer:
         if name == "iSWAP":
             return lambda: iSwapGate()
         if name == "Haar":
-            return lambda: random_unitary(dims=2 ** self.template.n_qubits).data
+            return lambda: random_unitary(dims=2**self.template.n_qubits).data
         if name == "Clifford":
             return lambda: Operator(
                 random_clifford(num_qubits=self.template.n_qubits)
@@ -410,7 +419,7 @@ class TemplateOptimizer:
                 axs[0][ax_index].plot(
                     optimizer.training_loss[i],
                     alpha=0.2,
-                    color=c[optimizer.training_reps[i]%len(c)],
+                    color=c[optimizer.training_reps[i] % len(c)],
                     linestyle="-",
                 )
 
@@ -450,7 +459,10 @@ class TemplateOptimizer:
 
                 # plot average with full color
                 axs[0][ax_index].plot(
-                    temp_average, color=c[reps%len(c)], label=f"L{reps}", linestyle="-"
+                    temp_average,
+                    color=c[reps % len(c)],
+                    label=f"L{reps}",
+                    linestyle="-",
                 )
 
             axs[0][ax_index].set_yscale("log")
@@ -471,46 +483,79 @@ class TemplateOptimizer:
 
 
 # %%
-#TODO: it would be nice to improve the random selection, perhaps just structure into all permutations instead or is random preferred?
+# TODO: it would be nice to improve the random selection, perhaps just structure into all permutations instead or is random preferred?
 import random
 import multiprocessing
 
-gate_list = [CSwapGate]#, SwapGate]#, SwapGate]#[CCXGate, CXGate]#, SwapGate, iSwapGate, CSwapGate]#, Peres]
-edge_dict = {CCXGate:[(0,1,2),(0,2,1),(2,1,0)], CSwapGate:[(0,1,2),(0,2,1),(2,1,0)], CXGate:[(0,1), (0,2), (1,2)], SwapGate:[(0,1), (0,2), (1,2)], iSwapGate:[(0,1), (0,2), (1,2)]}
+# gate_list = [CSwapGate, CCXGate, CXGate, SwapGate, iSwapGate, CSwapGate, Peres]
+gate_list = [CParitySwap, SwapGate, iSwapGate, CXGate]
+_3qedge = [(0, 1, 2), (0, 2, 1), (2, 1, 0)]
+_2qedge = [(0, 1), (0, 2), (1, 2)]
+edge_dict = {
+    CParitySwap: _3qedge,
+    CCXGate: _3qedge,
+    CSwapGate: _3qedge,
+    CXGate: _2qedge,
+    SwapGate: _2qedge,
+    iSwapGate: _2qedge,
+}
 
 best_result = None
 best_template = None
 best_Xk = None
 
+
 def random_template_test(N):
-    X=2#random.choice(range(2))
-    base_gate_class = [CSwapGate, CSwapGate]#[random.choice(gate_list) for _ in range(X)]
+    X = random.choice(range(5))
+    base_gate_class = [random.choice(gate_list) for _ in range(X)]
+    # base_gate_class = [CSwapGate, CSwapGate]
     edge_params = [random.choice(edge_dict[gate]) for gate in base_gate_class]
-    template = TemplateCircuit(n_qubits=3, base_gate_class=base_gate_class, gate_2q_params=[None], edge_params=edge_params)
-    optimizer = TemplateOptimizer(template, n_samples=1, unitary_sample_function="CParitySwap", template_iter_range=range(1,2), thread_id=N, no_save=True)
+    template = TemplateCircuit(
+        n_qubits=3,
+        base_gate_class=base_gate_class,
+        gate_2q_params=[None],
+        edge_params=edge_params,
+    )
+    optimizer = TemplateOptimizer(
+        template,
+        n_samples=1,
+        unitary_sample_function="Haar",
+        template_iter_range=range(1, 3),
+        thread_id=N,
+        no_save=True,
+    )
+    # unitary_sample_function="CParitySwap"
+
     result, Xk, cycles = optimizer.run(override_saved=True)
-    #print(f"thread {N}: {result}")
-    return (result, base_gate_class,edge_params, Xk, cycles)
+    # print(f"thread {N}: {result}")
+    return (result, base_gate_class, edge_params, Xk, cycles)
+
 
 if __name__ == "__main__":
-    multi_thread_repeat_count = 256
+    multi_thread_repeat_count = 8  # 256
     # pool_obj = multiprocessing.Pool()
     with multiprocessing.Pool() as p:
-        answer = p.map(random_template_test,range(0,multi_thread_repeat_count))
-    
-    s = sorted(answer, key= lambda x: 1 if (x is None or x[0] is None) else x[0])
+        answer = p.map(random_template_test, range(0, multi_thread_repeat_count))
+
+    s = sorted(answer, key=lambda x: 1 if (x is None or x[0] is None) else x[0])
     from sys import stdout
+
     for i in range(len(s)):
         if s[i] is None:
             continue
         best_result, best_base_gate_class, best_edge_params, best_Xk, best_cycles = s[i]
         if best_result < 1e-9:
             print(best_result)
-            best_template = TemplateCircuit(n_qubits=3, base_gate_class=best_base_gate_class, gate_2q_params=[None], edge_params=best_edge_params)
+            best_template = TemplateCircuit(
+                n_qubits=3,
+                base_gate_class=best_base_gate_class,
+                gate_2q_params=[None],
+                edge_params=best_edge_params,
+            )
             result_circuit = best_template.build(best_cycles)
             result_circuit = best_template.assign_Xk(best_Xk)
 
-            print(result_circuit.draw(output='text'))
+            print(result_circuit.draw(output="text"))
             stdout.flush()
             print("\n")
 
