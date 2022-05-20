@@ -519,7 +519,7 @@ def random_template_test(N):
     optimizer = TemplateOptimizer(
         template,
         n_samples=1,
-        unitary_sample_function="Haar",
+        unitary_sample_function="Toffoli",
         template_iter_range=range(1, 3),
         thread_id=N,
         no_save=True,

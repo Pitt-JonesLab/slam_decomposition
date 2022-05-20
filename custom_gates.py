@@ -47,7 +47,7 @@ _Cparity_array = build_circulator_U(*params)
 
 
 class VSwap(Gate):
-    def __init__(self):
+    def __init__(self, _: ParameterValueType = None):
         super().__init__("vswap", 3, [], "VSWAP")
         v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
         v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
@@ -58,6 +58,86 @@ class VSwap(Gate):
         # params = [np.pi/2,np.pi/2,0, np.pi/v_nn, np.pi/v_nn, 0]
         # U = build_circulator_U(*params)
         return self._array.full()
+
+
+class Margolus(Gate):
+    def __init__(self, _: ParameterValueType = None):
+        super().__init__("margolus", 3, [], "Margolus")
+
+    def __array__(Self, dtype=None):
+        return np.array(
+            [
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, -1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 1],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+            ],
+            dtype=dtype,
+        )
+
+
+class CCZGate(Gate):
+    def __init__(self, _: ParameterValueType = None):
+        super().__init__("ccz", 3, [], "CCZGate")
+
+    def __array__(Self, dtype=None):
+        return np.array(
+            [
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1, 0],
+                [0, 0, 0, 0, 0, 0, 0, -1],
+            ],
+            dtype=dtype,
+        )
+
+
+class CCiXGate(Gate):
+    def __init__(self, _: ParameterValueType = None):
+        super().__init__("ccix", 3, [], "CCiXGate")
+
+    def __array__(Self, dtype=None):
+        return np.array(
+            [
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 1j],
+                [0, 0, 0, 0, 0, 0, 1j, 0],
+            ],
+            dtype=dtype,
+        )
+
+
+class CiSwap(Gate):
+    def __init__(self, _: ParameterValueType = None):
+        super().__init__("ciswap", 3, [], "CiSwap")
+
+    def __array__(Self, dtype=None):
+        return np.array(
+            [
+                [1, 0, 0, 0, 0, 0, 0, 0],
+                [0, 1, 0, 0, 0, 0, 0, 0],
+                [0, 0, 1, 0, 0, 0, 0, 0],
+                [0, 0, 0, 1, 0, 0, 0, 0],
+                [0, 0, 0, 0, 1, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 1j, 0],
+                [0, 0, 0, 0, 0, 1j, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 1],
+            ],
+            dtype=dtype,
+        )
 
 
 class Peres(Gate):
@@ -85,8 +165,8 @@ class CParitySwap(Gate):
 
     def __init__(self, _: ParameterValueType = None):
         super().__init__("cpswap", 3, [], "TBD")
-        nn= 3*np.sqrt(3)/2
-        params = [-np.pi/2, np.pi/2, -np.pi / 2, np.pi/nn, np.pi/nn, np.pi/nn]
+        nn = 3 * np.sqrt(3) / 2
+        params = [-np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]
         self._array = build_circulator_U(*params)
 
     def __array__(self, dtype=None):
