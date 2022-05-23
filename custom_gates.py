@@ -185,6 +185,32 @@ class CParitySwap(Gate):
         )
 
 
+class FSim(Gate):
+    def __init__(self, theta: ParameterValueType, phi: ParameterValueType):
+        """SYC: FSim(theta=np.pi/2, phi=np.pi/6)"""
+        super().__init__("fsim", 2, [theta, phi])
+
+    def __array__(self, dtype=None):
+        return np.array(
+            [
+                [1, 0, 0, 0],
+                [0, np.cos(self.params[0]), -1j * np.sin(self.params[0]), 0],
+                [0, -1j * np.sin(self.params[0]), np.cos(self.params[0]), 0],
+                [0, 0, 0, np.exp(1j * self.params[1])],
+            ],
+            dtype=dtype,
+        )
+
+
+class SYC(FSim):
+    def __init__(self, _):
+        super().__init__(np.pi / 2, np.pi / 6)
+
+    @staticmethod
+    def latex_string(gate_params):
+        return "SYC"
+
+
 class RiSwapGate(Gate):
     r"""RiSWAP gate.
 
@@ -218,8 +244,9 @@ class RiSwapGate(Gate):
         )
 
     @staticmethod
-    def latex_string(n=None):
-        if n is None:
+    def latex_string(gate_params=None):
+        if gate_params is None:
             return r"$\sqrt[n]{iSwap}$"
         else:
+            n = 1 / gate_params[0]
             return r"$\sqrt[" + str(int(n)) + r"]{iSwap}$"
