@@ -126,20 +126,14 @@ class TemplateCircuit:
         self.cycles = 0
 
         if self.trotter:
-            raise NotImplementedError
-            if self.gate_2q_base != RiSwapGate:
-                raise NotImplementedError
-            # fixed param value, take first element
-            self.gate_2q_params = cycle(gate_2q_params[:1])
-            # override edges
-            self.gate_2q_edges = cycle([(0, 1)])
-            # fixed length, equals a full gate
-            self.cycle_length = 1
-        else:
-            self.gate_2q_base = cycle(base_gate_class)
-            self.gate_2q_params = cycle(gate_2q_params)
-            self.gate_2q_edges = cycle(edge_params)
-            self.cycle_length = max(len(gate_2q_params), len(edge_params))
+            # raise NotImplementedError
+            logging.warning("Trotter may not work as intended")
+
+        # else:
+        self.gate_2q_base = cycle(base_gate_class)
+        self.gate_2q_params = cycle(gate_2q_params)
+        self.gate_2q_edges = cycle(edge_params)
+        self.cycle_length = max(len(gate_2q_params), len(edge_params))
 
         self.gen_1q_params = self._param_iter()
 
@@ -152,7 +146,8 @@ class TemplateCircuit:
     def build(self, n_repetitions):
         self._reset()
         if self.trotter:
-            n_repetitions = int(1 / next(self.gate_2q_params))
+            pass
+            # n_repetitions = int(1 / next(self.gate_2q_params))
         for _ in range(n_repetitions - 1):
             self._build_cycle()
 

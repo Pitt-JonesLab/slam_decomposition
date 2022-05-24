@@ -2,6 +2,7 @@ import numpy as np
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
 import qutip
+import weylchamber
 
 """Example Usage:
 from custom_gates import *
@@ -80,11 +81,23 @@ class Margolus(Gate):
         )
 
 
+class CanonicalGate(Gate):
+    def __init__(self, alpha, beta, gamma):
+        super().__init__("can", 2, [alpha, beta, gamma], "can")
+        from weylchamber import canonical_gate
+
+        alpha, beta, gamma = [2 * x / np.pi for x in (alpha, beta, gamma)]
+        self.data = weylchamber.canonical_gate(alpha, beta, gamma).full()
+
+    def __array__(self, dtype=None):
+        return np.array(self.data, dtype=dtype)
+
+
 class CCZGate(Gate):
     def __init__(self, _: ParameterValueType = None):
         super().__init__("ccz", 3, [], "CCZGate")
 
-    def __array__(Self, dtype=None):
+    def __array__(self, dtype=None):
         return np.array(
             [
                 [1, 0, 0, 0, 0, 0, 0, 0],
