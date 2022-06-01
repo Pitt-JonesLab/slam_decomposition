@@ -1,0 +1,6 @@
+# This file is used internally by FFMPEG.
+file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/FormulaEmphasis/1342159004_664866970_223132457.mp4'
+file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/FormulaEmphasis/1353618911_96599650_1321135234.mp4'
+file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/FormulaEmphasis/1353618911_3503346753_3261977738.mp4'
+file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/FormulaEmphasis/1353618911_1759923244_3058411128.mp4'
+file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/FormulaEmphasis/1353618911_3503346753_774287825.mp4'
