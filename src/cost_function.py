@@ -5,7 +5,7 @@ from weylchamber import J_T_LI, bell_basis, c1c2c3, canonical_gate, g1g2g3
 
 """
 Defines functions that the optimizer attempts to minimize, 
-Each function is some metric of fidelity between unitaries
+Each function is some metric of fidelity between unitaries, where 0 means best and 1 means worst
 Experiment to find some metrics perform better/faster than others
 """
 
@@ -16,8 +16,8 @@ class UnitaryCostFunction(ABC):
     def unitary_fidelity(self, current_u, target_u):
         raise NotImplementedError
 
-    def fidelity_lambda(self, target_u):
-        return lambda current_u: self.unitary_fidelity(current_u, target_u)
+    # def fidelity_lambda(self, target_u):
+    #     return lambda current_u: self.unitary_fidelity(current_u, target_u)
 
 class BasicCost(UnitaryCostFunction):
     def unitary_fidelity(self, current_u, target_u):
@@ -67,9 +67,6 @@ class MakhlinEuclideanCost(UnitaryCostFunction):
         g_target = g1g2g3(target_u)
         g_current = g1g2g3(current_u)
         return np.linalg.norm(np.array(g_target) - np.array(g_current))
-
-
-
 
 class MakhlinFunctionalCost(UnitaryCostFunction):
     def unitary_fidelity(self, current_u, target_u):

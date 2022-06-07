@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from weylchamber import WeylChamber, c1c2c3
 
 """Helper functions for plotting"""
 
@@ -21,11 +22,66 @@ def plotMatrix(matrix, rounder=2, vmin=0, vmax=1):
     plt.show()
     return pm
 
+"""Optimizer plot"""
+ #TODO rewrite
+ # self.training_loss, self.training_reps, self.coordinate_list
+ # this are treated like 2d list over set of sampled targets
+
+def optimizer_training_plot(training_loss, training_reps, coordinate_list):
+    """Plot to show convergence of loss and movement in chamber"""
+    plt.close()
+    fig = plt.figure()
+    weyl_training_plot(fig, coordinate_list)
+    training_loss_plot(fig, training_loss, training_reps)
+    fig.suptitle(f"Convergence Data (N={len(training_loss)})")
+    return fig
+  
+
+def training_loss_plot(fig, training_loss, training_reps):
+    axs = fig.add_subplot(121)
+    c = ["black", "tab:red", "tab:blue", "tab:orange", "tab:green"]
+
+    # each sample gets plotted as a faint line
+    for sample_loss,sample_reps in zip(training_loss, training_reps):
+        axs.plot(
+            sample_loss,
+            alpha=0.8,
+            #color=c[i %len(c)],
+            color=c[sample_reps% len(c)],
+            linestyle="-",
+            label=sample_reps
+        )
+
+    # plot horizontal line to show average of final converged value
+    converged_averaged = np.mean([min(el) for el in training_loss])
+    axs.axhline(
+        converged_averaged, alpha=0.8, color="tab:gray", linestyle="--"
+    )
+    axs.text(
+        0.5,
+        converged_averaged * 1.01,
+        "Avg: " + "{:.2E}".format(converged_averaged),
+        {"size": 5},
+    )
+
+    axs.set_yscale("log")
+    axs.set_xlabel("Training Steps")
+    axs.set_ylabel("Training Loss")
+    axs.legend()
 
 """Generic Weyl Chamber plots"""
 
 # I have a lot of versions of this code plotting around
 # TODO rewrite to be usable generically
+
+def weyl_training_plot(fig, coordinate_list):
+    ax = fig.add_subplot(122, projection="3d")
+    w = WeylChamber();
+    for sample in coordinate_list:
+        col = np.arange(len(sample))
+        w.scatter(*zip(*sample), c=col)
+    w.render(ax)
+
 
 # from weylchamber import WeylChamber
 # def weyl_plot():

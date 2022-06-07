@@ -7,9 +7,9 @@ import numpy as np
 """Loading/Saving helper functions"""
 from hashlib import sha1
 
-
 def filename_encode(arg):
-    return sha1(arg.encode()).hexdigest()
+    hash = sha1(arg.encode()).hexdigest() 
+    return f"/home/evm9/decomposition_EM/data/{hash}.pkl"
 
 def pickle_load(filename):
     """load a dictionary"""

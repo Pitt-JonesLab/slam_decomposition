@@ -1,0 +1,1 @@
+Utils contains helpful code that is used but is not strongly related to the rest of the directory in the same sense. For example: generic data structure patterns, matplotlib patterns, patching imports, needing to borrow a file from elsewhere.

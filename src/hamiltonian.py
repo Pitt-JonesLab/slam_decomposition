@@ -3,7 +3,7 @@ from abc import ABC
 import numpy as np
 import qutip
 
-from data_utils import filename_encode
+from utils.data_utils import filename_encode
 
 """
 Hamiltonians defined in terms of raising/lowering operators

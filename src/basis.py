@@ -1,8 +1,9 @@
-from dataclasses import dataclass
 import logging
 from abc import ABC
+from dataclasses import dataclass
 from inspect import signature
 from itertools import cycle
+from xmlrpc.client import boolean
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
@@ -12,23 +13,26 @@ from scipy.spatial import KDTree
 from weylchamber import c1c2c3
 
 from custom_gates import *
-from data_utils import *
-from data_utils import filename_encode
 from hamiltonian import Hamiltonian
+from utils.data_utils import filename_encode, pickle_load, pickle_save
 
 """
 Defines the variational object passed to the optimizer
 """
 
 class VariationalTemplate(ABC):
-    def __init__(self, spanning_rule:range):
+    def __init__(self, spanning_rule:range, preseed:bool):
         if self.filename is None:
             raise NotImplementedError
         self.data_dict = pickle_load(self.filename)
-        #for preseeding, a good data structure to find the closest already known coordinate
-        
-        self.coordinate_tree = KDTree(self.data_dict.keys())
+
+        self._construct_tree()
+
         self.spanning_rule = spanning_rule
+
+        #only valid if range is 1 otherwise nuop fails when on boundary
+        self.preseeded = len(self.spanning_rule) == 1 and preseed
+        self.seed = None
     
     def eval(self, Xk):
         #evaluate on vector of parameters
@@ -36,13 +40,26 @@ class VariationalTemplate(ABC):
     
     def paramter_guess(self):
         #return a random vector of parameters
-        raise NotImplementedError
+        if self.preseeded and self.seed is not None:
+            return self.seed
+            #TODO: add a dash of randomization here, ie +- 5% on each value
+        return None
+
+    def assign_seed(self, Xk):
+        self.seed = Xk
     
     def save_data(self):
         pickle_save(self.filename, self.data_dict)
     
     def get_spanning_range(self):
         return self.spanning_rule
+    
+    def _construct_tree(self):
+        if len(self.data_dict) > 0:
+                #for preseeding, a good data structure to find the closest already known coordinate
+                self.coordinate_tree = KDTree(list(self.data_dict.keys()))
+        else:
+            self.coordinate_tree = None
 
     #XXX below will fail for 3Q+
     def target_invariant(self, target_U):
@@ -73,6 +90,9 @@ class HamiltonianTemplate(VariationalTemplate):
         return self.h.construct_U(Xk)
     
     def paramter_guess(self):
+        parent = super().paramter_guess()
+        if parent is not None:
+            return parent
         p_len =  len(signature(self.h.construct_U).parameters)
         return np.random.random(p_len)
 
@@ -80,10 +100,10 @@ def get_monodromy_span():
     return range(2,3)
 
 class CircuitTemplate(VariationalTemplate):
-    def __init__(self, n_qubits=2, base_gate_class=[RiSwapGate], gate_2q_params=[1/2], edge_params=[(0, 1)], no_exterior_1q=False, use_monodromy=False, maximum_span_guess=5):
+    def __init__(self, n_qubits=2, base_gate_class=[RiSwapGate], gate_2q_params=[1/2], edge_params=[(0, 1)], no_exterior_1q=False, use_monodromy=False, maximum_span_guess=5, preseed=False):
         """Initalizes a qiskit.quantumCircuit object with unbound 1Q gate parameters"""
         hash = str(n_qubits)+ str(base_gate_class)+ str(gate_2q_params)+ str(edge_params)+ str(no_exterior_1q)
-        self.filename = f"data/{filename_encode(hash)}.pkl"
+        self.filename = filename_encode(hash)
         self.n_qubits = n_qubits
         self.no_exterior_1q = no_exterior_1q
 
@@ -98,8 +118,8 @@ class CircuitTemplate(VariationalTemplate):
         if use_monodromy:
             spanning_rule = get_monodromy_span()
         else:
-            spanning_rule = range(maximum_span_guess+1)
-        super().__init__(spanning_rule=spanning_rule)
+            spanning_rule = range(1,maximum_span_guess+1)
+        super().__init__(spanning_rule=spanning_rule, preseed=preseed)
 
         self._reset()
 
@@ -113,6 +133,9 @@ class CircuitTemplate(VariationalTemplate):
 
     def paramter_guess(self):
         """returns a np array of random values for each parameter"""
+        parent = super().paramter_guess()
+        if parent is not None:
+            return parent
         return np.random.random(len(self.circuit.parameters)) * 2 * np.pi
 
     def assign_Xk(self, Xk):

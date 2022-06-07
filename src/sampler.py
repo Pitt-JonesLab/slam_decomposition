@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 
-from deprecate.weyl_exact import RootiSwapWeylDecomposition
+from utils.weyl_exact import RootiSwapWeylDecomposition
 from qiskit import QuantumCircuit
 from qiskit.circuit.gate import Gate
 from qiskit.quantum_info import Operator, random_clifford, random_unitary
@@ -21,7 +21,7 @@ class SampleFunction(ABC):
         self.n_qubits= n_qubits
         self.n_samples = n_samples
     
-    def __next__(self):
+    def __iter__(self):
         for _ in range(self.n_samples):
             yield self._get_unitary()
     
