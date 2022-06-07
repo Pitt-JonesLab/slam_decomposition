@@ -1,8 +1,16 @@
 import logging
 import pickle
+
+import h5py
 import numpy as np
 
 """Loading/Saving helper functions"""
+from hashlib import sha1
+
+
+def filename_encode(arg):
+    return sha1(arg.encode()).hexdigest()
+
 def pickle_load(filename):
     """load a dictionary"""
     #try to open file if it exists
@@ -20,7 +28,6 @@ def pickle_save(filename, data_dict):
     with open(filename, 'wb+') as f:
         pickle.dump(data_dict, f)
 
-import h5py
 def h5py_load(filekey, *args):
     """load a numpy array"""
     filename = f"data/{filekey}.h5"

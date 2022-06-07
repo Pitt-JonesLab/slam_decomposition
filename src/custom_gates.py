@@ -1,7 +1,9 @@
 import numpy as np
+import weylchamber
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
-import weylchamber
+
+from hamiltonian import CirculatorHamiltonian
 
 """
 Library of useful gates that aren't defined natively in qiskit
@@ -20,7 +22,6 @@ class VSwap(Gate):
         super().__init__("vswap", 3, [], "VSWAP")
         v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
         v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
-        from hamiltonian import CirculatorHamiltonian
 
         self._array = CirculatorHamiltonian.construct_U(*v_params)
 

@@ -1,159 +1,139 @@
 import logging
-import h5py
+
+import scipy.optimize as opt
+from weylchamber import c1c2c3
+
+from basis import CircuitTemplate, VariationalTemplate, DataDictEntry
+from cost_function import UnitaryCostFunction
+from sampler import SampleFunction
+
 SUCCESS_THRESHOLD = 1e-9
-
-
-#TODO: rewrite how sampling works
-# we don't need to save training data/weyl walks to files, but keep it in a variable for plotting?
-
+TRAINING_RESTARTS = 5
 """
 Given a gate basis objects finds parameters which minimize cost function
 """
-
 class TemplateOptimizer:
-    def __init__(
-        self,
-        objective_function_name="basic",
-        unitary_sample_function="Haar",
-        n_samples=1,
-        template_iter_range=range(2, 4),
-        no_save=True
-    ):
-        """Args:
-        template: TemplateCircuit object
-        objective_function_name: "basic" or "square"
-        unitary_sample_function: "Haar" or "Clifford for random sampling, "SWAP", "CNOT", "iSWAP" for single gates
-        n_samples: the number of times to sample a gate and minimize template on
-        template_iter_range: a range() object that whos values are passed to template.build()
-        """
-        self.sampler = self._sample_function(unitary_sample_function)
-        self.n_samples = n_samples
-        self.obj_f_name = objective_function_name
-        self.template_iter_range = template_iter_range
-        self.filekey = hashlib.sha1(
-            (
-                self.template.hash
-                + str(objective_function_name)
-                + str(unitary_sample_function)
-                + str(template_iter_range)
-            ).encode()
-        ).hexdigest()
-        self.plot_title = None
-        self.training_loss = []
-        self.training_reps = []
-        self.no_save=no_save
+    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False):
+        self.basis = basis
+        self.objective = objective
 
-    from basis import VariationalObject
-    def approximate_target_U(self, basis:VariationalObject, target_U):
+        self.use_callback = use_callback
+        self.sample_iter = 0
+        self.training_loss = [] #2d list sample_iter -> [training iter -> loss]
+        self.training_reps = [] #1d list sample_iter -> best result cycle length
+        self.coordinate_list = [] #2d list sample_iter -> [training iter -> (coordinate)]
 
-        target_coordinates = basis.target_invariant(target_U)
+    #TODO, investigate, when does basis data_dict get updated, when do I need to call save to file
+    def approximate_target_U(self, target_U):
+
+        target_coordinates = self.basis.target_invariant(target_U)
 
         if self.preseeding:
             #check if coordinate already exists in loaded_data
-            distance, index = basis.coordinate_tree.query([target_coordinates])
-
+            distance, index = self.basis.coordinate_tree.query([target_coordinates])
+            found_saved = self.basis.coordinate_tree.data[index]
+            
             #if target_coordinates in self.data_dict.keys():
-            if distance == 0:
+            if distance == 0 and found_saved.success_label:
                 logging.info(f"Found saved: {target_coordinates}")
-                return basis.data_dict.get(target_coordinates)
+                return found_saved
+
+            #convert key to guess vector
+            starting_guess = found_saved.Xk
         else:
             starting_guess = None
+        
         logging.info(f"SEARCHING: {target_coordinates}")
-        starting_guess = basis.data_dict[index]
         best_result, best_Xk, best_cycles = self.run(target_U, seed_Xk=starting_guess)
 
         if best_result <= SUCCESS_THRESHOLD:
             # label target coordinate as success
-            label = 1
+            success_label = 1
             logging.info(f"Success: {target_coordinates}")
         else:
             # label target coordinate as fail, label alternative coordinate as succss
-            label = 0
-            alternative_coordinate = weylchamber.c1c2c3(basis.eval(best_Xk))
+            success_label = 0
+
+            if isinstance(self.basis, CircuitTemplate):
+                self.basis.build(n_repetitions=best_cycles)
+            alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
+    
             logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
-            basis.data_dict[alternative_coordinate] = (1, 0) #, best_Xk, best_cycles)
+            self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
+
+        #save target
+        target_data = DataDictEntry(success_label, best_result, best_Xk, best_cycles)
+        self.basis.data_dict[target_coordinates] = target_data
+        return target_data
+
+    def approximate_from_distribution(self, sampler:SampleFunction):
+        for target in sampler:
+            logging.info(f"Starting sample iter {self.sample_iter}")
+            self.approximate_target_U(target_U=target)
+            self.sample_iter += 1
             
-    def approximate_from_distribution(self):
-        for i in range(offset, self.n_samples):
-            logging.info(f"Starting sample iter {i}")
-            self.training_loss.append([])
-            target_unitary = self.sampler()
-            obj = self._objective_function(self.obj_f_name, target_unitary)
-            best_result, best_Xk, best_cycles = self.minimize(
-                obj=obj, iter=i, t_range=self.template_iter_range
-            )
-
-    def minimize(self, obj, iter, t_range):
-        # NOTE: potential for speedup?
-        # you can calculate ahead of time the number of repetitions needed using traces??
-
-        # callback used to save current loss after each iteration
-        # can also be used to save current coordinate
+    def run(self, target_u, seed_Xk):
+        
+        objective_func = self.objective.fidelity_lambda(target_u)
+        
+        # callback used to save current loss and coordiante after each iteration
         def callbackF(xk):
-            loss = obj(xk)
+            current_state = self.basis.eval(xk)
+            loss = objective_func(current_state)
             temp_training_loss.append(loss)
-            gate = self.template.eval(xk)
-            c1, c2, c3 = weylchamber.c1c2c3(gate)
-            self.coordinate_list.append((c1,c2,c3))
+            temp_coordinate_list.append(c1c2c3(current_state))
 
         best_result = None
         best_Xk = None
         best_cycles = -1
 
         # each t creates fresh template with new repetition param
-        for t in t_range:
-            logging.info(f"Starting cycle length {t}")
+        for spanning_iter in self.basis.get_spanning_range():
+            logging.info(f"Starting opt on template size {spanning_iter}")
             temp_training_loss = []
-            self.template.build(n_repetitions=t)
+            temp_coordinate_list = []
+
+            if isinstance(self.basis, CircuitTemplate):
+                self.basis.build(n_repetitions=spanning_iter)
 
             #TODO can do this in threads?
-            starting_attempts = 5
-            for _ in range(starting_attempts):
-
-                else: #self.obj_f_name == "basic" or self.obj_f_name == "square"
-                    result = opt.minimize(
-                        fun=obj,
-                        method='BFGS',#'nelder-mead',
-                        x0=self.template.initial_guess(),
-                        callback=callbackF,
-                        options={"maxiter": 200},
-                    )
-                    # result = opt.minimize(
-                    #     fun=obj,
-                    #     method='BFGS',
-                    #     x0=result.x,
-                    #     callback=callbackF,
-                    #     options={"maxiter": 1000},
-                    # )
-                
+            for _ in range(TRAINING_RESTARTS):
+           
+                result = opt.minimize(
+                    fun=objective_func,
+                    method='BFGS',
+                    x0=self.basis.paramter_guess(),
+                    callback=callbackF if self.use_callback else None,
+                    options={"maxiter": 200},
+                )
 
                 # result is good, update temp vars
                 if best_result is None or result.fun < best_result:
                     best_result = result.fun
                     best_Xk = result.x
-                    best_cycles = self.template.cycles
-                    self.training_loss[iter] = temp_training_loss
+                    best_cycles = spanning_iter
+                    if self.use_callback:
+                        self.training_loss.append(temp_training_loss)
+                        self.coordinate_list.append(temp_coordinate_list)
                 
                 #break over starting attempts
-                if best_result < 1e-9:
+                if best_result < SUCCESS_THRESHOLD:
                     break
             
             #break over template extensions
             # already good enough, save time by stopping here
-            if best_result < 1e-9:
-                logging.info(f"Break on cycle {t}")
+            if best_result < SUCCESS_THRESHOLD:
+                logging.info(f"Break on cycle {spanning_iter}")
                 break
+        
+        if self.use_callback:
+            self.training_reps.append(best_cycles)
 
-        logging.info(f"loss= {best_result}")
-        self.training_reps.append(best_cycles)
+        logging.info(f"Loss={best_result}")
         return best_result, best_Xk, best_cycles
 
-    def _sample_function(self, name):
-        #XXX refactored
 
-    def _objective_function(self, name, target):
-        #XXX refactored
-
+    #TODO
     @staticmethod
     def plot(fig_title, *optimizers):
         #NOTE: previous version used different colors to signal different template lengths

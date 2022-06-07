@@ -1,5 +1,7 @@
 from abc import ABC
+
 import numpy as np
+from weylchamber import J_T_LI, bell_basis, c1c2c3, canonical_gate, g1g2g3
 
 """
 Defines functions that the optimizer attempts to minimize, 
@@ -28,7 +30,6 @@ class SquareCost(UnitaryCostFunction):
         d = np.array(target_u).shape[0]
         return 1 - (np.abs(np.trace(np.matmul(h, current_u))) ** 2+ d) / (d * (d + 1))
 
-from weylchamber import canonical_gate, c1c2c3, g1g2g3
 class BasicReducedCost(BasicCost):
     # version that eliminates exterior 1Q gates by converting to can basis
     # need to also convert the template to can basis for similarity
@@ -43,9 +44,7 @@ class SquareReducedCost(SquareCost):
         can_current = np.matrix(canonical_gate(*c1c2c3(current_u)))
         return super().unitary_fidelity(can_current, can_target)
 
-from weylchamber import bell_basis
 class SquareReducedBellCost(SquareCost):
-
     def unitary_fidelity(self, current_u, target_u):
         bell_target = np.matrix(bell_basis(target_u))
         bell_current = np.matrix(bell_basis(current_u))
@@ -69,7 +68,9 @@ class MakhlinEuclideanCost(UnitaryCostFunction):
         g_current = g1g2g3(current_u)
         return np.linalg.norm(np.array(g_target) - np.array(g_current))
 
-from weylchamber import J_T_LI
+
+
+
 class MakhlinFunctionalCost(UnitaryCostFunction):
     def unitary_fidelity(self, current_u, target_u):
         return J_T_LI(target_u, current_u)

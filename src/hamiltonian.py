@@ -1,8 +1,9 @@
 from abc import ABC
-from pydoc import classname
 
-import qutip
 import numpy as np
+import qutip
+
+from data_utils import filename_encode
 
 """
 Hamiltonians defined in terms of raising/lowering operators
@@ -13,7 +14,7 @@ class Hamiltonian(ABC):
         self.H = lambda: None
 
     def __repr__(self):
-        return type(self).__name__
+        return filename_encode(type(self).__name__)
 
     def _construct_H(self, *args):
         return self.H(*args)
