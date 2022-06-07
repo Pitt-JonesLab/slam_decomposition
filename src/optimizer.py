@@ -1,9 +1,11 @@
 import logging
 
+import matplotlib.pyplot as plt
+import numpy as np
 import scipy.optimize as opt
 from weylchamber import c1c2c3
 
-from basis import CircuitTemplate, VariationalTemplate, DataDictEntry
+from basis import CircuitTemplate, DataDictEntry, VariationalTemplate
 from cost_function import UnitaryCostFunction
 from sampler import SampleFunction
 
