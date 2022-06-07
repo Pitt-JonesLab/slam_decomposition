@@ -59,9 +59,9 @@ class VariationalTemplate(ABC):
 @dataclass
 class DataDictEntry():
     success_label: int
-    best_result: float
-    best_Xk: list
-    best_cycles: int
+    loss_result: float
+    Xk: list
+    cycles: int
 
 class HamiltonianTemplate(VariationalTemplate):
     def __init__(self, h:Hamiltonian):
