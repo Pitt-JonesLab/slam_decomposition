@@ -34,7 +34,7 @@ class GateSample(SampleFunction):
         super().__init__(gate.num_qubits, n_samples)
     
     def _get_unitary(self):
-        return self.gate
+        return Operator(self.gate).data
 
 class Clifford(SampleFunction):
     def _get_unitary(self):

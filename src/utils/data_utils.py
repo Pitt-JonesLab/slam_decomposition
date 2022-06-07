@@ -28,6 +28,7 @@ def pickle_save(filename, data_dict):
     with open(filename, 'wb+') as f:
         pickle.dump(data_dict, f)
 
+#XXX filename deprecated for h5py, update to work like pickle does above
 def h5py_load(filekey, *args):
     """load a numpy array"""
     filename = f"data/{filekey}.h5"

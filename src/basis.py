@@ -12,26 +12,31 @@ from qiskit.quantum_info import Operator
 from scipy.spatial import KDTree
 from weylchamber import c1c2c3
 
-from custom_gates import *
-from hamiltonian import Hamiltonian
-from utils.data_utils import filename_encode, pickle_load, pickle_save
+from src.utils.custom_gates import *
+from src.hamiltonian import Hamiltonian
+from src.utils.data_utils import filename_encode, pickle_load, pickle_save
+from src.utils.polytope_wrap import get_monodromy_span
 
 """
 Defines the variational object passed to the optimizer
 """
 
 class VariationalTemplate(ABC):
-    def __init__(self, spanning_rule:range, preseed:bool):
+    def __init__(self, preseed:bool, use_polytopes:bool):
         if self.filename is None:
             raise NotImplementedError
         self.data_dict = pickle_load(self.filename)
 
         self._construct_tree()
 
-        self.spanning_rule = spanning_rule
-
-        #only valid if range is 1 otherwise nuop fails when on boundary
-        self.preseeded = len(self.spanning_rule) == 1 and preseed
+        #messy bit of logic here
+        # I want spanning rule to refer to either a function using polytopes given a targer
+        # or a constant set range
+        # only valid if range is 1 otherwise nuop fails when on boundary
+        self.use_polytopes = use_polytopes
+        if self.spanning_range is None and not self.use_polytopes:
+            raise NotImplementedError
+        self.preseeded = preseed and (self.use_polytopes or len(self.spanning_range))
         self.seed = None
     
     def eval(self, Xk):
@@ -51,14 +56,19 @@ class VariationalTemplate(ABC):
     def save_data(self):
         pickle_save(self.filename, self.data_dict)
     
-    def get_spanning_range(self):
-        return self.spanning_rule
-    
+    def get_spanning_range(self, target_u):
+        if not self.use_polytopes:
+            return self.spanning_range
+        else:
+            #call monodromy polytope helper
+            return get_monodromy_span(self, target_u)
+
     def _construct_tree(self):
         if len(self.data_dict) > 0:
                 #for preseeding, a good data structure to find the closest already known coordinate
                 self.coordinate_tree = KDTree(list(self.data_dict.keys()))
         else:
+            #no data yet
             self.coordinate_tree = None
 
     #XXX below will fail for 3Q+
@@ -82,12 +92,13 @@ class DataDictEntry():
 
 class HamiltonianTemplate(VariationalTemplate):
     def __init__(self, h:Hamiltonian):
-        self.filename = f"data/{repr(h)}.pkl"
+        self.filename = filename_encode(repr(h))
         self.h = h
-        super().__init__(spanning_rule=range(1))
+        self.spanning_range = range(1)
+        super().__init__(preseed=False, use_polytopes=False)
     
     def eval(self, Xk):
-        return self.h.construct_U(Xk)
+        return self.h.construct_U(*Xk).full()
     
     def paramter_guess(self):
         parent = super().paramter_guess()
@@ -96,11 +107,8 @@ class HamiltonianTemplate(VariationalTemplate):
         p_len =  len(signature(self.h.construct_U).parameters)
         return np.random.random(p_len)
 
-def get_monodromy_span():
-    return range(2,3)
-
 class CircuitTemplate(VariationalTemplate):
-    def __init__(self, n_qubits=2, base_gate_class=[RiSwapGate], gate_2q_params=[1/2], edge_params=[(0, 1)], no_exterior_1q=False, use_monodromy=False, maximum_span_guess=5, preseed=False):
+    def __init__(self, n_qubits=2, base_gate_class=[RiSwapGate], gate_2q_params=[1/2], edge_params=[(0, 1)], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False):
         """Initalizes a qiskit.quantumCircuit object with unbound 1Q gate parameters"""
         hash = str(n_qubits)+ str(base_gate_class)+ str(gate_2q_params)+ str(edge_params)+ str(no_exterior_1q)
         self.filename = filename_encode(hash)
@@ -115,11 +123,9 @@ class CircuitTemplate(VariationalTemplate):
         self.gen_1q_params = self._param_iter()
 
         #define a range to see how many times we should extend the circuit while in optimization search
-        if use_monodromy:
-            spanning_rule = get_monodromy_span()
-        else:
-            spanning_rule = range(1,maximum_span_guess+1)
-        super().__init__(spanning_rule=spanning_rule, preseed=preseed)
+        if not use_polytopes:
+            self.spanning_range = range(1,maximum_span_guess+1)
+        super().__init__(preseed=preseed, use_polytopes=use_polytopes)
 
         self._reset()
 
@@ -191,11 +197,3 @@ class CircuitTemplate(VariationalTemplate):
                 for qubit in edge:
                     self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
         self.cycles += 1
-
-
-# %%
-# a = TemplateCircuit(
-#     gate_2q_params=[1 /3, 1 / 3], n_qubits=2, edge_params=[(0, 1), (0, 2), (1, 2)], trotter=True
-# )
-# a.build(2)
-# a.circuit.draw(output="mpl")

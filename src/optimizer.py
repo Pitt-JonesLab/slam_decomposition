@@ -61,6 +61,7 @@ class TemplateOptimizer:
             # label target coordinate as fail, label alternative coordinate as succss
             success_label = 0
 
+            #reset back to best size
             if isinstance(self.basis, CircuitTemplate):
                 self.basis.build(n_repetitions=best_cycles)
             alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
@@ -99,8 +100,8 @@ class TemplateOptimizer:
         best_Xk = None
         best_cycles = -1
 
-        # each t creates fresh template with new repetition param
-        for spanning_iter in self.basis.get_spanning_range():
+        # each iter creates fresh template with new repetition param
+        for spanning_iter in self.basis.get_spanning_range(target_u):
             logging.info(f"Starting opt on template size {spanning_iter}")
             temp_training_loss = []
             temp_coordinate_list = []

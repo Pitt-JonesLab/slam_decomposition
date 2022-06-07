@@ -26,7 +26,7 @@ from qiskit.quantum_info.synthesis.weyl import weyl_coordinates
 from qiskit.quantum_info.operators import Operator
 
 # from qiskit.circuit.library.standard_gates import *
-from custom_gates import RiSwapGate
+from src.utils.custom_gates import RiSwapGate
 from qiskit import QuantumCircuit
 import numpy as np
 

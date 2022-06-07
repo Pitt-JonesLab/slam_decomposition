@@ -3,7 +3,7 @@ import weylchamber
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
 
-from hamiltonian import CirculatorHamiltonian
+from src.hamiltonian import CirculatorHamiltonian
 
 """
 Library of useful gates that aren't defined natively in qiskit

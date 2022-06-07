@@ -3,7 +3,7 @@ from abc import ABC
 import numpy as np
 import qutip
 
-from utils.data_utils import filename_encode
+from src.utils.data_utils import filename_encode
 
 """
 Hamiltonians defined in terms of raising/lowering operators
@@ -40,14 +40,24 @@ class ConversionGainHamiltonian(Hamiltonian):
     
     #static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(gc, gg, t=1):
+    def construct_U(gc, gg):#, t=1):
+        t = 1
         h_instance = ConversionGainHamiltonian()
         return h_instance._construct_U_lambda(gc, gg)(t)
 
-class Simul1QGatesHamiltonian(Hamiltonian):
+
+#XXX not working yet, how do I want the gxvector, gyvector params to see by Basis?
+class TimeDependentHamiltonian(Hamiltonian):
+    def __init__(self, timesteps):
+        raise NotImplementedError
+        self.timesteps = timesteps
+        super().__init__()
+
+class Simul1QGatesHamiltonian(TimeDependentHamiltonian):
     """Smush together 1Q gates to build a new family of 2Q basis gates"""
 
-    def __init__(self):
+    def __init__(self, timesteps=10):
+        super().__init__(timesteps)
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
         A = qutip.tensor(a, I2)
