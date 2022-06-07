@@ -1,6 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/TransformEquation/1342159004_1257777400_739327842.mp4'
-file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/TransformEquation/1353618911_1532644140_230770454.mp4'
-file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/TransformEquation/1353618911_3503346753_2811413611.mp4'
-file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/TransformEquation/1353618911_270872053_3627863635.mp4'
-file 'file:/home/evm9/decomposition_EM/project/media/videos/project/720p30/partial_movie_files/TransformEquation/1353618911_3503346753_3318822174.mp4'
