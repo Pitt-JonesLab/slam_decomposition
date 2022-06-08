@@ -62,15 +62,15 @@ class HaarSample(SampleFunction):
 
 class Haar2Sample(HaarSample):
     def __init__(self, n_samples=1):
-        logging.warning(f"Only works for \sqrt[2]iSwap")
-        super().__init__(n_samples)
+        logging.warning(f"This sampler only works for \sqrt[2]iSwap")
+        super().__init__(n_samples=n_samples)
     def _get_unitary(self):
         return Operator(self._haar_ground_truth(2)).data
 
 class Haar3Sample(HaarSample):
     def __init__(self, n_samples=1):
-        logging.warning(f"Only works for \sqrt[2]iSwap")
-        super().__init__(n_samples)
+        logging.warning(f"This sampler only works for \sqrt[2]iSwap")
+        super().__init__(n_samples=n_samples)
     def _get_unitary(self):
         return Operator(self._haar_ground_truth(3)).data
 

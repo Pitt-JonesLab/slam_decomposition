@@ -15,7 +15,7 @@ from weylchamber import c1c2c3
 from .hamiltonian import Hamiltonian
 from .utils.custom_gates import *
 from .utils.data_utils import filename_encode, pickle_load, pickle_save
-from .utils.polytope_wrap import get_monodromy_span
+from .utils.polytope_wrap import monodromy_range_from_target
 
 """
 Defines the variational object passed to the optimizer
@@ -34,7 +34,7 @@ class VariationalTemplate(ABC):
         # or a constant set range
         # only valid if range is 1 otherwise nuop fails when on boundary
         self.use_polytopes = use_polytopes
-        if self.spanning_range is None and not self.use_polytopes:
+        if not self.use_polytopes and self.spanning_range is None:
             raise NotImplementedError
         self.preseeded = preseed and (self.use_polytopes or len(self.spanning_range))
         self.seed = None
@@ -53,6 +53,11 @@ class VariationalTemplate(ABC):
     def assign_seed(self, Xk):
         self.seed = Xk
     
+    def clear_all_save_data(self):
+        self.data_dict = {}
+        self._construct_tree()
+        self.save_data()
+
     def save_data(self):
         pickle_save(self.filename, self.data_dict)
     
@@ -61,7 +66,7 @@ class VariationalTemplate(ABC):
             return self.spanning_range
         else:
             #call monodromy polytope helper
-            return get_monodromy_span(self, target_u)
+            return monodromy_range_from_target(self, target_u)
 
     def _construct_tree(self):
         if len(self.data_dict) > 0:
@@ -123,6 +128,7 @@ class CircuitTemplate(VariationalTemplate):
         self.gen_1q_params = self._param_iter()
 
         #define a range to see how many times we should extend the circuit while in optimization search
+        self.spanning_range = None
         if not use_polytopes:
             self.spanning_range = range(1,maximum_span_guess+1)
         super().__init__(preseed=preseed, use_polytopes=use_polytopes)
@@ -153,12 +159,13 @@ class CircuitTemplate(VariationalTemplate):
         """Return template to a 0 cycle"""
         self.cycles = 0
         self.circuit = QuantumCircuit(self.n_qubits)
+        self.gen_1q_params = self._param_iter() #reset p labels
 
     def build(self, n_repetitions):
         self._reset()
 
         if n_repetitions <= 0:
-            return
+            raise ValueError()
 
         if self.trotter:
             pass

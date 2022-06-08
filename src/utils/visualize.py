@@ -5,6 +5,7 @@ from weylchamber import WeylChamber, c1c2c3
 """Helper functions for plotting"""
 
 # pretty print matrix from Chao
+#FIXME use figures and return
 def plotMatrix(matrix, rounder=2, vmin=0, vmax=1):
     matrix = np.array(matrix)
     dim = len(matrix)
@@ -23,44 +24,62 @@ def plotMatrix(matrix, rounder=2, vmin=0, vmax=1):
     return pm
 
 """Optimizer plot"""
- #TODO rewrite
- # self.training_loss, self.training_reps, self.coordinate_list
+ # self.training_loss, self.coordinate_list
  # this are treated like 2d list over set of sampled targets
-
-def optimizer_training_plot(training_loss, training_reps, coordinate_list):
+#FIXME adaptive figure size
+def optimizer_training_plot(training_loss, coordinate_list):
     """Plot to show convergence of loss and movement in chamber"""
     plt.close()
-    fig = plt.figure()
-    weyl_training_plot(fig, coordinate_list)
-    training_loss_plot(fig, training_loss, training_reps)
+    n_samples = len(training_loss)
+    fig = plt.figure(figsize=(6,4*n_samples))
+    for index, (sample_loss, sample_coords) in enumerate(zip(training_loss, coordinate_list)):
+        axs = fig.add_subplot(n_samples,2,2*index+1)
+        training_loss_plot(axs, sample_loss)
+
+        axs= fig.add_subplot(n_samples,2,2*index+2, projection="3d")
+        weyl_training_plot(axs, sample_coords)
     fig.suptitle(f"Convergence Data (N={len(training_loss)})")
     return fig
   
 
-def training_loss_plot(fig, training_loss, training_reps):
-    axs = fig.add_subplot(121)
+def training_loss_plot(axs, training_loss):
     c = ["black", "tab:red", "tab:blue", "tab:orange", "tab:green"]
+    #deliminate using training loss flags (-1)
+    current_index = 0
+    x_loss = range(0)
+    while True:
+        assert training_loss[current_index] == -1
+        reps = training_loss[1+current_index]
+        try:
+            loss = training_loss[2+current_index:training_loss[2+current_index:].index(-1)]
+        except ValueError:
+            loss = training_loss[2+current_index:] 
 
-    # each sample gets plotted as a faint line
-    for sample_loss,sample_reps in zip(training_loss, training_reps):
+        x_loss = range(x_loss.stop, x_loss.stop + len(loss))
         axs.plot(
-            sample_loss,
+            x_loss,
+            loss,
             alpha=0.8,
             #color=c[i %len(c)],
-            color=c[sample_reps% len(c)],
+            color=c[reps% len(c)],
             linestyle="-",
-            label=sample_reps
+            label=reps
         )
+        if -1 not in training_loss[2+current_index:]:
+            break
+        current_index += training_loss[2+current_index:].index(-1) + 2
 
     # plot horizontal line to show average of final converged value
-    converged_averaged = np.mean([min(el) for el in training_loss])
+    #converged_average = np.mean([min(el) for el in training_loss])
+    #filter flags (-1)
+    converged_average = min([el for el in training_loss if el >= 0])
     axs.axhline(
-        converged_averaged, alpha=0.8, color="tab:gray", linestyle="--"
+        converged_average, alpha=0.8, color="tab:gray", linestyle="--"
     )
     axs.text(
         0.5,
-        converged_averaged * 1.01,
-        "Avg: " + "{:.2E}".format(converged_averaged),
+        converged_average * 1.01,
+        "Avg: " + "{:.2E}".format(converged_average),
         {"size": 5},
     )
 
@@ -74,13 +93,11 @@ def training_loss_plot(fig, training_loss, training_reps):
 # I have a lot of versions of this code plotting around
 # TODO rewrite to be usable generically
 
-def weyl_training_plot(fig, coordinate_list):
-    ax = fig.add_subplot(122, projection="3d")
+def weyl_training_plot(axs, coordinate_list):
     w = WeylChamber();
-    for sample in coordinate_list:
-        col = np.arange(len(sample))
-        w.scatter(*zip(*sample), c=col)
-    w.render(ax)
+    col = np.arange(len(coordinate_list))
+    w.scatter(*zip(*coordinate_list), c=col)
+    w.render(axs)
 
 
 # from weylchamber import WeylChamber

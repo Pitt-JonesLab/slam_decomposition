@@ -23,7 +23,7 @@ def pickle_load(filename):
     try:
         with open(filename, 'rb') as f:
             loaded_data = pickle.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, EOFError) as e:
         loaded_data = {}
 
     return loaded_data

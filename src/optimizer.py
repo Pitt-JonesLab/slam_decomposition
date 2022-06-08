@@ -23,7 +23,6 @@ class TemplateOptimizer:
         self.use_callback = use_callback
         self.sample_iter = 0
         self.training_loss = [] #2d list sample_iter -> [training iter -> loss]
-        self.training_reps = [] #1d list sample_iter -> best result cycle length
         self.coordinate_list = [] #2d list sample_iter -> [training iter -> (coordinate)]
 
     #TODO, investigate, when does basis data_dict get updated, when do I need to call save to file
@@ -32,14 +31,16 @@ class TemplateOptimizer:
         target_coordinates = self.basis.target_invariant(target_U)
 
         if self.preseeding and self.basis.coordinate_tree is not None:
+            #TODO rewrite needs to check over k nearest neighbors to find first valid
+
             #check if coordinate already exists in loaded_data
             distance, index = self.basis.coordinate_tree.query([target_coordinates])
-            close_coords = self.basis.coordinate_tree.data[index]
+            close_coords = tuple(self.basis.coordinate_tree.data[index[0]])
             found_saved = self.basis.data_dict[close_coords]
-
-            #TODO rewrite needs to check over k nearest neighbors to find first valid
+            
             #check if valid for given template means success and correct template length
-            if found_saved.success_label and found_saved.cycles == self.basis.get_spanning_range()[0]:
+            #FIXME I don't need to call spanning range multiple times
+            if found_saved.success_label and found_saved.cycles == self.basis.get_spanning_range(target_U)[0]:
                 pass
                 
                 if distance == 0:
@@ -81,7 +82,7 @@ class TemplateOptimizer:
             logging.info(f"Starting sample iter {self.sample_iter}")
             self.approximate_target_U(target_U=target)
             self.sample_iter += 1
-        return self.training_loss, self.training_reps, self.coordinate_list
+        return self.training_loss, self.coordinate_list
             
     def run(self, target_u):
         
@@ -100,16 +101,23 @@ class TemplateOptimizer:
         best_Xk = None
         best_cycles = -1
 
+        temp_training_loss = []
+
         # each iter creates fresh template with new repetition param
         for spanning_iter in self.basis.get_spanning_range(target_u):
             logging.info(f"Starting opt on template size {spanning_iter}")
-            temp_training_loss = []
             temp_coordinate_list = []
+            #flags for plotting function
+            #sort of convoluted but doing this so can keep data as just a sample list
+            temp_training_loss.extend([-1, spanning_iter])
+            
         
             if isinstance(self.basis, CircuitTemplate):
                 self.basis.build(n_repetitions=spanning_iter)
 
-            #TODO can do this in threads?
+            #TODO if spanning range == 1, don't pass to optimizer
+            #implement a mathematica cloud call?
+            
             for _ in range(TRAINING_RESTARTS):
            
                 result = opt.minimize(
@@ -138,9 +146,6 @@ class TemplateOptimizer:
             if best_result < SUCCESS_THRESHOLD:
                 logging.info(f"Break on cycle {spanning_iter}")
                 break
-        
-        if self.use_callback:
-            self.training_reps.append(best_cycles)
 
         logging.info(f"Loss={best_result}")
         return best_result, best_Xk, best_cycles
