@@ -12,32 +12,26 @@
 
 """Weyl decomposition of two-qubit gates."""
 
-from qiskit import QuantumCircuit
+import cmath
 
+import numpy as np
+import scipy.linalg as la
+from qiskit import QuantumCircuit
+from qiskit.circuit.library import IGate, RXGate, RYGate, RZGate
+from qiskit.converters import circuit_to_dag
+from qiskit.dagcircuit import DAGCircuit
+from qiskit.extensions.unitary import UnitaryGate
+from qiskit.quantum_info import Operator
+from qiskit.quantum_info.operators import Operator
+from qiskit.quantum_info.synthesis.two_qubit_decompose import *
+from qiskit.quantum_info.synthesis.two_qubit_decompose import \
+    TwoQubitBasisDecomposer
+from qiskit.quantum_info.synthesis.weyl import weyl_coordinates
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.transpiler.exceptions import TranspilerError
 
-from qiskit.dagcircuit import DAGCircuit
-from qiskit.converters import circuit_to_dag
-
-from qiskit.quantum_info.synthesis.two_qubit_decompose import TwoQubitBasisDecomposer
-
-from qiskit.quantum_info.synthesis.weyl import weyl_coordinates
-from qiskit.quantum_info.operators import Operator
-
 # from qiskit.circuit.library.standard_gates import *
-from src.utils.custom_gates import RiSwapGate
-from qiskit import QuantumCircuit
-import numpy as np
-
-import cmath
-from qiskit.quantum_info.synthesis.two_qubit_decompose import *
-import scipy.linalg as la
-
-from qiskit.circuit.library import RZGate, RXGate, RYGate, IGate
-from qiskit.extensions.unitary import UnitaryGate
-from qiskit import QuantumCircuit
-from qiskit.quantum_info import Operator
+from .custom_gates import RiSwapGate
 
 
 class RootiSwapWeylDecomposition(TransformationPass):

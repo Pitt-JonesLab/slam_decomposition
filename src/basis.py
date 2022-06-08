@@ -12,10 +12,10 @@ from qiskit.quantum_info import Operator
 from scipy.spatial import KDTree
 from weylchamber import c1c2c3
 
-from src.utils.custom_gates import *
-from src.hamiltonian import Hamiltonian
-from src.utils.data_utils import filename_encode, pickle_load, pickle_save
-from src.utils.polytope_wrap import get_monodromy_span
+from .hamiltonian import Hamiltonian
+from .utils.custom_gates import *
+from .utils.data_utils import filename_encode, pickle_load, pickle_save
+from .utils.polytope_wrap import get_monodromy_span
 
 """
 Defines the variational object passed to the optimizer

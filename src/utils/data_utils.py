@@ -1,11 +1,17 @@
 import logging
 import pickle
+import sys
+from hashlib import sha1
 
 import h5py
 import numpy as np
+from src import basis
+
+#pickle only works if class definition must live in same module as when the object was stored
+#use this trick so modules sees src.basis as basis
+sys.modules['basis'] = basis
 
 """Loading/Saving helper functions"""
-from hashlib import sha1
 
 def filename_encode(arg):
     hash = sha1(arg.encode()).hexdigest() 
@@ -19,6 +25,7 @@ def pickle_load(filename):
             loaded_data = pickle.load(f)
     except FileNotFoundError:
         loaded_data = {}
+
     return loaded_data
 
 def pickle_save(filename, data_dict):
@@ -27,6 +34,7 @@ def pickle_save(filename, data_dict):
     logging.info("Saving data back to file")
     with open(filename, 'wb+') as f:
         pickle.dump(data_dict, f)
+
 
 #XXX filename deprecated for h5py, update to work like pickle does above
 def h5py_load(filekey, *args):

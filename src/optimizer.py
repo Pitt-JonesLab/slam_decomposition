@@ -5,9 +5,9 @@ import numpy as np
 import scipy.optimize as opt
 from weylchamber import c1c2c3
 
-from basis import CircuitTemplate, DataDictEntry, VariationalTemplate
-from cost_function import UnitaryCostFunction
-from sampler import SampleFunction
+from .basis import CircuitTemplate, DataDictEntry, VariationalTemplate
+from .cost_function import UnitaryCostFunction
+from .sampler import SampleFunction
 
 SUCCESS_THRESHOLD = 1e-9
 TRAINING_RESTARTS = 5

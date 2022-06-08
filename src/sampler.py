@@ -1,14 +1,14 @@
 import logging
 from abc import ABC
 
-from utils.weyl_exact import RootiSwapWeylDecomposition
 from qiskit import QuantumCircuit
 from qiskit.circuit.gate import Gate
 from qiskit.quantum_info import Operator, random_clifford, random_unitary
 from qiskit.transpiler.passes import CountOps
 from qiskit.transpiler.passmanager import PassManager
 
-from custom_gates import RiSwapGate
+from .utils.custom_gates import RiSwapGate
+from .utils.weyl_exact import RootiSwapWeylDecomposition
 
 logger = logging.getLogger()
 """
