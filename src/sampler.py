@@ -41,13 +41,17 @@ class Clifford(SampleFunction):
         return Operator(random_clifford(num_qubits=self.n_qubits)).data
 
 class HaarSample(SampleFunction):
+    def __init__(self, seed=None, n_samples=1):
+        self.seed=seed
+        super().__init__(n_samples=n_samples)
+
     def _get_unitary(self):
-        return random_unitary(dims=2 ** self.n_qubits).data
+        return random_unitary(dims=2 ** self.n_qubits, seed=self.seed).data
 
     def _haar_ground_truth(self, haar_exact=2):
         """When using sqrt[2] iswap, we might want to do a haar sample where we know ahead of time if it will take 2 or 3 uses
         this is used for establishing the effectiveness of our optimizer, but won't work for any other basis gate"""
-
+        logging.warning(f"This sampler only works for \sqrt[2]iSwap")
         pm0 = PassManager()
         pm0.append(RootiSwapWeylDecomposition(basis_gate=RiSwapGate(0.5)))
         pm0.append(CountOps())
@@ -62,14 +66,12 @@ class HaarSample(SampleFunction):
 
 class Haar2Sample(HaarSample):
     def __init__(self, n_samples=1):
-        logging.warning(f"This sampler only works for \sqrt[2]iSwap")
         super().__init__(n_samples=n_samples)
     def _get_unitary(self):
         return Operator(self._haar_ground_truth(2)).data
 
 class Haar3Sample(HaarSample):
     def __init__(self, n_samples=1):
-        logging.warning(f"This sampler only works for \sqrt[2]iSwap")
         super().__init__(n_samples=n_samples)
     def _get_unitary(self):
         return Operator(self._haar_ground_truth(3)).data

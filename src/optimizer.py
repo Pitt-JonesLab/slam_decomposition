@@ -10,7 +10,7 @@ from .cost_function import UnitaryCostFunction
 from .sampler import SampleFunction
 
 SUCCESS_THRESHOLD = 1e-9
-TRAINING_RESTARTS = 5
+TRAINING_RESTARTS = 10
 """
 Given a gate basis objects finds parameters which minimize cost function
 """
@@ -21,7 +21,6 @@ class TemplateOptimizer:
         self.preseeding = self.basis.preseeded
 
         self.use_callback = use_callback
-        self.sample_iter = 0
         self.training_loss = [] #2d list sample_iter -> [training iter -> loss]
         self.coordinate_list = [] #2d list sample_iter -> [training iter -> (coordinate)]
 
@@ -29,7 +28,7 @@ class TemplateOptimizer:
     def approximate_target_U(self, target_U):
 
         target_coordinates = self.basis.target_invariant(target_U)
-
+        target_spanning_range = self.basis.get_spanning_range(target_U)
         if self.preseeding and self.basis.coordinate_tree is not None:
             #TODO rewrite needs to check over k nearest neighbors to find first valid
 
@@ -39,8 +38,8 @@ class TemplateOptimizer:
             found_saved = self.basis.data_dict[close_coords]
             
             #check if valid for given template means success and correct template length
-            #FIXME I don't need to call spanning range multiple times
-            if found_saved.success_label and found_saved.cycles == self.basis.get_spanning_range(target_U)[0]:
+            #XXX what if closest value requires a different number of applications, parameters would be misaligned
+            if found_saved.success_label and found_saved.cycles == target_spanning_range[0]:
                 pass
                 
                 if distance == 0:
@@ -50,15 +49,18 @@ class TemplateOptimizer:
                 else:
                     logging.info(f"Preseed from neighbor: {close_coords}")
                     self.basis.assign_seed(found_saved.Xk)
+        else:
+            self.basis.assign_seed(None)
 
         logging.info(f"Begin search: {target_coordinates}")
-        best_result, best_Xk, best_cycles = self.run(target_U)
+        best_result, best_Xk, best_cycles = self._run(target_U, target_spanning_range)
 
         if best_result <= SUCCESS_THRESHOLD:
             # label target coordinate as success
             success_label = 1
             logging.info(f"Success: {target_coordinates}")
         else:
+            raise ValueError("Failed to converge. Try increasing restart attempts or increasing temperature scaling on preseed.")
             # label target coordinate as fail, label alternative coordinate as succss
             success_label = 0
 
@@ -78,13 +80,12 @@ class TemplateOptimizer:
         return target_data
 
     def approximate_from_distribution(self, sampler:SampleFunction):
-        for target in sampler:
-            logging.info(f"Starting sample iter {self.sample_iter}")
+        for index, target in enumerate(sampler):
+            logging.info(f"Starting sample iter {index}")
             self.approximate_target_U(target_U=target)
-            self.sample_iter += 1
         return self.training_loss, self.coordinate_list
             
-    def run(self, target_u):
+    def _run(self, target_u, target_spanning_range):
         
         def objective_func(xk):
             current_u = self.basis.eval(xk)
@@ -104,7 +105,7 @@ class TemplateOptimizer:
         temp_training_loss = []
 
         # each iter creates fresh template with new repetition param
-        for spanning_iter in self.basis.get_spanning_range(target_u):
+        for spanning_iter in target_spanning_range:
             logging.info(f"Starting opt on template size {spanning_iter}")
             temp_coordinate_list = []
             #flags for plotting function
@@ -114,16 +115,19 @@ class TemplateOptimizer:
         
             if isinstance(self.basis, CircuitTemplate):
                 self.basis.build(n_repetitions=spanning_iter)
+            else:
+                #XXX module reload might cause this to fail if basis.py has been changed and not reloaded
+                logging.warning("CircuitTemplate type checking failed")
 
             #TODO if spanning range == 1, don't pass to optimizer
             #implement a mathematica cloud call?
             
-            for _ in range(TRAINING_RESTARTS):
+            for r_i in range(TRAINING_RESTARTS):
            
                 result = opt.minimize(
                     fun=objective_func,
                     method='BFGS',
-                    x0=self.basis.paramter_guess(),
+                    x0=self.basis.parameter_guess(t=r_i),
                     callback=callbackF if self.use_callback else None,
                     options={"maxiter": 200},
                 )

@@ -3,7 +3,7 @@ from abc import ABC
 from dataclasses import dataclass
 from inspect import signature
 from itertools import cycle
-from xmlrpc.client import boolean
+from random import uniform
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import Parameter
@@ -36,18 +36,21 @@ class VariationalTemplate(ABC):
         self.use_polytopes = use_polytopes
         if not self.use_polytopes and self.spanning_range is None:
             raise NotImplementedError
-        self.preseeded = preseed and (self.use_polytopes or len(self.spanning_range))
+        
+        #NOTE: preseeding without polytopes can work if checking that nuop matches spanning range
+        #rather than implementing this I'll just force using polytopes so spanning range always matches
+        self.preseeded = preseed and self.use_polytopes #(self.use_polytopes or len(self.spanning_range))
         self.seed = None
     
     def eval(self, Xk):
         #evaluate on vector of parameters
         raise NotImplementedError
     
-    def paramter_guess(self):
+    def parameter_guess(self, temperature=0):
         #return a random vector of parameters
         if self.preseeded and self.seed is not None:
-            return self.seed
-            #TODO: add a dash of randomization here, ie +- 5% on each value
+             #add a dash of randomization here, ie +- 5% on each value
+            return [el*uniform(1-.05*temperature, 1+ .05*temperature) for el in self.seed]
         return None
 
     def assign_seed(self, Xk):
@@ -105,8 +108,8 @@ class HamiltonianTemplate(VariationalTemplate):
     def eval(self, Xk):
         return self.h.construct_U(*Xk).full()
     
-    def paramter_guess(self):
-        parent = super().paramter_guess()
+    def parameter_guess(self,t=0):
+        parent = super().parameter_guess(t)
         if parent is not None:
             return parent
         p_len =  len(signature(self.h.construct_U).parameters)
@@ -143,9 +146,9 @@ class CircuitTemplate(VariationalTemplate):
         """returns an Operator after binding parameter array to template"""
         return Operator(self.assign_Xk(Xk)).data
 
-    def paramter_guess(self):
+    def parameter_guess(self, t=0):
         """returns a np array of random values for each parameter"""
-        parent = super().paramter_guess()
+        parent = super().parameter_guess(t)
         if parent is not None:
             return parent
         return np.random.random(len(self.circuit.parameters)) * 2 * np.pi

@@ -221,9 +221,11 @@ class FSim(Gate):
 
 
 class SYC(FSim):
-    def __init__(self, _):
+    def __init__(self):
         super().__init__(np.pi / 2, np.pi / 6)
 
+    def __str__(self):
+        return self.latex_string(self.params)
     @staticmethod
     def latex_string(gate_params):
         return "SYC"
