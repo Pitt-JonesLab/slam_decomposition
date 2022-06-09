@@ -24,11 +24,10 @@ class TemplateOptimizer:
         self.training_loss = [] #2d list sample_iter -> [training iter -> loss]
         self.coordinate_list = [] #2d list sample_iter -> [training iter -> (coordinate)]
 
-    #TODO, investigate, when does basis data_dict get updated, when do I need to call save to file
     def approximate_target_U(self, target_U):
 
         target_coordinates = self.basis.target_invariant(target_U)
-        target_spanning_range = self.basis.get_spanning_range(target_U)
+        # target_spanning_range = self.basis.get_spanning_range(target_U)
         if self.preseeding and self.basis.coordinate_tree is not None:
             #TODO rewrite needs to check over k nearest neighbors to find first valid
 
@@ -39,18 +38,22 @@ class TemplateOptimizer:
             
             #check if valid for given template means success and correct template length
             #XXX what if closest value requires a different number of applications, parameters would be misaligned
-            if found_saved.success_label and found_saved.cycles == target_spanning_range[0]:
-                pass
-                
+            #this if structure means don't need to check spanning range if d=0 break early,
+            #then preseed only if spanning range matches the pressed
+            #otherwise set spanning range like normal
+            if found_saved.success_label: #and found_saved.cycles == target_spanning_range[0]:
+        
                 if distance == 0:
                     logging.info(f"Found saved: {target_coordinates}")
                     return found_saved
-                
-                else:
+
+                target_spanning_range = self.basis.get_spanning_range(target_U)
+                if found_saved.cycles == target_spanning_range[0]:
                     logging.info(f"Preseed from neighbor: {close_coords}")
                     self.basis.assign_seed(found_saved.Xk)
         else:
             self.basis.assign_seed(None)
+            target_spanning_range = self.basis.get_spanning_range(target_U)
 
         logging.info(f"Begin search: {target_coordinates}")
         best_result, best_Xk, best_cycles = self._run(target_U, target_spanning_range)

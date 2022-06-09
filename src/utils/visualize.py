@@ -99,7 +99,14 @@ def weyl_training_plot(axs, coordinate_list):
     w.scatter(*zip(*coordinate_list), c=col)
     w.render(axs)
 
-
+def unitary_to_weyl(unitary):
+    plt.close()
+    fig = plt.figure()
+    w = WeylChamber();
+    axs= fig.add_subplot(111, projection="3d")
+    w.add_point(*c1c2c3(unitary))
+    w.render(axs)
+    
 # from weylchamber import WeylChamber
 # def weyl_plot():
 #     w = WeylChamber()

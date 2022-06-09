@@ -65,7 +65,7 @@ def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
     return circuit_polytope
 
 #reference: monodromy/demo.py
-def gate_set_to_coverage(*basis_gates:list[CustomCostGate]):
+def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
 
     #first converts all individal gates to circuitpolytope objeect
     operations = []
@@ -104,7 +104,7 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate]):
 
     #finally, return the expected haar coverage
     logging.info("==== Haar volumes ====")
-    cost = expected_cost(coverage_set, chatty=True)
+    cost = expected_cost(coverage_set, chatty=chatty)
     stdout.flush() #fix out of order logging
     logging.info(f"Haar-expectation cost: {cost}")
     return cost
