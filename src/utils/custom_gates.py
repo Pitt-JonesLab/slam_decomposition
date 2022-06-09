@@ -1,3 +1,4 @@
+from re import L
 import numpy as np
 import weylchamber
 from qiskit.circuit.gate import Gate
@@ -16,6 +17,24 @@ qc.append(RiSwapGate(1/4), [0,1])
 qc.draw(output='mpl')
 """
 
+class CustomCostGate(Gate):
+    #want to build a gate progamatically from a unitary
+    #cost value used in expected haar calcuation
+    def __init__(self,unitary, str, cost=1):
+        self.unitary = unitary
+        self.str = str
+        self.cost = cost #i.e. duration
+        super().__init__(str, num_qubits=2, params=[], label=str)
+    
+    @classmethod
+    def from_gate(cls, gate:Gate, cost:float):
+        return cls(gate.to_matrix(), str(gate), cost=cost)
+
+    def __str__(self):
+        return self.str
+
+    def __array__(self):
+        return self.unitary
 
 class VSwap(Gate):
     def __init__(self, _: ParameterValueType = None):
@@ -95,6 +114,8 @@ class BerkeleyGate(CanonicalGate):
     def __init__(self):
         super().__init__(np.pi / 4, np.pi / 8, 0, name="B")
 
+    def __str__(self):
+        return "B"
     # alternative definition
     # def __init__(self):
     #     from hamiltonian import ConversionGainHamiltonian
@@ -240,6 +261,9 @@ class RiSwapGate(Gate):
             dtype=dtype,
         )
 
+    def __str__(self):
+        return RiSwapGate.latex_string(self.params)
+        
     @staticmethod
     def latex_string(gate_params=None):
         if gate_params is None:

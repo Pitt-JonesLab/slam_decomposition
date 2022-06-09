@@ -6,11 +6,16 @@ from typing import TYPE_CHECKING
 #using this to avoid a circular import
 if TYPE_CHECKING:
     from src.basis import CircuitTemplate
+    from src.utils.custom_gates import CustomCostGate
 
 from fractions import Fraction
+from sys import stdout
 
+import numpy as np
 from monodromy.coordinates import unitary_to_monodromy_coordinate
-from monodromy.coverage import deduce_qlr_consequences
+from monodromy.coverage import (CircuitPolytope, build_coverage_set,
+                                deduce_qlr_consequences, print_coverage_set)
+from monodromy.haar import expected_cost
 from monodromy.polytopes import ConvexPolytope
 from monodromy.static.examples import (everything_polytope, exactly,
                                        identity_polytope)
@@ -58,3 +63,48 @@ def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
         )
     
     return circuit_polytope
+
+#reference: monodromy/demo.py
+def gate_set_to_coverage(*basis_gates:list[CustomCostGate]):
+
+    #first converts all individal gates to circuitpolytope objeect
+    operations = []
+
+    for gate in basis_gates:
+        circuit_polytope = identity_polytope
+
+        b_polytope = exactly(
+            *(Fraction(x).limit_denominator(10_000)
+            for x in unitary_to_monodromy_coordinate(np.matrix(gate))[:-1])
+        )
+        circuit_polytope = deduce_qlr_consequences(
+            target="c",
+            a_polytope=circuit_polytope,
+            b_polytope=b_polytope,
+            c_polytope=everything_polytope
+        )
+
+        #here need to define cost of a gate
+        #might do this like cost = gate.duration, #TODO
+        operations.append(
+            CircuitPolytope(
+                operations=[str(gate)],
+                #cost=1,
+                #cost=1 - (1- base_iswap_fidelity)*basis_gate.params[0],
+                cost=gate.cost,
+                convex_subpolytopes=circuit_polytope.convex_subpolytopes)
+            )
+
+    #second build coverage set which finds the necessary permutations to do a complete span
+    #logging.info("==== Working to build a set of covering polytopes ====")
+    coverage_set = build_coverage_set(operations, chatty=False)
+
+    #logging.info("==== Done. Here's what we found: ====")
+    #logging.info(print_coverage_set(coverage_set))
+
+    #finally, return the expected haar coverage
+    logging.info("==== Haar volumes ====")
+    cost = expected_cost(coverage_set, chatty=True)
+    stdout.flush() #fix out of order logging
+    logging.info(f"Haar-expectation cost: {cost}")
+    return cost

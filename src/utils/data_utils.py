@@ -2,14 +2,16 @@ import logging
 import pickle
 import sys
 from hashlib import sha1
+from typing import TYPE_CHECKING
 
 import h5py
 import numpy as np
-from src import basis
 
-#pickle only works if class definition must live in same module as when the object was stored
-#use this trick so modules sees src.basis as basis
-sys.modules['basis'] = basis
+if TYPE_CHECKING:
+    from src import basis
+    #pickle only works if class definition must live in same module as when the object was stored
+    #use this trick so modules sees src.basis as basis
+    sys.modules['basis'] = basis
 
 """Loading/Saving helper functions"""
 
