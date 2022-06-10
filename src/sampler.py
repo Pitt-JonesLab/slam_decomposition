@@ -1,12 +1,14 @@
-from ast import Pass
 import logging
+import random
 from abc import ABC
+from ast import Pass
+from sys import maxint
 
 from qiskit import QuantumCircuit
-from qiskit.transpiler.passes import Collect2qBlocks, ConsolidateBlocks
 from qiskit.circuit.gate import Gate
 from qiskit.quantum_info import Operator, random_clifford, random_unitary
-from qiskit.transpiler.passes import CountOps
+from qiskit.transpiler.passes import (Collect2qBlocks, ConsolidateBlocks,
+                                      CountOps)
 from qiskit.transpiler.passmanager import PassManager
 
 from .utils.custom_gates import RiSwapGate
@@ -62,7 +64,8 @@ class HaarSample(SampleFunction):
         super().__init__(n_samples=n_samples)
 
     def _get_unitary(self):
-        return random_unitary(dims=2 ** self.n_qubits, seed=self.seed).data
+        random.seed(self.seed)
+        return random_unitary(dims=2 ** self.n_qubits, seed=random.randint(-maxint, maxint)).data
 
     def _haar_ground_truth(self, haar_exact=2):
         """When using sqrt[2] iswap, we might want to do a haar sample where we know ahead of time if it will take 2 or 3 uses

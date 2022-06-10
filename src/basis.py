@@ -48,7 +48,7 @@ class VariationalTemplate(ABC):
     def parameter_guess(self, temperature=0):
         #return a random vector of parameters
         if self.preseeded and self.seed is not None:
-             #add a dash of randomization here, ie +- 5% on each value
+            #add a dash of randomization here, ie +- 5% on each value
             return [el*uniform(1-.05*temperature, 1+ .05*temperature) for el in self.seed]
         return None
 

@@ -26,6 +26,23 @@ class Hamiltonian(ABC):
     def construct_U(*args):
         raise NotImplementedError
 
+class SnailEffectiveHamiltonian(Hamiltonian):
+    """Used to find iSwap family gates"""
+    def __init__(self):
+        a = qutip.operators.create(N=2)
+        I2 = qutip.operators.identity(2)
+        A = qutip.tensor(a, I2)
+        B = qutip.tensor(I2, a)
+        H_int = A * B.dag() + A.dag() * B
+        self.H = lambda geff: geff * H_int
+    
+    #static method creates an instance of class, acting like a factory
+    @staticmethod
+    def construct_U(geff):#, t=1):
+        t = 1
+        h_instance = SnailEffectiveHamiltonian()
+        return h_instance._construct_U_lambda(geff)(t)
+
 class ConversionGainHamiltonian(Hamiltonian):
     """Used to find B Gate"""
 
