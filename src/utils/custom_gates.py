@@ -33,8 +33,8 @@ class CustomCostGate(Gate):
     def __str__(self):
         return self.str
 
-    def __array__(self):
-        return self.unitary
+    def __array__(self, dtype=None):
+        return np.array(self.unitary,dtype)
 
 class VSwap(Gate):
     def __init__(self, _: ParameterValueType = None):

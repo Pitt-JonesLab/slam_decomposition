@@ -5,11 +5,11 @@ import numpy as np
 import scipy.optimize as opt
 from weylchamber import c1c2c3
 
-from .basis import CircuitTemplate, DataDictEntry, VariationalTemplate
+from .basis import CircuitTemplate, CustomCostCircuitTemplate, DataDictEntry, VariationalTemplate
 from .cost_function import UnitaryCostFunction
 from .sampler import SampleFunction
 
-SUCCESS_THRESHOLD = 1e-9
+SUCCESS_THRESHOLD = 2e-9
 TRAINING_RESTARTS = 10
 """
 Given a gate basis objects finds parameters which minimize cost function
@@ -27,6 +27,45 @@ class TemplateOptimizer:
     def approximate_target_U(self, target_U):
 
         target_coordinates = self.basis.target_invariant(target_U)
+        target_spanning_range = self._initialize_run(target_U, target_coordinates)
+
+        # bad code :(, but here we are checking if init_run is returning either a range 
+        # or if preseeding already had the exact target already saved
+        if isinstance(target_spanning_range, DataDictEntry):
+            return target_spanning_range
+
+        logging.info(f"Begin search: {target_coordinates}")
+        best_result, best_Xk, best_cycles = self._run(target_U, target_spanning_range)
+
+        if best_result <= SUCCESS_THRESHOLD:
+            # label target coordinate as success
+            success_label = 1
+            logging.info(f"Success: {target_coordinates}")
+        else:
+            raise ValueError("Failed to converge. Try increasing restart attempts or increasing temperature scaling on preseed.")
+            # label target coordinate as fail, label alternative coordinate as succss
+            success_label = 0
+
+            #reset back to best size
+            if isinstance(self.basis, CircuitTemplate):
+                self.basis.build(n_repetitions=best_cycles)
+            alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
+    
+            logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
+            self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
+
+        #save target, update tree
+        target_data = DataDictEntry(success_label, best_result, best_Xk, best_cycles)
+        self.basis.data_dict[target_coordinates] = target_data
+        self.basis._construct_tree()
+        self.basis.save_data()
+        return target_data
+
+    def _initialize_run(self, target_U, target_coordinates=None):
+
+        if target_coordinates is None:
+            target_coordinates = self.basis.target_invariant(target_U)
+
         # target_spanning_range = self.basis.get_spanning_range(target_U)
         if self.preseeding and self.basis.coordinate_tree is not None:
             #TODO rewrite needs to check over k nearest neighbors to find first valid
@@ -55,32 +94,26 @@ class TemplateOptimizer:
             self.basis.assign_seed(None)
             target_spanning_range = self.basis.get_spanning_range(target_U)
 
-        logging.info(f"Begin search: {target_coordinates}")
-        best_result, best_Xk, best_cycles = self._run(target_U, target_spanning_range)
+        return target_spanning_range
 
-        if best_result <= SUCCESS_THRESHOLD:
-            # label target coordinate as success
-            success_label = 1
-            logging.info(f"Success: {target_coordinates}")
-        else:
-            raise ValueError("Failed to converge. Try increasing restart attempts or increasing temperature scaling on preseed.")
-            # label target coordinate as fail, label alternative coordinate as succss
-            success_label = 0
-
-            #reset back to best size
-            if isinstance(self.basis, CircuitTemplate):
-                self.basis.build(n_repetitions=best_cycles)
-            alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
-    
-            logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
-            self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
-
-        #save target, update tree
-        target_data = DataDictEntry(success_label, best_result, best_Xk, best_cycles)
-        self.basis.data_dict[target_coordinates] = target_data
-        self.basis._construct_tree()
-        self.basis.save_data()
-        return target_data
+    def cost_from_distribution(self, sampler:SampleFunction):
+        if not isinstance(self.basis, CustomCostCircuitTemplate):
+            raise ValueError("use customcosttemplate to have defined costs")
+        total_cost = 0
+        for index, target in enumerate(sampler):
+            logging.info(f"Starting sample iter {index}")
+            init_info = self._initialize_run(target_U=target)
+            #bad code :)
+            #here we check if init function either returned an exact result
+            if isinstance(init_info, DataDictEntry):
+                init_info = init_info.cycles
+            #or if it returned a range, convert to a single value
+            else:
+                init_info = max(init_info)
+            total_cost += self.basis.unit_cost(init_info)
+        logging.info(f"Total circuit pulse cost: {total_cost}")
+        logging.info(f"Average gate pulse cost: {total_cost/(index+1)}")
+        return total_cost
 
     def approximate_from_distribution(self, sampler:SampleFunction):
         for index, target in enumerate(sampler):
@@ -132,7 +165,7 @@ class TemplateOptimizer:
                     method='BFGS',
                     x0=self.basis.parameter_guess(t=r_i),
                     callback=callbackF if self.use_callback else None,
-                    options={"maxiter": 200},
+                    options={"maxiter": 400},
                 )
 
                 # result is good, update temp vars

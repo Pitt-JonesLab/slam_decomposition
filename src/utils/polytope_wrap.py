@@ -22,6 +22,7 @@ from monodromy.static.examples import (everything_polytope, exactly,
 from qiskit.converters import circuit_to_dag
 from qiskit.quantum_info import Operator
 
+MAX_ITERS = 10
 """Helper function for monodromy polytope package"""
 
 # NOTE I'm not sure the best way to do this or if there is a more direct way already in the monodromy package somewhere
@@ -35,10 +36,14 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
 
     target_coords = unitary_to_monodromy_coordinate(target_u)
     iters = 0
-    while iters ==0 or not circuit_polytope.has_element(target_coords):
+    while (iters == 0 or not circuit_polytope.has_element(target_coords)) and iters < MAX_ITERS:
         iters+=1
         basis.build(iters)
         circuit_polytope = get_polytope_from_circuit(basis)
+    
+    if iters == MAX_ITERS and not circuit_polytope.has_element(target_coords):
+        raise ValueError("Monodromy did not find a polytope containing U, may need better gate or adjust MAX_ITERS")
+    
     logging.info(f"Monodromy found needs {iters} basis applications")
     return range(iters, iters+1)
 

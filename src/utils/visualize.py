@@ -90,9 +90,6 @@ def training_loss_plot(axs, training_loss):
 
 """Generic Weyl Chamber plots"""
 
-# I have a lot of versions of this code plotting around
-# TODO rewrite to be usable generically
-
 def weyl_training_plot(axs, coordinate_list):
     w = WeylChamber();
     col = np.arange(len(coordinate_list))
@@ -106,7 +103,7 @@ def unitary_to_weyl(unitary):
     axs= fig.add_subplot(111, projection="3d")
     w.add_point(*c1c2c3(unitary))
     w.render(axs)
-    
+
 # from weylchamber import WeylChamber
 # def weyl_plot():
 #     w = WeylChamber()

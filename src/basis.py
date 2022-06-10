@@ -1,4 +1,3 @@
-import logging
 from abc import ABC
 from dataclasses import dataclass
 from inspect import signature
@@ -115,19 +114,27 @@ class HamiltonianTemplate(VariationalTemplate):
         p_len =  len(signature(self.h.construct_U).parameters)
         return np.random.random(p_len)
 
+# FIXME !!!!
+# if hetereogenous basis, build is always appending in a set order
+# we really want to be able to pick and choose freely
+# when we find monodromy spanning range, we actually need to be checking more combinations of gates
+# find the minimum cost polytope which contains target
+##### for now, this is still functional for single basis gate but need to fix this!!!!!
+# suggestion, when we create basis it should precompute the coverage polytopes and order them based on cost
+
+# FIXME
+#if hetereogenous basis with both 2Q and 3Q could recieve edge errors if patterns misaligned
+
 class CircuitTemplate(VariationalTemplate):
-    def __init__(self, n_qubits=2, base_gate_class=[RiSwapGate], gate_2q_params=[1/2], edge_params=[(0, 1)], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False):
+    def __init__(self, n_qubits=2, base_gates=[RiSwapGate(1/2)], edge_params=[(0, 1)], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False):
         """Initalizes a qiskit.quantumCircuit object with unbound 1Q gate parameters"""
-        hash = str(n_qubits)+ str(base_gate_class)+ str(gate_2q_params)+ str(edge_params)+ str(no_exterior_1q)
+        hash = str(n_qubits)+ str(base_gates)+ str(edge_params)+ str(no_exterior_1q)
         self.filename = filename_encode(hash)
         self.n_qubits = n_qubits
         self.no_exterior_1q = no_exterior_1q
 
-        self.gate_2q_base = cycle(base_gate_class)
-        self.gate_2q_params = cycle(gate_2q_params)
+        self.gate_2q_base = cycle(base_gates)
         self.gate_2q_edges = cycle(edge_params)
-        self.cycle_length = max(len(gate_2q_params), len(edge_params))
-
         self.gen_1q_params = self._param_iter()
 
         #define a range to see how many times we should extend the circuit while in optimization search
@@ -140,8 +147,7 @@ class CircuitTemplate(VariationalTemplate):
 
         #deprecated feature
         self.trotter=False
-
-       
+               
     def eval(self, Xk):
         """returns an Operator after binding parameter array to template"""
         return Operator(self.assign_Xk(Xk)).data
@@ -193,17 +199,45 @@ class CircuitTemplate(VariationalTemplate):
                 index %= 3 * self.n_qubits
 
     def _build_cycle(self, initial=False, final=False):
-        """Extends tempalte by one full cycle"""
+        """Extends template by next nonlocal gate"""
         if initial and not self.no_exterior_1q:
             # before build by extend, add first pair of 1Qs
             for qubit in range(self.n_qubits):
                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
-        for _ in range(self.cycle_length):
-            edge = next(self.gate_2q_edges)
-            self.circuit.append(
-                next(self.gate_2q_base)(next(self.gate_2q_params)), edge
-            )
-            if not (final and self.no_exterior_1q):
-                for qubit in edge:
-                    self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+        edge = next(self.gate_2q_edges)
+        self.circuit.append(next(self.gate_2q_base), edge)
+        if not (final and self.no_exterior_1q):
+            for qubit in edge:
+                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
         self.cycles += 1
+
+
+class CustomCostCircuitTemplate(CircuitTemplate):
+    #
+    def __init__(self, base_gates=[CustomCostGate]) -> None:
+        for gate in base_gates:
+            if not isinstance(gate, CustomCostGate):
+                raise ValueError("Gates must have a defined cost")
+        self.cost = {0:0}
+        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[(0,1)], no_exterior_1q=False,use_polytopes=True, preseed=True)
+
+    def _build_cycle(self, initial=False, final=False):
+        """Extends template by next nonlocal gate
+        add modification which saves cost to dict"""
+        if initial and not self.no_exterior_1q:
+            # before build by extend, add first pair of 1Qs
+            for qubit in range(self.n_qubits):
+                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+        edge = next(self.gate_2q_edges)
+        gate = next(self.gate_2q_base)
+        self.circuit.append(gate, edge)
+        if not (final and self.no_exterior_1q):
+            for qubit in edge:
+                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+        self.cycles += 1
+        self.cost[self.cycles] = self.cost[self.cycles-1] + gate.cost
+        
+    def unit_cost(self, cycles):
+        if not cycles in self.cost.keys():
+            self.build(cycles)
+        return self.cost[cycles]

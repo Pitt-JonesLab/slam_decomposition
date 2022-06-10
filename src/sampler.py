@@ -1,7 +1,9 @@
+from ast import Pass
 import logging
 from abc import ABC
 
 from qiskit import QuantumCircuit
+from qiskit.transpiler.passes import Collect2qBlocks, ConsolidateBlocks
 from qiskit.circuit.gate import Gate
 from qiskit.quantum_info import Operator, random_clifford, random_unitary
 from qiskit.transpiler.passes import CountOps
@@ -35,6 +37,20 @@ class GateSample(SampleFunction):
     
     def _get_unitary(self):
         return Operator(self.gate).data
+
+class CircuitSample(SampleFunction):
+    def __init__(self, circuit:QuantumCircuit):
+        pm = PassManager([Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
+        self.transpiled_circuit = pm.run(circuit)
+        super().__init__(n_qubits=2, n_samples=len(self.transpiled_circuit))
+        logging.info(f"Created sampler with {self.n_samples} 2Q gates")
+    def __iter__(self):
+        for instruction in self.transpiled_circuit:
+            yield self._get_unitary(instruction)
+    
+    def _get_unitary(self, instruction):
+        return instruction[0].to_matrix()
+
 
 class Clifford(SampleFunction):
     def _get_unitary(self):
