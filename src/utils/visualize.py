@@ -5,28 +5,46 @@ from weylchamber import WeylChamber, c1c2c3
 """Helper functions for plotting"""
 
 # pretty print matrix from Chao
-#FIXME use figures and return
 def plotMatrix(matrix, rounder=2, vmin=0, vmax=1):
     matrix = np.array(matrix)
     dim = len(matrix)
     nBits = int(np.log2(dim))
     number_label = np.arange(0, dim, 1)
     fig = plt.figure(figsize=(7, 7))
-    plt.subplot(1, 1, 1)
+    axs = fig.add_subplot(1,1,1)
     pm = plt.imshow(np.abs(matrix), interpolation="nearest", vmin=vmin, vmax=vmax)
-    plt.xticks(number_label, [f"{n:0{nBits}b}" for n in number_label])
-    plt.yticks(number_label, [f"{n:0{nBits}b}" for n in number_label])
+    axs.set_xticks(number_label, [f"{n:0{nBits}b}" for n in number_label])
+    axs.set_yticks(number_label, [f"{n:0{nBits}b}" for n in number_label])
     for (j, i), label in np.ndenumerate(matrix):
         label = np.round(label, rounder)
-        plt.text(i, j, label, ha="center", va="center")
-    plt.colorbar()
-    plt.show()
-    return pm
+        axs.text(i, j, label, ha="center", va="center")
+    plt.colorbar(pm, ax=axs)
+    # fig.show()
+    return fig
+
+def plotHamiltonianSweep(matrix, title="Hamiltonian Sweep", labels=None, rounder=2, vmin=0, vmax=1):
+    matrix = np.array(matrix)
+    dim1 = len(matrix)
+    dim2 = len(matrix[0])
+    fig = plt.figure(figsize=(7, 7))
+    axs = fig.add_subplot(1,1,1)
+    pm = axs.imshow(np.abs(matrix), interpolation="nearest", vmin=vmin, vmax=vmax)
+    axs.set_title(title)
+    n_labels = np.arange(0, dim1, 1)
+    m_labels = np.arange(0, dim2, 1)
+    if labels is not None:
+        axs.set_xticks(m_labels, [labels[0][n][1] for n in m_labels])
+        axs.set_yticks(n_labels, [labels[n][0][0] for n in n_labels])
+    for (j, i), label in np.ndenumerate(matrix):
+        label = np.round(label, rounder)
+        axs.text(i, j, label, ha="center", va="center")
+    plt.colorbar(pm, ax=axs)
+    # fig.show()
+    return fig
 
 """Optimizer plot"""
  # self.training_loss, self.coordinate_list
  # this are treated like 2d list over set of sampled targets
-#FIXME adaptive figure size
 def optimizer_training_plot(training_loss, coordinate_list):
     """Plot to show convergence of loss and movement in chamber"""
     plt.close()
@@ -101,7 +119,7 @@ def unitary_to_weyl(unitary):
     fig = plt.figure()
     w = WeylChamber();
     axs= fig.add_subplot(111, projection="3d")
-    w.add_point(*c1c2c3(unitary))
+    w.add_point(*c1c2c3(np.array(unitary)))
     w.render(axs)
 
 # from weylchamber import WeylChamber

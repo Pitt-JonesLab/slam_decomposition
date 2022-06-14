@@ -14,8 +14,7 @@ from weylchamber import c1c2c3
 from .hamiltonian import Hamiltonian
 from .utils.custom_gates import *
 from .utils.data_utils import filename_encode, pickle_load, pickle_save
-from .utils.polytope_wrap import monodromy_range_from_target
-
+from .utils.polytope_wrap import monodromy_range_from_target, gate_set_to_coverage
 """
 Defines the variational object passed to the optimizer
 """
@@ -114,14 +113,6 @@ class HamiltonianTemplate(VariationalTemplate):
         p_len =  len(signature(self.h.construct_U).parameters)
         return np.random.random(p_len)
 
-# FIXME !!!!
-# if hetereogenous basis, build is always appending in a set order
-# we really want to be able to pick and choose freely
-# when we find monodromy spanning range, we actually need to be checking more combinations of gates
-# find the minimum cost polytope which contains target
-##### for now, this is still functional for single basis gate but need to fix this!!!!!
-# suggestion, when we create basis it should precompute the coverage polytopes and order them based on cost
-
 # FIXME
 #if hetereogenous basis with both 2Q and 3Q could recieve edge errors if patterns misaligned
 
@@ -141,6 +132,12 @@ class CircuitTemplate(VariationalTemplate):
         self.spanning_range = None
         if not use_polytopes:
             self.spanning_range = range(1,maximum_span_guess+1)
+            self.coverage = None
+        else:
+            #precompute coverage polytopes?
+            #TODO
+            self.coverage = gate_set_to_coverage(*base_gates, chatty=True)
+            
         super().__init__(preseed=preseed, use_polytopes=use_polytopes)
 
         self._reset()
@@ -213,7 +210,7 @@ class CircuitTemplate(VariationalTemplate):
 
 
 class CustomCostCircuitTemplate(CircuitTemplate):
-    #
+    #assigns a cost value to each repeated call to build()
     def __init__(self, base_gates=[CustomCostGate]) -> None:
         for gate in base_gates:
             if not isinstance(gate, CustomCostGate):
@@ -241,3 +238,23 @@ class CustomCostCircuitTemplate(CircuitTemplate):
         if not cycles in self.cost.keys():
             self.build(cycles)
         return self.cost[cycles]
+
+
+# FIXME !!!!
+# if hetereogenous basis, build is always appending in a set order
+# we really want to be able to pick and choose freely
+# when we find monodromy spanning range, we actually need to be checking more combinations of gates
+# find the minimum cost polytope which contains target
+##### for now, this is still functional for single basis gate but need to fix this!!!!!
+# suggestion, when we create basis it should precompute the coverage polytopes and order them based on cost
+
+class MixedOrderBasisCircuitTemplate(CircuitTemplate):
+    #in previous circuit templates, everytime we call build it extends based on a predefined pattern
+    #now for mixed basis sets, polytope coverage informs a better way to mix and match
+    #this method needs to override the build method
+    
+    #this means monodromy_range_from_target needs to return a circuit polytope
+    #we update template to match circuit polytope shape
+    #then tell optimizer range to be range(1) so it knows not to call build again
+    def build(self, n):
+        pass

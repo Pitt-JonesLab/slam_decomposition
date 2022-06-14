@@ -39,7 +39,7 @@ class SnailEffectiveHamiltonian(Hamiltonian):
     #static method creates an instance of class, acting like a factory
     @staticmethod
     def construct_U(geff):#, t=1):
-        t = 1
+        t=1
         h_instance = SnailEffectiveHamiltonian()
         return h_instance._construct_U_lambda(geff)(t)
 
@@ -57,12 +57,12 @@ class ConversionGainHamiltonian(Hamiltonian):
     
     #static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(gc, gg):#, t=1):
-        t = 1
+    def construct_U(gc, gg, t=1):
         h_instance = ConversionGainHamiltonian()
         return h_instance._construct_U_lambda(gc, gg)(t)
 
-
+    #fix total gc to be pi/2 and see how small t can go
+    
 #XXX not working yet, how do I want the gxvector, gyvector params to see by Basis?
 class TimeDependentHamiltonian(Hamiltonian):
     def __init__(self, timesteps):

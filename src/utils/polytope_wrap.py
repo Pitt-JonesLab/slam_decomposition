@@ -35,17 +35,26 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
         raise ValueError("monodromy only for 2Q templates")
 
     target_coords = unitary_to_monodromy_coordinate(target_u)
-    iters = 0
-    while (iters == 0 or not circuit_polytope.has_element(target_coords)) and iters < MAX_ITERS:
-        iters+=1
-        basis.build(iters)
-        circuit_polytope = get_polytope_from_circuit(basis)
+    #old method when polytopes not precomputed
+    #NOTE possible deprecated not sure when this would ever be none
+    if basis.coverage is None:
+        iters = 0
+        while (iters == 0 or not circuit_polytope.has_element(target_coords)) and iters < MAX_ITERS:
+            iters+=1
+            basis.build(iters)
+            circuit_polytope = get_polytope_from_circuit(basis)
+        
+        if iters == MAX_ITERS and not circuit_polytope.has_element(target_coords):
+            raise ValueError("Monodromy did not find a polytope containing U, may need better gate or adjust MAX_ITERS")
+        logging.info(f"Monodromy found needs {iters} basis applications")
+        return range(iters,iters+1)
+    else: 
+        # new method, now we can iterate over precomputed polytopes
+        # we want to find the first polytoped (when sorted by cost) that contains target
+        print("here")
+        pass
     
-    if iters == MAX_ITERS and not circuit_polytope.has_element(target_coords):
-        raise ValueError("Monodromy did not find a polytope containing U, may need better gate or adjust MAX_ITERS")
-    
-    logging.info(f"Monodromy found needs {iters} basis applications")
-    return range(iters, iters+1)
+        return None
 
 def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
     if basis.n_qubits != 2:
@@ -70,6 +79,10 @@ def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
     return circuit_polytope
 
 #reference: monodromy/demo.py
+def gate_set_to_haar_expectation(*basis_gates:list[CustomCostGate], chatty=True):
+    coverage = gate_set_to_coverage(*basis_gates, chatty=chatty)
+    return coverage_to_haar_expectation(coverage, chatty=chatty)
+
 def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
 
     #first converts all individal gates to circuitpolytope objeect
@@ -89,24 +102,28 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
             c_polytope=everything_polytope
         )
 
-        #here need to define cost of a gate
-        #might do this like cost = gate.duration, #TODO
         operations.append(
             CircuitPolytope(
                 operations=[str(gate)],
                 #cost=1,
                 #cost=1 - (1- base_iswap_fidelity)*basis_gate.params[0],
-                cost=gate.cost,
+                cost= 1, #gate.cost, #if isinstance(gate, CustomCostGate) else 1, #XXX danger
                 convex_subpolytopes=circuit_polytope.convex_subpolytopes)
             )
 
     #second build coverage set which finds the necessary permutations to do a complete span
-    #logging.info("==== Working to build a set of covering polytopes ====")
-    coverage_set = build_coverage_set(operations, chatty=False)
+    logging.info("==== Working to build a set of covering polytopes ====")
+    coverage_set = build_coverage_set(operations, chatty=chatty)
 
-    #logging.info("==== Done. Here's what we found: ====")
-    #logging.info(print_coverage_set(coverage_set))
+    #TODO: add some warning or fail condition if the coverage set fails to coverage
+    #one way, (but there may be a more direct way) is to check if expected haar == 0
 
+    if chatty: 
+        logging.info("==== Done. Here's what we found: ====")
+        logging.info(print_coverage_set(coverage_set))
+    return coverage_set
+
+def coverage_to_haar_expectation(coverage_set, chatty=True):
     #finally, return the expected haar coverage
     logging.info("==== Haar volumes ====")
     cost = expected_cost(coverage_set, chatty=chatty)

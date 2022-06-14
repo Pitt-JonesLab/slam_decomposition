@@ -2,7 +2,7 @@ from abc import ABC
 
 import numpy as np
 from weylchamber import J_T_LI, bell_basis, c1c2c3, canonical_gate, g1g2g3
-
+import logging
 """
 Defines functions that the optimizer attempts to minimize, 
 Each function is some metric of fidelity between unitaries, where 0 means best and 1 means worst
@@ -11,7 +11,12 @@ Experiment to find some metrics perform better/faster than others
 
 class UnitaryCostFunction(ABC):
     def __init__(self):
-        pass
+        #experimenting with this
+        #normalize cost using max_cost = c(swap, identity)
+        swap = np.array([[1,0,0,0], [0,0,1,0], [0,1,0,0], [0,0,0,1]])
+        id = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0],[0,0,0,1]])
+        self.normalization = self.unitary_fidelity(id, swap)
+        logging.debug(self.normalization)
 
     def unitary_fidelity(self, current_u, target_u):
         raise NotImplementedError

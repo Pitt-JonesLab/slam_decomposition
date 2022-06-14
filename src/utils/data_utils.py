@@ -41,7 +41,7 @@ def pickle_save(filename, data_dict):
 #XXX filename deprecated for h5py, update to work like pickle does above
 def h5py_load(filekey, *args):
     """load a numpy array"""
-    filename = f"data/{filekey}.h5"
+    filename = f"/home/evm9/decomposition_EM/data/{filekey}.h5"
     results = {}
     try:
         with h5py.File(filename, "r") as h5f:
@@ -53,8 +53,8 @@ def h5py_load(filekey, *args):
         return None
 
 def h5py_save(filekey, **kwargs):
-    """save a dictionary"""
-    filename = f"data/{filekey}.h5"
+    """save a numpy array"""
+    filename = f"/home/evm9/decomposition_EM/data/{filekey}.h5"
     with h5py.File(filename, "a") as h5f:
         for key, value in kwargs.items():
             try:

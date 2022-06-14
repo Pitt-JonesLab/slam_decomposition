@@ -58,7 +58,8 @@ class TemplateOptimizer:
         target_data = DataDictEntry(success_label, best_result, best_Xk, best_cycles)
         self.basis.data_dict[target_coordinates] = target_data
         self.basis._construct_tree()
-        self.basis.save_data()
+        if self.preseeding:
+            self.basis.save_data()
         return target_data
 
     def _initialize_run(self, target_U, target_coordinates=None):
@@ -125,7 +126,7 @@ class TemplateOptimizer:
         
         def objective_func(xk):
             current_u = self.basis.eval(xk)
-            return self.objective.unitary_fidelity(current_u, target_u)
+            return self.objective.unitary_fidelity(current_u, target_u)/self.objective.normalization
         
         # callback used to save current loss and coordiante after each iteration
         def callbackF(xk):

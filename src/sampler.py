@@ -1,8 +1,6 @@
 import logging
 import random
 from abc import ABC
-from ast import Pass
-from sys import maxint
 
 from qiskit import QuantumCircuit
 from qiskit.circuit.gate import Gate
@@ -13,6 +11,7 @@ from qiskit.transpiler.passmanager import PassManager
 
 from .utils.custom_gates import RiSwapGate
 from .utils.weyl_exact import RootiSwapWeylDecomposition
+from sys import maxsize
 
 logger = logging.getLogger()
 """
@@ -65,7 +64,7 @@ class HaarSample(SampleFunction):
 
     def _get_unitary(self):
         random.seed(self.seed)
-        return random_unitary(dims=2 ** self.n_qubits, seed=random.randint(-maxint, maxint)).data
+        return random_unitary(dims=2 ** self.n_qubits, seed=random.randint(0, maxsize)).data
 
     def _haar_ground_truth(self, haar_exact=2):
         """When using sqrt[2] iswap, we might want to do a haar sample where we know ahead of time if it will take 2 or 3 uses
