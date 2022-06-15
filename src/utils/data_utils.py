@@ -65,7 +65,7 @@ def h5py_save(filekey, **kwargs):
     logging.debug(f"Successfully saved to {filename}")
 
 #DEPRECRATED but might be useful snippets to have around
-def rag_to_pad(arr):
+def rag_to_pad_extend(arr):
     max_len = max(len(arr[i]) for i in range(len(arr)))
     for i in range(len(arr)):
         temp_len = len(arr[i])
@@ -77,6 +77,17 @@ def rag_to_pad(arr):
                 # arr[i].append(-1)
     return np.array(arr)
 
+def rag_to_pad_blank(arr):
+    max_len = max(len(arr[i]) for i in range(len(arr)))
+    for i in range(len(arr)):
+        temp_len = len(arr[i])
+        for j in range(max_len):
+            if j >= temp_len:
+                if j == 0:
+                    raise ValueError("cant extend blank row")
+                #arr[i].append(arr[i][j - 1])
+                arr[i].append(-1)
+    return np.array(arr)
 # rewrite convert to ragged array by detecting when row is being extended
 def pad_to_rag(arr):
     arr = arr.tolist()

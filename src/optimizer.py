@@ -5,7 +5,7 @@ import numpy as np
 import scipy.optimize as opt
 from weylchamber import c1c2c3
 
-from .basis import CircuitTemplate, CustomCostCircuitTemplate, DataDictEntry, VariationalTemplate
+from .basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplate, VariationalTemplate
 from .cost_function import UnitaryCostFunction
 from .sampler import SampleFunction
 
@@ -98,11 +98,12 @@ class TemplateOptimizer:
         return target_spanning_range
 
     def cost_from_distribution(self, sampler:SampleFunction):
-        if not isinstance(self.basis, CustomCostCircuitTemplate):
+        #use this function if you want to calculate cost over a distribution, but not the entire decomposition fitting
+        if not isinstance(self.basis, MixedOrderBasisCircuitTemplate):
             raise ValueError("use customcosttemplate to have defined costs")
         total_cost = 0
         for index, target in enumerate(sampler):
-            logging.info(f"Starting sample iter {index}")
+            #logging.info(f"Starting sample iter {index}")
             init_info = self._initialize_run(target_U=target)
             #bad code :)
             #here we check if init function either returned an exact result

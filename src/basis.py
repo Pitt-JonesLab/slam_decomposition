@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from dataclasses import dataclass
 from inspect import signature
@@ -14,7 +15,9 @@ from weylchamber import c1c2c3
 from .hamiltonian import Hamiltonian
 from .utils.custom_gates import *
 from .utils.data_utils import filename_encode, pickle_load, pickle_save
-from .utils.polytope_wrap import monodromy_range_from_target, gate_set_to_coverage
+from .utils.polytope_wrap import (gate_set_to_coverage,
+                                  monodromy_range_from_target)
+
 """
 Defines the variational object passed to the optimizer
 """
@@ -132,11 +135,7 @@ class CircuitTemplate(VariationalTemplate):
         self.spanning_range = None
         if not use_polytopes:
             self.spanning_range = range(1,maximum_span_guess+1)
-            self.coverage = None
-        else:
-            #precompute coverage polytopes?
-            #TODO
-            self.coverage = gate_set_to_coverage(*base_gates, chatty=True)
+            self.coverage = None #only precomputed in mixedbasis class
             
         super().__init__(preseed=preseed, use_polytopes=use_polytopes)
 
@@ -209,44 +208,47 @@ class CircuitTemplate(VariationalTemplate):
         self.cycles += 1
 
 
-class CustomCostCircuitTemplate(CircuitTemplate):
-    #assigns a cost value to each repeated call to build()
-    def __init__(self, base_gates=[CustomCostGate]) -> None:
-        for gate in base_gates:
-            if not isinstance(gate, CustomCostGate):
-                raise ValueError("Gates must have a defined cost")
-        self.cost = {0:0}
-        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[(0,1)], no_exterior_1q=False,use_polytopes=True, preseed=True)
+"""this might be deprecated, if I want to use gate costs, should be factored in with circuit polytopes already
+for now, instead just use the mixedbasis instead"""
 
-    def _build_cycle(self, initial=False, final=False):
-        """Extends template by next nonlocal gate
-        add modification which saves cost to dict"""
-        if initial and not self.no_exterior_1q:
-            # before build by extend, add first pair of 1Qs
-            for qubit in range(self.n_qubits):
-                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
-        edge = next(self.gate_2q_edges)
-        gate = next(self.gate_2q_base)
-        self.circuit.append(gate, edge)
-        if not (final and self.no_exterior_1q):
-            for qubit in edge:
-                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
-        self.cycles += 1
-        self.cost[self.cycles] = self.cost[self.cycles-1] + gate.cost
+# class CustomCostCircuitTemplate(CircuitTemplate):
+#     
+#     #assigns a cost value to each repeated call to build()
+#     def __init__(self, base_gates=[CustomCostGate]) -> None:
+#         logging.warning("deprecated, use mixedorderbasis with cost assigned to cirucit polytopes")
+#         for gate in base_gates:
+#             if not isinstance(gate, CustomCostGate):
+#                 raise ValueError("Gates must have a defined cost")
+#         self.cost = {0:0}
+#         super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[(0,1)], no_exterior_1q=False,use_polytopes=True, preseed=True)
+
+#     def _build_cycle(self, initial=False, final=False):
+#         """Extends template by next nonlocal gate
+#         add modification which saves cost to dict"""
+#         if initial and not self.no_exterior_1q:
+#             # before build by extend, add first pair of 1Qs
+#             for qubit in range(self.n_qubits):
+#                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+#         edge = next(self.gate_2q_edges)
+#         gate = next(self.gate_2q_base)
+#         self.circuit.append(gate, edge)
+#         if not (final and self.no_exterior_1q):
+#             for qubit in edge:
+#                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+#         self.cycles += 1
+#         self.cost[self.cycles] = self.cost[self.cycles-1] + gate.cost
         
-    def unit_cost(self, cycles):
-        if not cycles in self.cost.keys():
-            self.build(cycles)
-        return self.cost[cycles]
+#     def unit_cost(self, cycles):
+#         if not cycles in self.cost.keys():
+#             self.build(cycles)
+#         return self.cost[cycles]
 
 
-# FIXME !!!!
-# if hetereogenous basis, build is always appending in a set order
-# we really want to be able to pick and choose freely
-# when we find monodromy spanning range, we actually need to be checking more combinations of gates
-# find the minimum cost polytope which contains target
-##### for now, this is still functional for single basis gate but need to fix this!!!!!
-# suggestion, when we create basis it should precompute the coverage polytopes and order them based on cost
+"""if hetereogenous basis, build is always appending in a set order
+we really want to be able to pick and choose freely
+when we find monodromy spanning range, we actually need to be checking more combinations of gates
+find the minimum cost polytope which contains target
+now when we create basis it should precompute the coverage polytopes and order them based on cost"""
 
 class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #in previous circuit templates, everytime we call build it extends based on a predefined pattern
@@ -256,5 +258,25 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #this means monodromy_range_from_target needs to return a circuit polytope
     #we update template to match circuit polytope shape
     #then tell optimizer range to be range(1) so it knows not to call build again
-    def build(self, n):
-        pass
+    def __init__(self, base_gates=[CustomCostGate], no_exterior_1q=False, preseed=False, chatty_build=True):
+        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[(0,1)], no_exterior_1q=no_exterior_1q, use_polytopes=True, preseed=preseed)
+        #precomputed polytopes
+        self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build)
+
+    def set_polytope(self, circuit_polytope):
+        self.circuit_polytope = circuit_polytope
+        self.cost = circuit_polytope.cost #?
+    
+    def unit_cost(self, n_):
+        return self.cost
+
+    def _reset(self):
+        self.circuit_polytope = None
+        super()._reset()
+
+    def build(self, n_repetitions):
+        assert self.circuit_polytope is not None
+        #convert circuit polytope into a qiskit circuit with variation 1q params
+        gate_list = [self.gate_hash[gate_key] for gate_key in self.circuit_polytope.operations]
+        self.gate_2q_base = cycle(gate_list)
+        super().build(n_repetitions=len(gate_list))

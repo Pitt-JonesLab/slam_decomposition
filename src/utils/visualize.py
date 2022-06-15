@@ -90,7 +90,7 @@ def training_loss_plot(axs, training_loss):
     # plot horizontal line to show average of final converged value
     #converged_average = np.mean([min(el) for el in training_loss])
     #filter flags (-1)
-    converged_average = min([el for el in training_loss if el >= 0])
+    converged_average = min([el for el in training_loss if el > 0])
     axs.axhline(
         converged_average, alpha=0.8, color="tab:gray", linestyle="--"
     )

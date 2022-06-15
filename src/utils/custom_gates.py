@@ -20,9 +20,9 @@ qc.draw(output='mpl')
 class CustomCostGate(Gate):
     #want to build a gate progamatically from a unitary
     #cost value used in expected haar calcuation
-    def __init__(self,unitary, str, cost=1):
+    def __init__(self, unitary, str, cost=1):
         self.unitary = unitary
-        self.str = str
+        self.str= str
         self.cost = cost #i.e. duration
         super().__init__(str, num_qubits=2, params=[], label=str)
     

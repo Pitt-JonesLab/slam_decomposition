@@ -28,6 +28,7 @@ class Hamiltonian(ABC):
 
 class SnailEffectiveHamiltonian(Hamiltonian):
     """Used to find iSwap family gates"""
+    #same as conversion gain but H_g=0
     def __init__(self):
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
@@ -38,8 +39,7 @@ class SnailEffectiveHamiltonian(Hamiltonian):
     
     #static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(geff):#, t=1):
-        t=1
+    def construct_U(geff, t=1):
         h_instance = SnailEffectiveHamiltonian()
         return h_instance._construct_U_lambda(geff)(t)
 

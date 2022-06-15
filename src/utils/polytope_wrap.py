@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 #using this to avoid a circular import
 if TYPE_CHECKING:
     from src.basis import CircuitTemplate
-    from src.utils.custom_gates import CustomCostGate
+from src.utils.custom_gates import CustomCostGate
 
 from fractions import Fraction
 from sys import stdout
@@ -31,6 +31,10 @@ MAX_ITERS = 10
 # https://github.com/evmckinney9/monodromy/blob/main/scripts/single_circuit.py
 
 def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
+    #NOTE, depending on whether using precomputed coverages,
+    # both return a range element, because this is value is used by the optimizer to call build
+    # in order to bind the precomputed circuit polytope, we use a set method on basis
+
     if basis.n_qubits != 2:
         raise ValueError("monodromy only for 2Q templates")
 
@@ -51,11 +55,16 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
     else: 
         # new method, now we can iterate over precomputed polytopes
         # we want to find the first polytoped (when sorted by cost) that contains target
-        print("here")
-        pass
+        # this sorting might be redundant but we will do it just in case
+        sorted_polytopes = sorted(basis.coverage, key=lambda k: k.cost)
+        for circuit_polytope in sorted_polytopes:
+            if circuit_polytope.has_element(target_coords):
+                #set polytope
+                basis.set_polytope(circuit_polytope)
+                #return a default range
+                return range(1)
+        raise ValueError("Monodromy did not find a polytope containing U")
     
-        return None
-
 def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
     if basis.n_qubits != 2:
         raise ValueError("monodromy only for 2Q templates")
@@ -84,16 +93,25 @@ def gate_set_to_haar_expectation(*basis_gates:list[CustomCostGate], chatty=True)
     return coverage_to_haar_expectation(coverage, chatty=chatty)
 
 def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
-
     #first converts all individal gates to circuitpolytope objeect
     operations = []
-
+    basis_gate_hash_dict = {}
     for gate in basis_gates:
+
+        #this is an ugly solution, but not sure a more direct way
+        #when we see the circuit polytope later in the basis build method,
+        #we need to reconstruct it as a variational circuit, and need a reference to the gates
+        #the circuitpolytopes need a hashable object so we use string
+        #this dict looks up string->gate object
+        if str(gate) in basis_gate_hash_dict.keys():
+            raise ValueError("need unique gate strings for hashing to work")
+        basis_gate_hash_dict[str(gate)] = gate
+
         circuit_polytope = identity_polytope
 
         b_polytope = exactly(
             *(Fraction(x).limit_denominator(10_000)
-            for x in unitary_to_monodromy_coordinate(np.matrix(gate))[:-1])
+            for x in unitary_to_monodromy_coordinate(np.matrix(gate, dtype=complex))[:-1])
         )
         circuit_polytope = deduce_qlr_consequences(
             target="c",
@@ -101,13 +119,13 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
             b_polytope=b_polytope,
             c_polytope=everything_polytope
         )
-
+        #FIXME, cost is 1 or has a gate.cost? can't detect with isinstance bc circle import!
         operations.append(
             CircuitPolytope(
-                operations=[str(gate)],
+                operations= [str(gate)],
                 #cost=1,
                 #cost=1 - (1- base_iswap_fidelity)*basis_gate.params[0],
-                cost= 1, #gate.cost, #if isinstance(gate, CustomCostGate) else 1, #XXX danger
+                cost= gate.cost if isinstance(gate, CustomCostGate) else 1, #XXX danger
                 convex_subpolytopes=circuit_polytope.convex_subpolytopes)
             )
 
@@ -121,7 +139,7 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
     if chatty: 
         logging.info("==== Done. Here's what we found: ====")
         logging.info(print_coverage_set(coverage_set))
-    return coverage_set
+    return coverage_set, basis_gate_hash_dict
 
 def coverage_to_haar_expectation(coverage_set, chatty=True):
     #finally, return the expected haar coverage
