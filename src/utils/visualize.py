@@ -108,10 +108,10 @@ def training_loss_plot(axs, training_loss):
 
 """Generic Weyl Chamber plots"""
 
-def weyl_training_plot(axs, coordinate_list):
+def weyl_training_plot(axs, coordinate_list, **kwargs):
     w = WeylChamber();
     col = np.arange(len(coordinate_list))
-    w.scatter(*zip(*coordinate_list), c=col)
+    w.scatter(*zip(*coordinate_list), c=col, **kwargs)
     w.render(axs)
 
 def unitary_to_weyl(unitary):

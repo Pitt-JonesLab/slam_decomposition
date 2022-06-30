@@ -20,7 +20,7 @@ class Hamiltonian(ABC):
         return self.H(*args)
 
     def _construct_U_lambda(self, *args):
-        return lambda t: (1j * t * self._construct_H(*args)).expm()
+        return lambda t: (-1j * t * self._construct_H(*args)).expm()
 
     @staticmethod
     def construct_U(*args):
@@ -39,7 +39,8 @@ class SnailEffectiveHamiltonian(Hamiltonian):
     
     #static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(geff, t=1):
+    def construct_U(geff):#, t=1):
+        t=1
         h_instance = SnailEffectiveHamiltonian()
         return h_instance._construct_U_lambda(geff)(t)
 
@@ -57,7 +58,8 @@ class ConversionGainHamiltonian(Hamiltonian):
     
     #static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(gc, gg, t=1):
+    def construct_U(gc, gg):#, t=1):
+        t=1
         h_instance = ConversionGainHamiltonian()
         return h_instance._construct_U_lambda(gc, gg)(t)
 
