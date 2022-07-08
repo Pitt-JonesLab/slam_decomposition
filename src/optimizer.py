@@ -10,12 +10,12 @@ from .cost_function import UnitaryCostFunction
 from .sampler import SampleFunction
 
 SUCCESS_THRESHOLD = 2e-9
-TRAINING_RESTARTS = 10
+TRAINING_RESTARTS = 5
 """
 Given a gate basis objects finds parameters which minimize cost function
 """
 class TemplateOptimizer:
-    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False):
+    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False, override_fail=False, success_threshold=None):
         self.basis = basis
         self.objective = objective
         self.preseeding = self.basis.preseeded
@@ -23,26 +23,39 @@ class TemplateOptimizer:
         self.use_callback = use_callback
         self.training_loss = [] #2d list sample_iter -> [training iter -> loss]
         self.coordinate_list = [] #2d list sample_iter -> [training iter -> (coordinate)]
+        #used for counting haar length
+        self.best_cycle_list = []
+        self.override_fail = override_fail
+
+        if success_threshold is None:
+            self.success_threshold = success_threshold
+        else:
+            self.success_threshold = SUCCESS_THRESHOLD
+
+        assert not (self.preseeding and self.override_fail)
 
     def approximate_target_U(self, target_U):
 
         target_coordinates = self.basis.target_invariant(target_U)
-        target_spanning_range = self._initialize_run(target_U, target_coordinates)
+        init_run_results = self._initialize_run(target_U, target_coordinates)
 
         # bad code :(, but here we are checking if init_run is returning either a range 
         # or if preseeding already had the exact target already saved
-        if isinstance(target_spanning_range, DataDictEntry):
+        if isinstance(init_run_results, DataDictEntry):
             return target_spanning_range
+        else:
+            target_spanning_range = init_run_results
 
         logging.info(f"Begin search: {target_coordinates}")
         best_result, best_Xk, best_cycles = self._run(target_U, target_spanning_range)
 
-        if best_result <= SUCCESS_THRESHOLD:
+        if best_result <= self.success_threshold:
             # label target coordinate as success
             success_label = 1
             logging.info(f"Success: {target_coordinates}")
         else:
-            raise ValueError("Failed to converge. Try increasing restart attempts or increasing temperature scaling on preseed.")
+            if not self.override_fail:
+                raise ValueError("Failed to converge within error threshold. Try increasing restart attempts or increasing temperature scaling on preseed.")
             # label target coordinate as fail, label alternative coordinate as succss
             success_label = 0
 
@@ -52,13 +65,15 @@ class TemplateOptimizer:
             alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
     
             logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
-            self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
+            if self.preseeding:
+                self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
 
         #save target, update tree
         target_data = DataDictEntry(success_label, best_result, best_Xk, best_cycles)
-        self.basis.data_dict[target_coordinates] = target_data
-        self.basis._construct_tree()
+    
         if self.preseeding:
+            self.basis.data_dict[target_coordinates] = target_data
+            self.basis._construct_tree()
             self.basis.save_data()
         return target_data
 
@@ -121,20 +136,23 @@ class TemplateOptimizer:
         for index, target in enumerate(sampler):
             logging.info(f"Starting sample iter {index}")
             self.approximate_target_U(target_U=target)
-        return self.training_loss, self.coordinate_list
+        return self.training_loss, self.coordinate_list, self.best_cycle_list
             
     def _run(self, target_u, target_spanning_range):
-        
+        self.ii=0
         def objective_func(xk):
             current_u = self.basis.eval(xk)
-            return self.objective.unitary_fidelity(current_u, target_u)/self.objective.normalization
+            objf_val = self.objective.unitary_fidelity(current_u, target_u)/self.objective.normalization
+            self.objf_val_cache = objf_val
+            return objf_val
         
         # callback used to save current loss and coordiante after each iteration
         def callbackF(xk):
-            current_state = self.basis.eval(xk)
-            loss = objective_func(xk)
+            loss = self.objf_val_cache
             temp_training_loss.append(loss)
-            temp_coordinate_list.append(c1c2c3(current_state))
+            if self.basis.n_qubits == 2: #will break for hamiltonianvariationalobjects?
+                current_state = self.basis.eval(xk)
+                temp_coordinate_list.append(c1c2c3(current_state))
 
         best_result = None
         best_Xk = None
@@ -177,7 +195,7 @@ class TemplateOptimizer:
                     best_cycles = spanning_iter
                 
                 #break over starting attempts
-                if best_result < SUCCESS_THRESHOLD:
+                if best_result < self.success_threshold:
                     if self.use_callback:
                         self.training_loss.append(temp_training_loss)
                         self.coordinate_list.append(temp_coordinate_list)
@@ -185,9 +203,16 @@ class TemplateOptimizer:
             
             #break over template extensions
             # already good enough, save time by stopping here
-            if best_result < SUCCESS_THRESHOLD:
+            if best_result < self.success_threshold:
                 logging.info(f"Break on cycle {spanning_iter}")
                 break
 
         logging.info(f"Loss={best_result}")
+
+        if not self.use_callback:
+            #if not saving into a list, just save the last value pass or fail
+            self.training_loss.append(best_result)
+        
+        self.best_cycle_list.append(best_cycles)
+
         return best_result, best_Xk, best_cycles

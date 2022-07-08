@@ -83,6 +83,7 @@ class VariationalTemplate(ABC):
     #XXX below will fail for 3Q+
     def target_invariant(self, target_U):
         if not (4,4) == target_U.shape:
+            return (-1,-1,-1,-1)
             raise NotImplementedError
         return c1c2c3(target_U)
 
@@ -113,14 +114,11 @@ class HamiltonianTemplate(VariationalTemplate):
         parent = super().parameter_guess(t)
         if parent is not None:
             return parent
-        p_len =  len(signature(self.h.construct_U).parameters)
+        p_len =  len(signature(self.h.construct_U).parameters) #getting number of parameters from Hamiltonian function definition
         return np.random.random(p_len)
 
-# FIXME
-#if hetereogenous basis with both 2Q and 3Q could recieve edge errors if patterns misaligned
-
 class CircuitTemplate(VariationalTemplate):
-    def __init__(self, n_qubits=2, base_gates=[RiSwapGate(1/2)], edge_params=[(0, 1)], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False):
+    def __init__(self, n_qubits=2, base_gates=[RiSwapGate(1/2)], edge_params=[[(0, 1)]], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False):
         """Initalizes a qiskit.quantumCircuit object with unbound 1Q gate parameters"""
         hash = str(n_qubits)+ str(base_gates)+ str(edge_params)+ str(no_exterior_1q)
         self.filename = filename_encode(hash)
@@ -128,7 +126,8 @@ class CircuitTemplate(VariationalTemplate):
         self.no_exterior_1q = no_exterior_1q
 
         self.gate_2q_base = cycle(base_gates)
-        self.gate_2q_edges = cycle(edge_params)
+        #each gate gets its on cycler
+        self.gate_2q_edges = cycle([cycle(edge_params_el) for edge_params_el in edge_params])
         self.gen_1q_params = self._param_iter()
 
         #define a range to see how many times we should extend the circuit while in optimization search
@@ -200,8 +199,10 @@ class CircuitTemplate(VariationalTemplate):
             # before build by extend, add first pair of 1Qs
             for qubit in range(self.n_qubits):
                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
-        edge = next(self.gate_2q_edges)
-        self.circuit.append(next(self.gate_2q_base), edge)
+
+        gate = next(self.gate_2q_base)
+        edge = next(next(self.gate_2q_edges)) #call cycle twice to increment gate then edge
+        self.circuit.append(gate, edge)
         if not (final and self.no_exterior_1q):
             for qubit in edge:
                 self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)

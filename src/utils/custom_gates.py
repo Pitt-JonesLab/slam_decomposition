@@ -53,7 +53,7 @@ class VSwap(Gate):
 
 class CParitySwap(Gate):
     def __init__(self, _: ParameterValueType = None):
-        super().__init__("cpswap", 3, [], "TBD")
+        super().__init__("cpswap", 3, [], "CParitySwap")
 
         # an alternative defintion using hamiltonian
         # we just have it hardcoded instead
@@ -232,6 +232,9 @@ class SYC(FSim):
 
 
 class RiSwapGate(Gate):
+    #turns out you can also do qiskit.iSwapGate().power(1/n)
+    #but I didnt know about the power fucntion until recently :(
+
     r"""RiSWAP gate.
 
     **Circuit Symbol:**

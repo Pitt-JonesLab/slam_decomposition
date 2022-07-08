@@ -58,9 +58,9 @@ class Clifford(SampleFunction):
         return Operator(random_clifford(num_qubits=self.n_qubits)).data
 
 class HaarSample(SampleFunction):
-    def __init__(self, seed=None, n_samples=1):
+    def __init__(self, seed=None, n_samples=1, n_qubits=2):
         self.seed=seed
-        super().__init__(n_samples=n_samples)
+        super().__init__(n_samples=n_samples, n_qubits=n_qubits)
 
     def _get_unitary(self):
         random.seed(self.seed)
@@ -83,14 +83,14 @@ class HaarSample(SampleFunction):
                 return qc
 
 class Haar2Sample(HaarSample):
-    def __init__(self, n_samples=1):
-        super().__init__(n_samples=n_samples)
+    def __init__(self, seed=None, n_samples=1):
+        super().__init__(seed=seed, n_samples=n_samples)
     def _get_unitary(self):
         return Operator(self._haar_ground_truth(2)).data
 
 class Haar3Sample(HaarSample):
-    def __init__(self, n_samples=1):
-        super().__init__(n_samples=n_samples)
+    def __init__(self,seed=None, n_samples=1):
+        super().__init__(seed=seed,n_samples=n_samples)
     def _get_unitary(self):
         return Operator(self._haar_ground_truth(3)).data
 
