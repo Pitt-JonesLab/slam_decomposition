@@ -9,7 +9,7 @@ from .basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplat
 from .cost_function import UnitaryCostFunction
 from .sampler import SampleFunction
 
-SUCCESS_THRESHOLD = 2e-9
+SUCCESS_THRESHOLD = 1e-10
 TRAINING_RESTARTS = 5
 """
 Given a gate basis objects finds parameters which minimize cost function
@@ -27,7 +27,7 @@ class TemplateOptimizer:
         self.best_cycle_list = []
         self.override_fail = override_fail
 
-        if success_threshold is None:
+        if success_threshold is not None:
             self.success_threshold = success_threshold
         else:
             self.success_threshold = SUCCESS_THRESHOLD
