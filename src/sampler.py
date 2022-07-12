@@ -17,7 +17,6 @@ logger = logging.getLogger()
 """
 Define functions which act as distributions for a template to train against
 """
-#TODO empiric distribution ,pass in a circuit and build a generator object using stopiteration
 
 class SampleFunction(ABC):
     def __init__(self, n_qubits=2,n_samples=1):
