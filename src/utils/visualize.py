@@ -104,7 +104,7 @@ def training_loss_plot(axs, training_loss):
     axs.set_yscale("log")
     axs.set_xlabel("Training Steps")
     axs.set_ylabel("Training Loss")
-    axs.legend()
+    axs.legend(title="Gate Applications")
 
 """Generic Weyl Chamber plots"""
 
@@ -121,6 +121,7 @@ def unitary_to_weyl(unitary):
     axs= fig.add_subplot(111, projection="3d")
     w.add_point(*c1c2c3(np.array(unitary)))
     w.render(axs)
+    return fig
 
 # from weylchamber import WeylChamber
 # def weyl_plot():

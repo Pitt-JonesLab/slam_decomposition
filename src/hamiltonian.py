@@ -63,7 +63,34 @@ class ConversionGainHamiltonian(Hamiltonian):
         h_instance = ConversionGainHamiltonian()
         return h_instance._construct_U_lambda(gc, gg)(t)
 
-    #fix total gc to be pi/2 and see how small t can go
+class ConversionGainPhaseHamiltonian(Hamiltonian):
+    def __init__(self):
+        a = qutip.operators.create(N=2)
+        I2 = qutip.operators.identity(2)
+        A = qutip.tensor(a, I2)
+        B = qutip.tensor(I2, a)
+        # H_c = A * B.dag() + A.dag() * B
+        # H_g = A * B + A.dag() * B.dag()
+ 
+        # construct Hamiltonian
+        # fmt: off
+        def foo_H(gc, gg, phi_c, phi_g):
+            # H_ab = np.exp(1j * phi_ab) * A * B.dag() + np.exp(-1j * phi_ab) * A.dag() * B
+            # H_ac = np.exp(1j * phi_ac) * A * C.dag() + np.exp(-1j * phi_ac) * A.dag() * C
+            # H_bc = np.exp(1j * phi_bc) * B * C.dag() + np.exp(-1j * phi_bc) * B.dag() * C
+            H_c = np.exp(1j * phi_c) * A * B.dag() + np.exp(-1j * phi_c) * A.dag() * B
+            H_g = np.exp(1j * phi_g) * A * B + np.exp(-1j * phi_g) * A.dag() * B.dag()
+            return gc * H_c + gg * H_g
+        # fmt: on
+
+        self.H = foo_H
+
+    #static method creates an instance of class, acting like a factory
+    @staticmethod
+    def construct_U(gc, gg, phi_c, phi_g): #, t=1):
+        t=1
+        h_instance = ConversionGainPhaseHamiltonian()
+        return h_instance._construct_U_lambda(gc, gg, phi_c, phi_g)(t)
     
 #XXX not working yet, how do I want the gxvector, gyvector params to see by Basis?
 class TimeDependentHamiltonian(Hamiltonian):
@@ -99,6 +126,30 @@ class Simul1QGatesHamiltonian(TimeDependentHamiltonian):
             totalUi = Ui @ totalUi
         return totalUi
 
+class FSimHamiltonian(Hamiltonian):
+    """https://arxiv.org/pdf/1910.11333.pdf"""
+    def __init__(self):
+        #a = qutip.operators.create(N=2)
+        I2 = qutip.operators.identity(2)
+        sp1 = qutip.tensor(qutip.operators.sigmap(), I2)
+        sp2 = qutip.tensor(I2,qutip.operators.sigmap())
+        sm1 = qutip.tensor(qutip.operators.sigmam(), I2)
+        sm2 = qutip.tensor(I2,qutip.operators.sigmam())
+        sz1 = qutip.tensor(qutip.operators.sigmaz(), I2)
+        sz2 = qutip.tensor(I2, qutip.operators.sigmaz())
+
+        H_1 = sp1*sm2 + sm1*sp2
+        H_2 = sz1*sz2
+        self.H = lambda g, eta: g * H_1 + (g**2/np.abs(eta)) * H_2
+
+    #static method creates an instance of class, acting like a factory
+    @staticmethod
+    def construct_U(g, eta): #, t=1):
+        t=1
+        h_instance = FSimHamiltonian()
+        return h_instance._construct_U_lambda(g, eta)(t)
+
+
 class CirculatorHamiltonian(Hamiltonian):
     """Use to find VSwap and CParitySwap"""
 
@@ -115,15 +166,16 @@ class CirculatorHamiltonian(Hamiltonian):
             H_ab = np.exp(1j * phi_ab) * A * B.dag() + np.exp(-1j * phi_ab) * A.dag() * B
             H_ac = np.exp(1j * phi_ac) * A * C.dag() + np.exp(-1j * phi_ac) * A.dag() * C
             H_bc = np.exp(1j * phi_bc) * B * C.dag() + np.exp(-1j * phi_bc) * B.dag() * C
-            return g_ac * H_ac + g_bc * H_bc + g_ab * H_ab
+            return g_ab * H_ab + g_ac * H_ac + g_bc * H_bc
         # fmt: on
 
         self.H = foo_H
 
     @staticmethod
-    def construct_U(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_b, t=1):
+    def construct_U(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc, t):
+        # t=1
         h_instance = CirculatorHamiltonian()
-        return h_instance._construct_U_lambda(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_b)(t)
+        return h_instance._construct_U_lambda(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc)(t)
 
     # def gaussian(t, A, s):
     #     return A * np.exp(-((t / s) ** 2))

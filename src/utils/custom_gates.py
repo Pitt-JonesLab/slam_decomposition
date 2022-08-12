@@ -59,7 +59,8 @@ class CParitySwap(Gate):
         # we just have it hardcoded instead
 
         # nn = 3 * np.sqrt(3) / 2
-        # params = [-np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]
+        # params = [-np.pi / 2, np.pi / 2, -np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]  #frowny
+        # params = [np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]   #smiley
         # from hamiltonian import CirculatorHamiltonian
         # self._array = CirculatorHamiltonian.construct_U(*params)
 
@@ -77,6 +78,32 @@ class CParitySwap(Gate):
             ],
             dtype=dtype,
         )
+    def _define(self):
+        """
+        gate ccx a,b,c
+        {
+        h c; cx b,c; tdg c; cx a,c;
+        t c; cx b,c; tdg c; cx a,c;
+        t b; t c; h c; cx a,b;
+        t a; tdg b; cx a,b;}
+        """
+        # pylint: disable=cyclic-import
+        from qiskit.circuit.quantumcircuit import QuantumCircuit
+        from qiskit.circuit import QuantumRegister
+        from qiskit.circuit.library.standard_gates import SwapGate, CSwapGate
+
+        # q_0: ─X──X──X──X─
+        #     │  │  │  │ 
+        # q_1: ─X──■──X──┼─
+        #     │  │     │ 
+        # q_2: ─■──X─────X─ 
+        
+        qc = QuantumCircuit(3, name=self.name)
+        qc.cswap(2,0,1)
+        qc.cswap(1,0,2)
+        qc.swap(0,1)
+        qc.swap(0,2)
+        self.definition = qc
 
 
 class Margolus(Gate):
@@ -255,7 +282,7 @@ class RiSwapGate(Gate):
 
     def __array__(self, dtype=None):
         """Return a numpy.array for the RiSWAP gate."""
-        alpha = self.params[0]
+        alpha = float(self.params[0])
         return np.array(
             [
                 [1, 0, 0, 0],

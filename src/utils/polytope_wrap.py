@@ -89,8 +89,8 @@ def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
 
 #reference: monodromy/demo.py
 def gate_set_to_haar_expectation(*basis_gates:list[CustomCostGate], chatty=True):
-    coverage = gate_set_to_coverage(*basis_gates, chatty=chatty)
-    return coverage_to_haar_expectation(coverage, chatty=chatty)
+    coverage_set, basis_gate_hash_dict = gate_set_to_coverage(*basis_gates, chatty=chatty)
+    return coverage_to_haar_expectation(coverage_set, chatty=chatty)
 
 def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
     #first converts all individal gates to circuitpolytope objeect

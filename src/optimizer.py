@@ -15,7 +15,7 @@ TRAINING_RESTARTS = 5
 Given a gate basis objects finds parameters which minimize cost function
 """
 class TemplateOptimizer:
-    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False, override_fail=False, success_threshold=None):
+    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False, override_fail=False, success_threshold=None, training_restarts=None):
         self.basis = basis
         self.objective = objective
         self.preseeding = self.basis.preseeded
@@ -32,10 +32,16 @@ class TemplateOptimizer:
         else:
             self.success_threshold = SUCCESS_THRESHOLD
 
-        assert not (self.preseeding and self.override_fail)
+        if training_restarts is not None:
+            self.training_restarts = training_restarts
+        else:
+            self.training_restarts = TRAINING_RESTARTS
+
+        assert not (self.preseeding and self.override_fail) #don't want to save failed data
+        assert not (self.preseeding and self.basis.n_qubits !=2) #currently preseeding based on weyl coordinates
 
     def approximate_target_U(self, target_U):
-
+        """Atomic training function"""
         target_coordinates = self.basis.target_invariant(target_U)
         init_run_results = self._initialize_run(target_U, target_coordinates)
 
@@ -62,9 +68,9 @@ class TemplateOptimizer:
             #reset back to best size
             if isinstance(self.basis, CircuitTemplate):
                 self.basis.build(n_repetitions=best_cycles)
-            alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
-    
-            logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
+            if self.basis.n_qubits == 2:
+                alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
+                logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
             if self.preseeding:
                 self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
 
@@ -112,22 +118,26 @@ class TemplateOptimizer:
 
         return target_spanning_range
 
+    def cost_target_U(self, target):
+        """Atomic cost function - doesn't actually fit 1Q parameters"""
+        #logging.info(f"Starting sample iter {index}")
+        init_info = self._initialize_run(target_U=target)
+        #bad code :)
+        #here we check if init function either returned an exact result
+        if isinstance(init_info, DataDictEntry):
+            init_info = init_info.cycles
+        #or if it returned a range, convert to a single value
+        else:
+            init_info = max(init_info)
+        return self.basis.unit_cost(init_info)
+
     def cost_from_distribution(self, sampler:SampleFunction):
         #use this function if you want to calculate cost over a distribution, but not the entire decomposition fitting
         if not isinstance(self.basis, MixedOrderBasisCircuitTemplate):
             raise ValueError("use customcosttemplate to have defined costs")
         total_cost = 0
         for index, target in enumerate(sampler):
-            #logging.info(f"Starting sample iter {index}")
-            init_info = self._initialize_run(target_U=target)
-            #bad code :)
-            #here we check if init function either returned an exact result
-            if isinstance(init_info, DataDictEntry):
-                init_info = init_info.cycles
-            #or if it returned a range, convert to a single value
-            else:
-                init_info = max(init_info)
-            total_cost += self.basis.unit_cost(init_info)
+            total_cost += self.cost_target_U(target)
         logging.info(f"Total circuit pulse cost: {total_cost}")
         logging.info(f"Average gate pulse cost: {total_cost/(index+1)}")
         return total_cost
@@ -178,7 +188,7 @@ class TemplateOptimizer:
             #TODO if spanning range == 1, don't pass to optimizer
             #implement a mathematica cloud call?
             
-            for r_i in range(TRAINING_RESTARTS):
+            for r_i in range(self.training_restarts):
            
                 result = opt.minimize(
                     fun=objective_func,
@@ -195,11 +205,13 @@ class TemplateOptimizer:
                     best_cycles = spanning_iter
                 
                 #break over starting attempts
-                if best_result < self.success_threshold:
+                if best_result < self.success_threshold or self.override_fail:
                     if self.use_callback:
                         self.training_loss.append(temp_training_loss)
                         self.coordinate_list.append(temp_coordinate_list)
-                    break
+
+                    if best_result < self.success_threshold:
+                        break
             
             #break over template extensions
             # already good enough, save time by stopping here
