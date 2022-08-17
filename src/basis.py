@@ -199,16 +199,16 @@ class CircuitTemplate(VariationalTemplate):
         if initial and not self.no_exterior_1q:
             # before build by extend, add first pair of 1Qs
             for qubit in range(self.n_qubits):
-                #self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
-                self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
+                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+                #self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
 
         gate = next(self.gate_2q_base)
         edge = next(next(self.gate_2q_edges)) #call cycle twice to increment gate then edge
         self.circuit.append(gate, edge)
         if not (final and self.no_exterior_1q):
             for qubit in edge:
-                self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
-                #self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+                #self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
+                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
         self.cycles += 1
 
 

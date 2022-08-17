@@ -42,7 +42,7 @@ class VSwap(Gate):
         v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
         v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
 
-        self._array = CirculatorHamiltonian.construct_U(*v_params)
+        self._array = CirculatorHamiltonian.construct_U(*v_params,t=1)
 
     def __array__(self, dtype=None):
         # v_nn = np.sqrt(2)*np.pi/np.arccos(1/np.sqrt(3))
