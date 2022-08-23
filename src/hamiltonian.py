@@ -174,6 +174,7 @@ class CirculatorHamiltonian(Hamiltonian):
     @staticmethod
     def construct_U(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc, t):
         # t=1
+        t = float(t) #convert from ParameterExpression
         h_instance = CirculatorHamiltonian()
         return h_instance._construct_U_lambda(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc)(t)
 

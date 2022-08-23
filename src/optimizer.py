@@ -5,8 +5,10 @@ import numpy as np
 import scipy.optimize as opt
 from weylchamber import c1c2c3
 
+from src.basisv2 import CircuitTemplateV2
+
 from .basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplate, VariationalTemplate
-from .cost_function import UnitaryCostFunction
+from .cost_function import UnitaryCostFunction, EntanglementCostFunction
 from .sampler import SampleFunction
 
 SUCCESS_THRESHOLD = 1e-10
@@ -66,7 +68,7 @@ class TemplateOptimizer:
             success_label = 0
 
             #reset back to best size
-            if isinstance(self.basis, CircuitTemplate):
+            if isinstance(self.basis, CircuitTemplate) or isinstance(self.basis, CircuitTemplateV2):
                 self.basis.build(n_repetitions=best_cycles)
             if self.basis.n_qubits == 2:
                 alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
@@ -151,8 +153,20 @@ class TemplateOptimizer:
     def _run(self, target_u, target_spanning_range):
         self.ii=0
         def objective_func(xk):
-            current_u = self.basis.eval(xk)
-            objf_val = self.objective.unitary_fidelity(current_u, target_u)/self.objective.normalization
+
+            if isinstance(self.objective, UnitaryCostFunction):
+                current_u = self.basis.eval(xk)
+                objf_val = self.objective.unitary_fidelity(current_u, target_u)/self.objective.normalization
+                #optionally, multiply decomposition fidelity objf_val by circuit fidelity
+                if isinstance(self.basis, CircuitTemplateV2):
+                    objf_val = 1 - (objf_val * self.basis.circuit_fidelity(xk))
+            
+            elif isinstance(self.objective, EntanglementCostFunction):
+                current_qc = self.basis.assign_Xk(xk)
+                objf_val = self.objective.entanglement_monotone(current_qc)
+            else:
+                raise ValueError("Unrecognized Cost Function")
+
             self.objf_val_cache = objf_val
             return objf_val
         
@@ -179,7 +193,7 @@ class TemplateOptimizer:
             temp_training_loss.extend([-1, spanning_iter])
             
         
-            if isinstance(self.basis, CircuitTemplate):
+            if isinstance(self.basis, CircuitTemplate) or isinstance(self.basis, CircuitTemplateV2):
                 self.basis.build(n_repetitions=spanning_iter)
             else:
                 #XXX module reload might cause this to fail if basis.py has been changed and not reloaded
@@ -192,10 +206,11 @@ class TemplateOptimizer:
            
                 result = opt.minimize(
                     fun=objective_func,
-                    method='BFGS',
+                    method='BFGS' if self.basis.using_constraints else 'L-BFGS-B',
                     x0=self.basis.parameter_guess(t=r_i),
                     callback=callbackF if self.use_callback else None,
                     options={"maxiter": 400},
+                    bounds=self.basis.bounds
                 )
 
                 # result is good, update temp vars

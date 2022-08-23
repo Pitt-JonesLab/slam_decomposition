@@ -37,17 +37,17 @@ class CustomCostGate(Gate):
         return np.array(self.unitary,dtype)
 
 class VSwap(Gate):
-    def __init__(self, _: ParameterValueType = None):
-        super().__init__("vswap", 3, [], "VSWAP")
+    def __init__(self, t_el: ParameterValueType = 1):
+        super().__init__("vswap", 3, [t_el], "VSWAP")
         v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
-        v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
+        self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
 
-        self._array = CirculatorHamiltonian.construct_U(*v_params,t=1)
+        #self._array = CirculatorHamiltonian.construct_U(*v_params,t=t_el)
 
     def __array__(self, dtype=None):
         # v_nn = np.sqrt(2)*np.pi/np.arccos(1/np.sqrt(3))
         # params = [np.pi/2,np.pi/2,0, np.pi/v_nn, np.pi/v_nn, 0]
-        # U = build_circulator_U(*params)
+        self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
         return self._array.full()
 
 
@@ -276,18 +276,35 @@ class RiSwapGate(Gate):
 
     def __init__(self, alpha: ParameterValueType):
         """Create new iSwap gate."""
+        # super().__init__(
+        #     "riswap", 2, [alpha], label=r"$\sqrt[" + str(int(1 / alpha)) + r"]{iSwap}$"
+        # )
         super().__init__(
-            "riswap", 2, [alpha], label=r"$\sqrt[" + str(int(1 / alpha)) + r"]{iSwap}$"
+            "riswap", 2, [alpha], label="riswap"
         )
+    
+    def _define(self):
+        from qiskit import QuantumCircuit
+        qc = QuantumCircuit(2)
+        qc.iswap(0,1)
+        self.definition = qc
+    
+    def cost(self):
+        if float(self.params[0]) <= (1/20): #something to prevent infinitely small/negative values
+            return 0 
+        base = .999
+        return np.max(1 - (1-base)*float(self.params[0]),0)
 
     def __array__(self, dtype=None):
         """Return a numpy.array for the RiSWAP gate."""
-        alpha = float(self.params[0])
+        alpha = float(self.params[0]) / 2
+        cos = np.cos(np.pi * alpha)
+        isin = 1j * np.sin(np.pi* alpha)
         return np.array(
             [
                 [1, 0, 0, 0],
-                [0, np.cos(np.pi * alpha / 2), 1j * np.sin(np.pi * alpha / 2), 0],
-                [0, 1j * np.sin(np.pi * alpha / 2), np.cos(np.pi * alpha / 2), 0],
+                [0, cos, isin, 0],
+                [0, isin, cos, 0],
                 [0, 0, 0, 1],
             ],
             dtype=dtype,
