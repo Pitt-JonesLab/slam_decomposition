@@ -69,7 +69,7 @@ class CirculatorSNAILGate(Gate):
         super().__init__("3QGate", 3, [p1, p2, p3, g1, g2, g3, t_el], "3QGate")
  
     def __array__(self, dtype=None):
-        self._array = CirculatorHamiltonian.construct_U(*self.params[0:-1],t=self.params[-1])
+        self._array = CirculatorHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
         return self._array.full()
 
     def cost(self):
