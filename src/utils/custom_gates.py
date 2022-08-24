@@ -42,6 +42,10 @@ class VSwap(Gate):
         v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
         self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
 
+        #alternative normalization
+        v_nn = 4/np.sqrt(2) #1.5iswap
+        self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0] #V-swap
+
         #self._array = CirculatorHamiltonian.construct_U(*v_params,t=t_el)
 
     def __array__(self, dtype=None):
@@ -50,6 +54,32 @@ class VSwap(Gate):
         self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
         return self._array.full()
 
+class DeltaSwap(Gate):
+    def __init__(self, t_el: ParameterValueType = 1):
+        super().__init__("Δswap", 3, [t_el], "ΔSWAP")
+        nn = 3 * np.sqrt(3) / 2
+        self.v_params = [np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]   #smiley
+
+    def __array__(self, dtype=None):
+        self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
+        return self._array.full()
+
+class CirculatorSNAILGate(Gate):
+    def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1):
+        super().__init__("3QGate", 3, [p1, p2, p3, g1, g2, g3, t_el], "3QGate")
+ 
+    def __array__(self, dtype=None):
+        self._array = CirculatorHamiltonian.construct_U(*self.params[0:-1],t=self.params[-1])
+        return self._array.full()
+
+    def cost(self):
+        # #something to prevent infinitely small/negative values
+        # if all([float(el) <= (1/20) for el in self.params[3:-1]]):
+        #     return 0 
+        base = .999
+        norm = np.pi/2
+        c = (sum(self.params[3:-1]) * self.params[-1])/norm
+        return np.max(1 - (1-base)*float(c) , 0)
 
 class CParitySwap(Gate):
     def __init__(self, _: ParameterValueType = None):

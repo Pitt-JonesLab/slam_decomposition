@@ -97,6 +97,9 @@ class CircuitTemplateV2(VariationalTemplate):
             clow, chigh = self.constraints.get(parameter.name, (dlow,dhigh))
             random_list.append(np.random.uniform(clow, chigh, 1))
             self.bounds.append((clow, chigh))
+        
+        if not self.using_constraints:
+            self.bounds = None
         return random_list
         # return np.random.random(len(self.circuit.parameters))* 2 * np.pi
 
@@ -186,7 +189,11 @@ class CircuitTemplateV2(VariationalTemplate):
 
         gate = next(self.gate_2q_base)
         edge = next(next(self.gate_2q_edges)) #call cycle twice to increment gate then edge
-        self.circuit.append(gate(next(self.gen_2q_params)), edge)
+        #inspect to find how many parameters our gate requires
+        num2qparams = len(signature(gate).parameters)
+        gate_instance = gate(*[next(self.gen_2q_params) for _ in range(num2qparams)])
+        self.circuit.append(gate_instance, edge)
+        
         if not (final and self.no_exterior_1q):
             for qubit in edge:
                 #self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)

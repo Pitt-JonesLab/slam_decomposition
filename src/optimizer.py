@@ -206,7 +206,7 @@ class TemplateOptimizer:
            
                 result = opt.minimize(
                     fun=objective_func,
-                    method='BFGS' if self.basis.using_constraints else 'L-BFGS-B',
+                    method='BFGS' if not self.basis.using_constraints else 'L-BFGS-B',
                     x0=self.basis.parameter_guess(t=r_i),
                     callback=callbackF if self.use_callback else None,
                     options={"maxiter": 400},

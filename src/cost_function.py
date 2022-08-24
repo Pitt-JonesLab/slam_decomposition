@@ -12,38 +12,58 @@ Experiment to find some metrics perform better/faster than others
 """
 class EntanglementCostFunction(ABC):
     #concurrence, mutual info, negativity, entanglement of formation, entropy of entanglement
-    def __init__(self):
-        pass
+    def __init__(self, state='w'):
+        self.state = state
     def entanglement_monotone(self, qc):
-        raise NotImplementedError
+        self.state_prep = QuantumCircuit(3)
+        if self.state == "w":
+            self.state_prep.ry(2*np.arccos(1/np.sqrt(3)),0)
+            self.state_prep.ch(0,1)
+            self.state_prep.cx(1,2)
+            self.state_prep.cx(0,1)
+            self.state_prep.x(0)
+        elif self.state == "ghz":
+            self.state_prep.h(0)
+            self.state_prep.cx(0, 1)
+            self.state_prep.cx(0, 2)
+        else:
+            raise NotImplementedError
+            
+        self.state_prep.barrier()
+        self.full = self.state_prep.compose(qc)
+        self.statevector = Statevector(self.full)
 
 class MutualInformation(EntanglementCostFunction):
-    #I could code this to be more flexible
+    # I could code this to be more flexible
     # for now I am going to hardcode 3Q states in with partial tracing
     def entanglement_monotone(self, qc):
         #append on the entangled state circuit
         #the goal of minimizing the cost means undoing the entangled state
-
-        #GHZ
-        # qc.h(0)
-        # qc.cx(0, 1)
-        # qc.cx(0, 2)
-
-        #W-state
-        state_prep = QuantumCircuit(3)
-        state_prep.ry(2*np.arccos(1/np.sqrt(3)),0)
-        state_prep.ch(0,1)
-        state_prep.cx(1,2)
-        state_prep.cx(0,1)
-        state_prep.x(0)
-
-        full = state_prep.compose(qc)
-
-        state = Statevector(full)
-        state1 = partial_trace(state, [0])
-        state2 = partial_trace(state, [1])
-        state3 = partial_trace(state, [2])
+        super().entanglement_monotone(qc)
+        state1 = partial_trace(self.statevector, [0])
+        state2 = partial_trace(self.statevector, [1])
+        state3 = partial_trace(self.statevector, [2])
         return sum([mutual_information(state1), mutual_information(state2), mutual_information(state3)])
+
+class MutualInformationSquare(EntanglementCostFunction):
+    def entanglement_monotone(self, qc):
+        super().entanglement_monotone(qc)
+        state1 = partial_trace(self.statevector, [0])
+        state2 = partial_trace(self.statevector, [1])
+        state3 = partial_trace(self.statevector, [2])
+        return sum([mutual_information(state1)**2, mutual_information(state2)**2, mutual_information(state3)**2])
+
+class Negativity(EntanglementCostFunction):
+    def entanglement_monotone(self, qc):
+        return super().entanglement_monotone(qc)
+
+class Formation(EntanglementCostFunction):
+    def entanglement_monotone(self, qc):
+        return super().entanglement_monotone(qc)
+
+class EntropyofEntanglement(EntanglementCostFunction):
+    def entanglement_monotone(self, qc):
+        return super().entanglement_monotone(qc)
 
 class UnitaryCostFunction(ABC):
     def __init__(self):
