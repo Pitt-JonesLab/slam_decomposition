@@ -210,7 +210,8 @@ class TemplateOptimizer:
                     x0=self.basis.parameter_guess(t=r_i),
                     callback=callbackF if self.use_callback else None,
                     options={"maxiter": 400},
-                    bounds=self.basis.bounds
+                    bounds=self.basis.bounds_list, #grab bounds list
+                    constraints=self.basis.constraint_func #grab constraint function
                 )
 
                 # result is good, update temp vars

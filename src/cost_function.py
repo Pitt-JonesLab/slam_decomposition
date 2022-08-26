@@ -13,16 +13,14 @@ Experiment to find some metrics perform better/faster than others
 class EntanglementCostFunction(ABC):
     #concurrence, mutual info, negativity, entanglement of formation, entropy of entanglement
     def __init__(self, state='w'):
-        self.state = state
-    def entanglement_monotone(self, qc):
         self.state_prep = QuantumCircuit(3)
-        if self.state == "w":
+        if state == "w":
             self.state_prep.ry(2*np.arccos(1/np.sqrt(3)),0)
             self.state_prep.ch(0,1)
             self.state_prep.cx(1,2)
             self.state_prep.cx(0,1)
             self.state_prep.x(0)
-        elif self.state == "ghz":
+        elif state == "ghz":
             self.state_prep.h(0)
             self.state_prep.cx(0, 1)
             self.state_prep.cx(0, 2)
@@ -30,6 +28,7 @@ class EntanglementCostFunction(ABC):
             raise NotImplementedError
             
         self.state_prep.barrier()
+    def entanglement_monotone(self, qc):
         self.full = self.state_prep.compose(qc)
         self.statevector = Statevector(self.full)
 

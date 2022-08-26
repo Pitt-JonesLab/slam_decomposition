@@ -3,7 +3,7 @@ import numpy as np
 import weylchamber
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
-
+from qiskit.extensions import UnitaryGate
 from src.hamiltonian import CirculatorHamiltonian
 
 """
@@ -39,10 +39,10 @@ class CustomCostGate(Gate):
 class VSwap(Gate):
     def __init__(self, t_el: ParameterValueType = 1):
         super().__init__("vswap", 3, [t_el], "VSWAP")
-        v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
-        self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
+        # v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
+        # self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
 
-        #alternative normalization
+        #use a more standardized normalization
         v_nn = 4/np.sqrt(2) #1.5iswap
         self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0] #V-swap
 
@@ -54,6 +54,9 @@ class VSwap(Gate):
         self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
         return self._array.full()
 
+    def inverse(self):
+        return UnitaryGate(np.matrix.getH(self.__array__()))
+
 class DeltaSwap(Gate):
     def __init__(self, t_el: ParameterValueType = 1):
         super().__init__("Δswap", 3, [t_el], "ΔSWAP")
@@ -63,6 +66,9 @@ class DeltaSwap(Gate):
     def __array__(self, dtype=None):
         self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
         return self._array.full()
+
+    def inverse(self):
+        return UnitaryGate(np.matrix.getH(self.__array__()))
 
 class CirculatorSNAILGate(Gate):
     def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1):
@@ -79,7 +85,11 @@ class CirculatorSNAILGate(Gate):
         base = .999
         norm = np.pi/2
         c = (sum(self.params[3:-1]) * self.params[-1])/norm
+        return c
         return np.max(1 - (1-base)*float(c) , 0)
+
+    def inverse(self):
+        return UnitaryGate(np.matrix.getH(self.__array__()))
 
 class CParitySwap(Gate):
     def __init__(self, _: ParameterValueType = None):

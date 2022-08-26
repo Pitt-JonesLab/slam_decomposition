@@ -46,9 +46,10 @@ class CircuitTemplateV2(VariationalTemplate):
         self.gen_1q_params = self._param_iter()
 
         #XXX
-        self.constraints = {}
-        self.bounds = []
-        self.using_constraints = False
+        self.bounds = {} #dict key is each parameter
+        self.bounds_list = [] #list puts in order for scipy.optimze()
+        self.constraint_func = None #cost function constraint for optimize()
+        self.using_constraints = False #bound or constraint
 
         #define a range to see how many times we should extend the circuit while in optimization search
         self.spanning_range = None
@@ -63,18 +64,28 @@ class CircuitTemplateV2(VariationalTemplate):
         #deprecated feature
         self.trotter=False
     
-    def circuit_fidelity(self, Xk):
-        fidelity = 1.0
+    def circuit_cost(self, Xk):
+        #NOTE: this doesn't necessarily correlate to a fidelity measure
+        #for now, consider to just be an abstract score used in constraint building
+
+        # fidelity = 1.0
+        cost = 0
         qc = self.assign_Xk(Xk)
         #assuming there is only 1 critical path, need to iterate through gates 
         #want to take the product of fidelities
         #for now just hardcode this until we settle on a better way
         for gate in qc:
+            c=0.0
             if gate[0].name == "riswap":
                 a = gate[0].params[0]
                 c = RiSwapGate(a).cost() #fidelity
-                fidelity = fidelity * c
-        return fidelity
+            elif gate[0].name == "3QGate":
+                #cast ParameterExpression to list(float)
+                a = [float(el) for el in gate[0].params]
+                c = CirculatorSNAILGate(*a).cost()
+            # fidelity = fidelity * c
+            cost += c
+        return cost
                
     def eval(self, Xk):
         """returns an Operator after binding parameter array to template"""
@@ -92,19 +103,19 @@ class CircuitTemplateV2(VariationalTemplate):
         dlow = -2*np.pi
         dhigh = 2*np.pi
 
-        self.bounds = [] #sequence of (min,max) for each element in X passed to scipy optimze
+        self.bounds_list = [] #sequence of (min,max) for each element in X passed to scipy optimze
         for parameter in self.circuit.parameters:
-            clow, chigh = self.constraints.get(parameter.name, (dlow,dhigh))
-            random_list.append(np.random.uniform(clow, chigh, 1))
-            self.bounds.append((clow, chigh))
+            clow, chigh = self.bounds.get(parameter.name, (dlow,dhigh))
+            random_list.append(np.random.uniform(clow, chigh, 1)[0])
+            self.bounds_list.append((clow, chigh))
         
         if not self.using_constraints:
-            self.bounds = None
+            self.bounds_list = None #remove so optimizer can use BFGS
         return random_list
         # return np.random.random(len(self.circuit.parameters))* 2 * np.pi
 
-    def add_constraint(self, parameter_name, max=None, min=None):
-        self.constraints[parameter_name] = (min, max)
+    def add_bound(self, parameter_name, max=None, min=None):
+        self.bounds[parameter_name] = (min, max)
         #con_funs is passed to scipy optimizer
         #quick iteration because I don't have a better way
         p_index = -1
@@ -120,6 +131,12 @@ class CircuitTemplateV2(VariationalTemplate):
         #flag for safety, can't rebuilt or messes with ordering
         self.using_constraints = True
         return
+
+    def set_constraint(self, param_max_cost):
+        #set a constraint that the current basis can't have a cost more than param
+        #of the form C_j(x) >= 0
+        self.constraint_func = ({'type:ineq':lambda x: param_max_cost - self.circuit_cost(x)})
+        self.using_constraints = True
 
     def assign_Xk(self, Xk):
         return self.circuit.assign_parameters(
