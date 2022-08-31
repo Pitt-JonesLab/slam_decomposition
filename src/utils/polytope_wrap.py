@@ -139,6 +139,8 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
     if chatty: 
         logging.info("==== Done. Here's what we found: ====")
         logging.info(print_coverage_set(coverage_set))
+    return circuit_polytope
+    return operations
     return coverage_set, basis_gate_hash_dict
 
 def coverage_to_haar_expectation(coverage_set, chatty=True):
@@ -148,3 +150,29 @@ def coverage_to_haar_expectation(coverage_set, chatty=True):
     stdout.flush() #fix out of order logging
     logging.info(f"Haar-expectation cost: {cost}")
     return cost
+
+#In-house rendering, also see utils.visualize.py
+"""
+import matplotlib.pyplot as plt
+plt.close()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+
+from weylchamber import WeylChamber
+w = WeylChamber();
+
+total_coord_list = []
+for subpoly in reduced_vertices:
+    subpoly_coords = [[float(x) for x in coord] for coord in subpoly]
+    total_coord_list += subpoly_coords
+    w.scatter(*zip(*subpoly_coords))
+
+from scipy.spatial import ConvexHull
+pts = np.array(total_coord_list)
+hull = ConvexHull(pts)
+for s in hull.simplices:
+    s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+    ax.plot(pts[s, 0], pts[s, 1], pts[s, 2], "r-")
+
+w.render(ax)
+"""

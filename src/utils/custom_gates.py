@@ -84,7 +84,8 @@ class CirculatorSNAILGate(Gate):
         #     return 0 
         base = .999
         norm = np.pi/2
-        c = (sum(self.params[3:-1]) * self.params[-1])/norm
+        #abs because g can be negative, just consider its absolute strength
+        c = (sum(abs(np.array(self.params[3:-1]))) * self.params[-1])/norm
         return c
         return np.max(1 - (1-base)*float(c) , 0)
 
