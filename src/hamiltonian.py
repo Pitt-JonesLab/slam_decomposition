@@ -215,3 +215,29 @@ class CirculatorHamiltonian(Hamiltonian):
     #     )
     #     return build_time_dependent_U
 
+class FluxQubit(Hamiltonian):
+    """https://arxiv.org/pdf/2107.02343.pdf"""
+    def __init__(self):
+        
+        a = qutip.operators.destroy(N=2)
+        I2 = qutip.operators.identity(2)
+        A = qutip.tensor(a, I2, I2) #qubit1
+        B = qutip.tensor(I2, a, I2) #qubit2
+        C = qutip.tensor(I2, I2, a) #coupler
+        alpha = 0 #coupler anharmonicity
+
+        H_a = lambda wa: wa * A.dag() * A 
+        #self.H = lambda t: H_a + H_b + H_c(t) + H_g
+
+    def __repr__(self):
+        return filename_encode(type(self).__name__)
+
+    def _construct_H(self, *args):
+        return self.H(*args)
+
+    def _construct_U_lambda(self, *args):
+        return lambda t: (-1j * t * self._construct_H(*args)).expm()
+
+    @staticmethod
+    def construct_U(*args):
+        raise NotImplementedError

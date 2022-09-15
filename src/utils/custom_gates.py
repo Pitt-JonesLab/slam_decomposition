@@ -82,11 +82,15 @@ class CirculatorSNAILGate(Gate):
         # #something to prevent infinitely small/negative values
         # if all([float(el) <= (1/20) for el in self.params[3:-1]]):
         #     return 0 
-        base = .999
+        
         norm = np.pi/2
         #abs because g can be negative, just consider its absolute strength
         c = (sum(abs(np.array(self.params[3:-1]))) * self.params[-1])/norm
         return c
+    
+    def fidelity(self):
+        c = self.cost()
+        base = .999
         return np.max(1 - (1-base)*float(c) , 0)
 
     def inverse(self):
@@ -299,7 +303,7 @@ class SYC(FSim):
         return "SYC"
 
 
-class RiSwapGate(Gate):
+class   RiSwapGate(Gate):
     #turns out you can also do qiskit.iSwapGate().power(1/n)
     #but I didnt know about the power fucntion until recently :(
 
@@ -331,6 +335,12 @@ class RiSwapGate(Gate):
         self.definition = qc
     
     def cost(self):
+        # norm = np.pi/2
+        #I don't need to use nrom bc already considered in parameter definition
+        #e.g. sqisw has params[0] := 1/2
+        return float(self.params[0])
+
+    def fidelity(self):
         if float(self.params[0]) <= (1/20): #something to prevent infinitely small/negative values
             return 0 
         base = .999

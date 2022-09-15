@@ -139,8 +139,8 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
     if chatty: 
         logging.info("==== Done. Here's what we found: ====")
         logging.info(print_coverage_set(coverage_set))
-    return circuit_polytope
-    return operations
+    # return circuit_polytope
+    # return operations
     return coverage_set, basis_gate_hash_dict
 
 def coverage_to_haar_expectation(coverage_set, chatty=True):

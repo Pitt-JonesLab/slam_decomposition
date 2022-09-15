@@ -8,7 +8,7 @@ from weylchamber import c1c2c3
 from src.basisv2 import CircuitTemplateV2
 
 from .basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplate, VariationalTemplate
-from .cost_function import UnitaryCostFunction, EntanglementCostFunction
+from .cost_function import UnitaryCostFunction, EntanglementCostFunction, BasicCostInverse
 from .sampler import SampleFunction
 
 SUCCESS_THRESHOLD = 1e-10
@@ -157,8 +157,9 @@ class TemplateOptimizer:
             if isinstance(self.objective, UnitaryCostFunction):
                 current_u = self.basis.eval(xk)
                 objf_val = self.objective.unitary_fidelity(current_u, target_u)/self.objective.normalization
+                
                 #optionally, multiply decomposition fidelity objf_val by circuit fidelity
-                if isinstance(self.basis, CircuitTemplateV2):
+                if isinstance(self.objective, BasicCostInverse):
                     objf_val = 1 - (objf_val * self.basis.circuit_fidelity(xk))
             
             elif isinstance(self.objective, EntanglementCostFunction):
