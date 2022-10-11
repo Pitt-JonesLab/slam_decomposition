@@ -74,7 +74,7 @@ class ConversionGainPhaseHamiltonian(Hamiltonian):
  
         # construct Hamiltonian
         # fmt: off
-        def foo_H(gc, gg, phi_c, phi_g):
+        def foo_H(phi_c, phi_g, gc, gg):
             # H_ab = np.exp(1j * phi_ab) * A * B.dag() + np.exp(-1j * phi_ab) * A.dag() * B
             # H_ac = np.exp(1j * phi_ac) * A * C.dag() + np.exp(-1j * phi_ac) * A.dag() * C
             # H_bc = np.exp(1j * phi_bc) * B * C.dag() + np.exp(-1j * phi_bc) * B.dag() * C
@@ -87,8 +87,8 @@ class ConversionGainPhaseHamiltonian(Hamiltonian):
 
     #static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(gc, gg, phi_c, phi_g): #, t=1):
-        t=1
+    def construct_U(gc, gg, phi_c, phi_g, t=1):
+        t=float(t)
         h_instance = ConversionGainPhaseHamiltonian()
         return h_instance._construct_U_lambda(gc, gg, phi_c, phi_g)(t)
     

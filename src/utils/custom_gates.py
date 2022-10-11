@@ -4,7 +4,7 @@ import weylchamber
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
 from qiskit.extensions import UnitaryGate
-from src.hamiltonian import CirculatorHamiltonian
+from src.hamiltonian import CirculatorHamiltonian, ConversionGainPhaseHamiltonian
 
 """
 Library of useful gates that aren't defined natively in qiskit
@@ -17,18 +17,22 @@ qc.append(RiSwapGate(1/4), [0,1])
 qc.draw(output='mpl')
 """
 
+
 class CustomCostGate(Gate):
     #want to build a gate progamatically from a unitary
     #cost value used in expected haar calcuation
     def __init__(self, unitary, str, cost=1):
         self.unitary = unitary
         self.str= str
-        self.cost = cost #i.e. duration
+        self.c = cost #i.e. duration
         super().__init__(str, num_qubits=2, params=[], label=str)
     
     @classmethod
     def from_gate(cls, gate:Gate, cost:float):
         return cls(gate.to_matrix(), str(gate), cost=cost)
+
+    def cost(self):
+        return self.c
 
     def __str__(self):
         return self.str
@@ -36,43 +40,43 @@ class CustomCostGate(Gate):
     def __array__(self, dtype=None):
         return np.array(self.unitary,dtype)
 
-class VSwap(Gate):
-    def __init__(self, t_el: ParameterValueType = 1):
-        super().__init__("vswap", 3, [t_el], "VSWAP")
-        # v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
-        # self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
+# class VSwap(Gate):
+#     def __init__(self, t_el: ParameterValueType = 1):
+#         super().__init__("vswap", 3, [t_el], "VSWAP")
+#         # v_nn = np.sqrt(2) * np.pi / np.arccos(1 / np.sqrt(3))
+#         # self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0]
 
-        #use a more standardized normalization
-        v_nn = 4/np.sqrt(2) #1.5iswap
-        self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0] #V-swap
+#         #use a more standardized normalization
+#         v_nn = 4/np.sqrt(2) #1.5iswap
+#         self.v_params = [np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0] #V-swap
 
-        #self._array = CirculatorHamiltonian.construct_U(*v_params,t=t_el)
+#         #self._array = CirculatorHamiltonian.construct_U(*v_params,t=t_el)
 
-    def __array__(self, dtype=None):
-        # v_nn = np.sqrt(2)*np.pi/np.arccos(1/np.sqrt(3))
-        # params = [np.pi/2,np.pi/2,0, np.pi/v_nn, np.pi/v_nn, 0]
-        self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
-        return self._array.full()
+#     def __array__(self, dtype=None):
+#         # v_nn = np.sqrt(2)*np.pi/np.arccos(1/np.sqrt(3))
+#         # params = [np.pi/2,np.pi/2,0, np.pi/v_nn, np.pi/v_nn, 0]
+#         self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
+#         return self._array.full()
 
-    def inverse(self):
-        return UnitaryGate(np.matrix.getH(self.__array__()))
+#     def inverse(self):
+#         return UnitaryGate(np.matrix.getH(self.__array__()))
 
-class DeltaSwap(Gate):
-    def __init__(self, t_el: ParameterValueType = 1):
-        super().__init__("Δswap", 3, [t_el], "ΔSWAP")
-        nn = 3 * np.sqrt(3) / 2
-        self.v_params = [np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]   #smiley
+# class DeltaSwap(Gate):
+#     def __init__(self, t_el: ParameterValueType = 1):
+#         super().__init__("Δswap", 3, [t_el], "ΔSWAP")
+#         nn = 3 * np.sqrt(3) / 2
+#         self.v_params = [np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn]   #smiley
 
-    def __array__(self, dtype=None):
-        self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
-        return self._array.full()
+#     def __array__(self, dtype=None):
+#         self._array = CirculatorHamiltonian.construct_U(*self.v_params,t=self.params[0])
+#         return self._array.full()
 
-    def inverse(self):
-        return UnitaryGate(np.matrix.getH(self.__array__()))
+#     def inverse(self):
+#         return UnitaryGate(np.matrix.getH(self.__array__()))
 
 class CirculatorSNAILGate(Gate):
-    def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1):
-        super().__init__("3QGate", 3, [p1, p2, p3, g1, g2, g3, t_el], "3QGate")
+    def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1, name:str="3QGate"):
+        super().__init__(name, 3, [p1, p2, p3, g1, g2, g3, t_el], name)
  
     def __array__(self, dtype=None):
         self._array = CirculatorHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
@@ -95,6 +99,30 @@ class CirculatorSNAILGate(Gate):
 
     def inverse(self):
         return UnitaryGate(np.matrix.getH(self.__array__()))
+
+class VSwap(CirculatorSNAILGate):
+    def __init__(self,t_el: ParameterValueType = 1,) -> None:
+        v_nn = 4/np.sqrt(2) #1.5iswap
+        super().__init__(*[np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0], t_el=t_el, name="VSWAP")
+
+class DeltaSwap(CirculatorSNAILGate):
+    def __init__(self) -> None:
+        nn = 3 * np.sqrt(3) / 2
+        super().__init__(*[np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn], t_el=1, name="ΔSWAP")
+
+class ConversionGainGate(Gate):
+    def __init__(self, p1:ParameterValueType, p2:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, t_el: ParameterValueType = 1):
+        super().__init__("2QGate", 2, [p1, p2, g1, g2, t_el], "2QGate")
+    
+    def __array__(self, dtype=None):
+        self._array = ConversionGainPhaseHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
+        return self._array.full()
+    
+    def cost(self):
+        norm = np.pi/2
+        #sum the g terms
+        c = (sum(abs(np.array(self.params[2:-1]))) * self.params[-1])/norm
+        return c
 
 class CParitySwap(Gate):
     def __init__(self, _: ParameterValueType = None):

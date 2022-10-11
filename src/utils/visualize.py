@@ -1,3 +1,4 @@
+from re import U
 import matplotlib.pyplot as plt
 import numpy as np
 from weylchamber import WeylChamber, c1c2c3
@@ -114,12 +115,36 @@ def weyl_training_plot(axs, coordinate_list, **kwargs):
     w.scatter(*zip(*coordinate_list), c=col, **kwargs)
     w.render(axs)
 
-def unitary_to_weyl(unitary):
+def unitary_2dlist_weyl(*unitary_list, **kwargs):
     plt.close()
     fig = plt.figure()
     w = WeylChamber();
     axs= fig.add_subplot(111, projection="3d")
-    w.add_point(*c1c2c3(np.array(unitary)))
+    for i, inner_list in enumerate(unitary_list):
+        col = ['c', 'm', 'y', 'k', 'w'][i%5]
+        coordinate_list = [c1c2c3(np.array(u)) for u in inner_list]
+        w.scatter(*zip(*coordinate_list), c=col, **kwargs)
+    w.render(axs)
+    return fig
+
+def coordinate_2dlist_weyl(*coordinate_list, **kwargs):
+    plt.close()
+    fig = plt.figure()
+    w = WeylChamber();
+    axs= fig.add_subplot(111, projection="3d")
+    for i, inner_list in enumerate(coordinate_list):
+        col = ['r', 'g', 'b', 'y'][i%4]
+        w.scatter(*zip(*inner_list), c=col, **kwargs)
+    w.render(axs)
+    return fig
+
+def unitary_to_weyl(*unitary):
+    plt.close()
+    fig = plt.figure()
+    w = WeylChamber();
+    axs= fig.add_subplot(111, projection="3d")
+    for u in unitary:
+        w.add_point(*c1c2c3(np.array(u)))
     w.render(axs)
     return fig
 

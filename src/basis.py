@@ -131,6 +131,12 @@ class CircuitTemplate(VariationalTemplate):
         self.gate_2q_edges = cycle([cycle(edge_params_el) for edge_params_el in edge_params])
         self.gen_1q_params = self._param_iter()
 
+        #compliant with basisv2 optimizer changes
+        self.using_bounds = False
+        self.bounds_list = None
+        self.using_constraints = False
+        self.constraint_func = None
+
         #define a range to see how many times we should extend the circuit while in optimization search
         self.spanning_range = None
         if not use_polytopes:
@@ -262,10 +268,10 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #this means monodromy_range_from_target needs to return a circuit polytope
     #we update template to match circuit polytope shape
     #then tell optimizer range to be range(1) so it knows not to call build again
-    def __init__(self, base_gates=[CustomCostGate], no_exterior_1q=False, preseed=False, chatty_build=True):
+    def __init__(self, base_gates=[CustomCostGate], no_exterior_1q=False, preseed=False, chatty_build=True, cost_1q=0, bare_cost=False):
         super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[(0,1)], no_exterior_1q=no_exterior_1q, use_polytopes=True, preseed=preseed)
         #precomputed polytopes
-        self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build)
+        self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
 
     def set_polytope(self, circuit_polytope):
         self.circuit_polytope = circuit_polytope

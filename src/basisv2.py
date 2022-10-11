@@ -80,7 +80,7 @@ class CircuitTemplateV2(VariationalTemplate):
             if gate[0].name == "riswap":
                 a = gate[0].params[0]
                 c = RiSwapGate(a).cost() #fidelity
-            elif gate[0].name == "3QGate":
+            elif gate[0].name in ["3QGate", "VSWAP", "ΔSWAP"]:
                 #cast ParameterExpression to list(float)
                 a = [float(el) for el in gate[0].params]
                 c = CirculatorSNAILGate(*a).cost()

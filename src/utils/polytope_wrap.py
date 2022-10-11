@@ -57,12 +57,12 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
         # we want to find the first polytoped (when sorted by cost) that contains target
         # this sorting might be redundant but we will do it just in case
         sorted_polytopes = sorted(basis.coverage, key=lambda k: k.cost)
-        for circuit_polytope in sorted_polytopes:
+        for i, circuit_polytope in enumerate(sorted_polytopes):
             if circuit_polytope.has_element(target_coords):
                 #set polytope
                 basis.set_polytope(circuit_polytope)
                 #return a default range
-                return range(1)
+                return range(i,i+1)
         raise ValueError("Monodromy did not find a polytope containing U")
     
 def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
@@ -92,7 +92,7 @@ def gate_set_to_haar_expectation(*basis_gates:list[CustomCostGate], chatty=True)
     coverage_set, basis_gate_hash_dict = gate_set_to_coverage(*basis_gates, chatty=chatty)
     return coverage_to_haar_expectation(coverage_set, chatty=chatty)
 
-def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
+def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True, cost_1q=0, bare_cost=False):
     #first converts all individal gates to circuitpolytope objeect
     operations = []
     basis_gate_hash_dict = {}
@@ -119,18 +119,26 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
             b_polytope=b_polytope,
             c_polytope=everything_polytope
         )
-        #FIXME, cost is 1 or has a gate.cost? can't detect with isinstance bc circle import!
+
+        # use bare_cost to get cost in terms of number of gates - will be scaled by costs later
+        # idea is we don't need to recompute everytime we change costs for speed limits or 2Q gates
+        # this idea can't be used if using mixed basis gate sets because we need to know relative costs
+        if bare_cost and len(basis_gates) != 1:
+            raise ValueError("bare_cost only works for single 2Q gate sets")
+        op_cost = gate.cost() + cost_1q
+        if bare_cost:
+            op_cost = 1
+
         operations.append(
             CircuitPolytope(
                 operations= [str(gate)],
-                #cost=1,
-                #cost=1 - (1- base_iswap_fidelity)*basis_gate.params[0],
-                cost= gate.cost if isinstance(gate, CustomCostGate) else 1, #XXX danger
+                cost = op_cost,
                 convex_subpolytopes=circuit_polytope.convex_subpolytopes)
             )
 
     #second build coverage set which finds the necessary permutations to do a complete span
-    logging.info("==== Working to build a set of covering polytopes ====")
+    if chatty:
+        logging.info("==== Working to build a set of covering polytopes ====")
     coverage_set = build_coverage_set(operations, chatty=chatty)
 
     #TODO: add some warning or fail condition if the coverage set fails to coverage
@@ -145,10 +153,12 @@ def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True):
 
 def coverage_to_haar_expectation(coverage_set, chatty=True):
     #finally, return the expected haar coverage
-    logging.info("==== Haar volumes ====")
+    if chatty:
+        logging.info("==== Haar volumes ====")
     cost = expected_cost(coverage_set, chatty=chatty)
     stdout.flush() #fix out of order logging
-    logging.info(f"Haar-expectation cost: {cost}")
+    if chatty:
+        logging.info(f"Haar-expectation cost: {cost}")
     return cost
 
 #In-house rendering, also see utils.visualize.py

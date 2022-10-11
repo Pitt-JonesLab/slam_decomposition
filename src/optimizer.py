@@ -11,6 +11,8 @@ from .basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplat
 from .cost_function import UnitaryCostFunction, EntanglementCostFunction, BasicCostInverse
 from .sampler import SampleFunction
 
+from tqdm import tqdm
+
 SUCCESS_THRESHOLD = 1e-10
 TRAINING_RESTARTS = 5
 """
@@ -203,7 +205,7 @@ class TemplateOptimizer:
             #TODO if spanning range == 1, don't pass to optimizer
             #implement a mathematica cloud call?
             
-            for r_i in range(self.training_restarts):
+            for r_i in tqdm(range(self.training_restarts)):
                 #Constraints definition (only for COBYLA and SLSQP)
                 method_str = "BFGS"
                 if self.basis.using_bounds:
