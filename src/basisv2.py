@@ -33,12 +33,18 @@ I'll leave this as a TODO for now because it still breaks for 3Q+ and that's wha
 """
 from src.basis import VariationalTemplate
 class CircuitTemplateV2(VariationalTemplate):
-    def __init__(self, n_qubits=2, base_gates=[RiSwapGate], edge_params=[[(0, 1)]], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False):
+    def __init__(self, n_qubits=2, base_gates=[RiSwapGate], edge_params=[[(0, 1)]], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False, vz_only=False, param_vec_expand=None):
         """Initalizes a qiskit.quantumCircuit object with unbound 1Q gate parameters"""
         hash = str(n_qubits)+ str(base_gates)+ str(edge_params)+ str(no_exterior_1q)
         self.filename = filename_encode(hash)
         self.n_qubits = n_qubits
         self.no_exterior_1q = no_exterior_1q
+
+        #for smushing gate exps
+        self.param_vec_expand = param_vec_expand
+        if self.param_vec_expand is not None:
+            assert len(base_gates) == 1 #too complicated otherwise :)
+        self.vz_only = vz_only
 
         self.gate_2q_base = cycle(base_gates)
         #each gate gets its on cycler
@@ -82,9 +88,19 @@ class CircuitTemplateV2(VariationalTemplate):
                 c = RiSwapGate(a).cost() #fidelity
             elif gate[0].name in ["3QGate", "VSWAP", "ΔSWAP"]:
                 #cast ParameterExpression to list(float)
+                #XXX I believe the gate.params doesn't preserve the order so splatting is not correct
+                raise ValueError("BROKEN!")
                 a = [float(el) for el in gate[0].params]
                 c = CirculatorSNAILGate(*a).cost()
-            # fidelity = fidelity * c
+            # elif gate[0].name in ["2QSmushGate"]:
+            # # fidelity = fidelity * c:
+            #     a = [float(el) for el in gate[0].params]
+            #     c = ConversionGainSmushGate(*a).cost()
+            elif gate[0].name in ["2QGate", "2QSmushGate"]:
+                #raise ValueError("BROKEN!")
+            # fidelity = fidelity * c:
+                a = [float(el) for el in gate[0].params]
+                c = ConversionGainGate(a[0], a[1], a[2], a[3], a[-1]).cost()
             cost += c
         return cost
     
@@ -222,20 +238,30 @@ class CircuitTemplateV2(VariationalTemplate):
         if initial and not self.no_exterior_1q:
             # before build by extend, add first pair of 1Qs
             for qubit in range(self.n_qubits):
-                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
-                #self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
+                if self.vz_only:
+                    self.circuit.rz(*[next(self.gen_1q_params) for _ in range(1)], qubit)
+                else:
+                    self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+                #
 
         gate = next(self.gate_2q_base)
         edge = next(next(self.gate_2q_edges)) #call cycle twice to increment gate then edge
-        #inspect to find how many parameters our gate requires
+
+        # inspect to find how many parameters our gate requires
+        # now using self.param_vec_expand to handle when parameter is a vector
         num2qparams = len(signature(gate).parameters)
+        if self.param_vec_expand is not None:
+            num2qparams = sum(self.param_vec_expand)
+            
         gate_instance = gate(*[next(self.gen_2q_params) for _ in range(num2qparams)])
         self.circuit.append(gate_instance, edge)
         
         if not (final and self.no_exterior_1q):
             for qubit in edge:
-                #self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
-                self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
+                if self.vz_only:
+                    self.circuit.rz(*[next(self.gen_1q_params) for _ in range(1)], qubit)
+                else:
+                    self.circuit.u(*[next(self.gen_1q_params) for _ in range(3)], qubit)
         self.cycles += 1
 
 

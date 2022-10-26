@@ -66,12 +66,17 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
         raise ValueError("Monodromy did not find a polytope containing U")
     
 def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
-    if basis.n_qubits != 2:
-        raise ValueError("monodromy only for 2Q templates")
-    
+    from qiskit import QuantumCircuit
+    if isinstance(basis, QuantumCircuit):
+        if basis.num_qubits != 2:
+            raise ValueError("monodromy only for 2Q templates")
+        dag = circuit_to_dag(basis)
+    else: #if isinstance(basis, CircuitTemplate): #XXX not imported for preventing circular import
+        if basis.n_qubits != 2:
+            raise ValueError("monodromy only for 2Q templates")
+        dag = circuit_to_dag(basis.circuit)
+        
     circuit_polytope = identity_polytope
-
-    dag = circuit_to_dag(basis.circuit)
     for gate in dag.two_qubit_ops():
         gd = Operator(gate.op).data
         b_polytope = exactly(

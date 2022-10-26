@@ -3,8 +3,9 @@ import numpy as np
 import weylchamber
 from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
+from typing import List
 from qiskit.extensions import UnitaryGate
-from src.hamiltonian import CirculatorHamiltonian, ConversionGainPhaseHamiltonian
+from src.hamiltonian import CirculatorHamiltonian, ConversionGainPhaseHamiltonian, ConversionGainSmush
 
 """
 Library of useful gates that aren't defined natively in qiskit
@@ -77,7 +78,10 @@ class CustomCostGate(Gate):
 class CirculatorSNAILGate(Gate):
     def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1, name:str="3QGate"):
         super().__init__(name, 3, [p1, p2, p3, g1, g2, g3, t_el], name)
- 
+        # XXX can only assign duration after init with real values
+        if all([isinstance(p, (int, float)) for p in self.params]):
+            self.duration = self.cost()
+
     def __array__(self, dtype=None):
         self._array = CirculatorHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
         return self._array.full()
@@ -113,7 +117,10 @@ class DeltaSwap(CirculatorSNAILGate):
 class ConversionGainGate(Gate):
     def __init__(self, p1:ParameterValueType, p2:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, t_el: ParameterValueType = 1):
         super().__init__("2QGate", 2, [p1, p2, g1, g2, t_el], "2QGate")
-    
+        # XXX can only assign duration after init with real values
+        if all([isinstance(p, (int, float)) for p in self.params]):
+            self.duration = self.cost()
+
     def __array__(self, dtype=None):
         self._array = ConversionGainPhaseHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
         return self._array.full()
@@ -121,7 +128,30 @@ class ConversionGainGate(Gate):
     def cost(self):
         norm = np.pi/2
         #sum the g terms
-        c = (sum(abs(np.array(self.params[2:-1]))) * self.params[-1])/norm
+        c = (sum(abs(np.array(self.params[2:4]))) * self.params[-1])/norm
+        return c
+
+class ConversionGainSmushGate(Gate):
+    def __init__(self, pc:ParameterValueType, pg: ParameterValueType, gc: ParameterValueType, gg: ParameterValueType, gx: List[ParameterValueType], gy: List[ParameterValueType], t_el: ParameterValueType=1):
+        self.xy_len = len(gx)
+        assert len(gx) == len(gy)
+        self.t_el = t_el
+        super().__init__("2QSmushGate", 2, [pc, pg, gc, gg, *gx, *gy, t_el], "2QSmushGate")
+        # XXX can only assign duration after init with real values
+        # XXX vectors will break this type checking
+        # XXX not checking if time is real valued!! 
+        if all([isinstance(p, (int, float)) for p in self.params[0:4]]):
+            self.duration = self.cost()
+
+    def __array__(self, dtype=None):
+        self._array = ConversionGainSmush.construct_U(float(self.params[0]), float(self.params[1]), float(self.params[2]), float(self.params[3]), [float(el) for el in self.params[4:4+self.xy_len]], [float(el) for el in self.params[4+self.xy_len:-1]], t= float(self.params[-1]))
+        return self._array #don't need full() since multiplication happens inside the construct_U function
+    
+    def cost(self):
+        norm = np.pi/2
+        #sum the g terms, ignore the x and y terms
+        #idea is that 1Q gates drive qubits not SNAIL so don't contribute to speed limit
+        c = (sum(abs(np.array(self.params[2:4]))) * self.params[-1])/norm
         return c
 
 class CParitySwap(Gate):
@@ -355,12 +385,18 @@ class   RiSwapGate(Gate):
         super().__init__(
             "riswap", 2, [alpha], label="riswap"
         )
+        # XXX can only assign duration after init with real values
+        if all([isinstance(p, (int, float)) for p in self.params]):
+            self.duration = self.cost()
     
-    def _define(self):
-        from qiskit import QuantumCircuit
-        qc = QuantumCircuit(2)
-        qc.iswap(0,1)
-        self.definition = qc
+    #including this seems to break the decompose method
+    # we don't want to define riswap in terms of other gates, leave it as riswap primitives
+    # def _define(self):
+    #     from qiskit import QuantumCircuit
+    #     qc = QuantumCircuit(2)
+    #     from qiskit.circuit.library.standard_gates import iSwapGate
+    #     qc.append(iSwapGate().power(1/self.params[0]), [0, 1])
+    #     self.definition = qc
     
     def cost(self):
         # norm = np.pi/2

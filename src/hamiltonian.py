@@ -91,63 +91,94 @@ class ConversionGainPhaseHamiltonian(Hamiltonian):
         t=float(t)
         h_instance = ConversionGainPhaseHamiltonian()
         return h_instance._construct_U_lambda(gc, gg, phi_c, phi_g)(t)
-    
-#XXX not working yet, how do I want the gxvector, gyvector params to see by Basis?
-class TimeDependentHamiltonian(Hamiltonian):
-    def __init__(self, timesteps):
-        raise NotImplementedError
-        self.timesteps = timesteps
-        super().__init__()
 
-class Simul1QGatesHamiltonian(TimeDependentHamiltonian):
-    """Smush together 1Q gates to build a new family of 2Q basis gates"""
-
-    def __init__(self, timesteps=10):
-        super().__init__(timesteps)
+class ConversionGainSmush(Hamiltonian):
+    def __init__(self):
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
         A = qutip.tensor(a, I2)
         B = qutip.tensor(I2, a)
-        self.H = (
-            lambda gx, gy, gz: gx * (A + A.dag())
-            + gy * (B + B.dag())
-            + gz * (A * B.dag() + A.dag() * B)
-        )
+        # construct Hamiltonian
+        # fmt: off
+        def foo_H(phi_c, phi_g, gc, gg, gx, gy):
+            H_x = (A + A.dag())
+            H_y = (B + B.dag())
+            H_c = np.exp(1j * phi_c) * A * B.dag() + np.exp(-1j * phi_c) * A.dag() * B
+            H_g = np.exp(1j * phi_g) * A * B + np.exp(-1j * phi_g) * A.dag() * B.dag()
+            return gx* H_x + gy * H_y + gc * H_c + gg * H_g
+        # fmt: on
+        self.H = foo_H
 
     @staticmethod
-    def construct_U(gxvector, gyvector, full_time=np.pi/2):
-        h_instance = Simul1QGatesHamiltonian()
+    def construct_U(phi_c, phi_g, gc, gg, gxvector, gyvector, t=1):
+        h_instance = ConversionGainSmush()
         assert len(gxvector) == len(gyvector)
         N = len(gxvector)
-        timestep = full_time/N
+        timestep = t / N
+        #timestep = 0.1 #1:10 1Q to 2Q gate duration
         totalUi = np.eye(4)
         for it in range(N):
-            Ui = h_instance._construct_U_lambda(gx=gxvector[it], gy=gyvector[it], gz=1)(timestep).full()
+            Ui = h_instance._construct_U_lambda(phi_c, phi_g, gc, gg, gxvector[it], gyvector[it])(timestep).full()
             totalUi = Ui @ totalUi
         return totalUi
 
-class FSimHamiltonian(Hamiltonian):
-    """https://arxiv.org/pdf/1910.11333.pdf"""
-    def __init__(self):
-        #a = qutip.operators.create(N=2)
-        I2 = qutip.operators.identity(2)
-        sp1 = qutip.tensor(qutip.operators.sigmap(), I2)
-        sp2 = qutip.tensor(I2,qutip.operators.sigmap())
-        sm1 = qutip.tensor(qutip.operators.sigmam(), I2)
-        sm2 = qutip.tensor(I2,qutip.operators.sigmam())
-        sz1 = qutip.tensor(qutip.operators.sigmaz(), I2)
-        sz2 = qutip.tensor(I2, qutip.operators.sigmaz())
 
-        H_1 = sp1*sm2 + sm1*sp2
-        H_2 = sz1*sz2
-        self.H = lambda g, eta: g * H_1 + (g**2/np.abs(eta)) * H_2
+# #XXX not working yet, how do I want the gxvector, gyvector params to see by Basis?
+# class TimeDependentHamiltonian(Hamiltonian):
+#     def __init__(self, timesteps):
+#         raise NotImplementedError
+#         self.timesteps = timesteps
+#         super().__init__()
 
-    #static method creates an instance of class, acting like a factory
-    @staticmethod
-    def construct_U(g, eta): #, t=1):
-        t=1
-        h_instance = FSimHamiltonian()
-        return h_instance._construct_U_lambda(g, eta)(t)
+# class Simul1QGatesHamiltonian(TimeDependentHamiltonian):
+#     """Smush together 1Q gates to build a new family of 2Q basis gates"""
+
+#     def __init__(self, timesteps=10):
+#         super().__init__(timesteps)
+#         a = qutip.operators.create(N=2)
+#         I2 = qutip.operators.identity(2)
+#         A = qutip.tensor(a, I2)
+#         B = qutip.tensor(I2, a)
+#         self.H = (
+#             lambda gx, gy, gz: gx * (A + A.dag())
+#             + gy * (B + B.dag())
+#             + gz * (A * B.dag() + A.dag() * B)
+#         )
+
+#     @staticmethod
+#     def construct_U(gxvector, gyvector, full_time=np.pi/2):
+#         h_instance = Simul1QGatesHamiltonian()
+#         assert len(gxvector) == len(gyvector)
+#         N = len(gxvector)
+#         timestep = full_time/N
+#         totalUi = np.eye(4)
+#         for it in range(N):
+#             Ui = h_instance._construct_U_lambda(gx=gxvector[it], gy=gyvector[it], gz=1)(timestep).full()
+#             totalUi = Ui @ totalUi
+#         return totalUi
+
+# class FSimHamiltonian(Hamiltonian):
+#     """https://arxiv.org/pdf/1910.11333.pdf"""
+#     def __init__(self):
+#         #a = qutip.operators.create(N=2)
+#         I2 = qutip.operators.identity(2)
+#         sp1 = qutip.tensor(qutip.operators.sigmap(), I2)
+#         sp2 = qutip.tensor(I2,qutip.operators.sigmap())
+#         sm1 = qutip.tensor(qutip.operators.sigmam(), I2)
+#         sm2 = qutip.tensor(I2,qutip.operators.sigmam())
+#         sz1 = qutip.tensor(qutip.operators.sigmaz(), I2)
+#         sz2 = qutip.tensor(I2, qutip.operators.sigmaz())
+
+#         H_1 = sp1*sm2 + sm1*sp2
+#         H_2 = sz1*sz2
+#         self.H = lambda g, eta: g * H_1 + (g**2/np.abs(eta)) * H_2
+
+#     #static method creates an instance of class, acting like a factory
+#     @staticmethod
+#     def construct_U(g, eta): #, t=1):
+#         t=1
+#         h_instance = FSimHamiltonian()
+#         return h_instance._construct_U_lambda(g, eta)(t)
 
 
 class CirculatorHamiltonian(Hamiltonian):
@@ -215,29 +246,29 @@ class CirculatorHamiltonian(Hamiltonian):
     #     )
     #     return build_time_dependent_U
 
-class FluxQubit(Hamiltonian):
-    """https://arxiv.org/pdf/2107.02343.pdf"""
-    def __init__(self):
+# class FluxQubit(Hamiltonian):
+#     """https://arxiv.org/pdf/2107.02343.pdf"""
+#     def __init__(self):
         
-        a = qutip.operators.destroy(N=2)
-        I2 = qutip.operators.identity(2)
-        A = qutip.tensor(a, I2, I2) #qubit1
-        B = qutip.tensor(I2, a, I2) #qubit2
-        C = qutip.tensor(I2, I2, a) #coupler
-        alpha = 0 #coupler anharmonicity
+#         a = qutip.operators.destroy(N=2)
+#         I2 = qutip.operators.identity(2)
+#         A = qutip.tensor(a, I2, I2) #qubit1
+#         B = qutip.tensor(I2, a, I2) #qubit2
+#         C = qutip.tensor(I2, I2, a) #coupler
+#         alpha = 0 #coupler anharmonicity
 
-        H_a = lambda wa: wa * A.dag() * A 
-        #self.H = lambda t: H_a + H_b + H_c(t) + H_g
+#         H_a = lambda wa: wa * A.dag() * A 
+#         #self.H = lambda t: H_a + H_b + H_c(t) + H_g
 
-    def __repr__(self):
-        return filename_encode(type(self).__name__)
+#     def __repr__(self):
+#         return filename_encode(type(self).__name__)
 
-    def _construct_H(self, *args):
-        return self.H(*args)
+#     def _construct_H(self, *args):
+#         return self.H(*args)
 
-    def _construct_U_lambda(self, *args):
-        return lambda t: (-1j * t * self._construct_H(*args)).expm()
+#     def _construct_U_lambda(self, *args):
+#         return lambda t: (-1j * t * self._construct_H(*args)).expm()
 
-    @staticmethod
-    def construct_U(*args):
-        raise NotImplementedError
+#     @staticmethod
+#     def construct_U(*args):
+#         raise NotImplementedError

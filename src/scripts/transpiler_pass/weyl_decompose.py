@@ -1,53 +1,22 @@
-# This code is part of Qiskit.
-#
-# (C) Copyright IBM 2017, 2021.
-#
-# This code is licensed under the Apache License, Version 2.0. You may
-# obtain a copy of this license in the LICENSE.txt file in the root directory
-# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
-#
-# Any modifications or derivative works of this code must retain this
-# copyright notice, and modified files need to carry a notice indicating
-# that they have been altered from the originals.
-
+"""File taken from transpilation repo"""
 """Weyl decomposition of two-qubit gates in terms of echoed cross-resonance gates."""
 
-from typing import Tuple
-from aiohttp import content_disposition_filename
+import cmath
+
+import numpy as np
+import scipy.linalg as la
 from qiskit import QuantumCircuit
-
-from qiskit.circuit import QuantumRegister
-from qiskit.circuit.library.standard_gates import RZXGate, HGate, XGate
-
+from qiskit.circuit.library import IGate, RXGate, RYGate, RZGate
+from qiskit.converters import circuit_to_dag
+from qiskit.dagcircuit import DAGCircuit
+from qiskit.extensions.unitary import UnitaryGate
+from qiskit.quantum_info.synthesis.two_qubit_decompose import *
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.transpiler.exceptions import TranspilerError
-from qiskit.transpiler.layout import Layout
-
-from qiskit.dagcircuit import DAGCircuit
-from qiskit.converters import circuit_to_dag
-
-from utils.qiskit_patch.two_qubit_decompose import TwoQubitBasisDecomposer
-from utils.riswap_gates.equivalence_library import SessionEquivalenceLibrary
-
-from qiskit.quantum_info.synthesis.weyl import weyl_coordinates
-from qiskit.quantum_info.operators import Operator
-
-# from qiskit.circuit.library.standard_gates import *
-from utils.riswap_gates.riswap import RiSwapGate, fSim
-from qiskit.circuit import Parameter
-from qiskit import QuantumCircuit
-import numpy as np
-
-import cmath
-from qiskit.quantum_info.synthesis.two_qubit_decompose import *
-import scipy.linalg as la
-
-from qiskit.circuit.library import RZGate, RXGate, RYGate, IGate
-from qiskit.extensions.unitary import UnitaryGate
-from qiskit import QuantumCircuit
-from qiskit.quantum_info import Operator
-
-_sel = SessionEquivalenceLibrary
+#from utils.qiskit_patch.two_qubit_decompose import TwoQubitBasisDecomposer
+# I made this patched version but I don't remember what difference is from original
+from qiskit.quantum_info.synthesis.two_qubit_decompose import TwoQubitBasisDecomposer
+from src.utils.custom_gates import RiSwapGate, FSim
 
 
 class RootiSwapWeylDecomposition(TransformationPass):
@@ -297,10 +266,10 @@ class RootiSwapWeylDecomposition(TransformationPass):
     def SYCDecomposer(self, U):
         qc = QuantumCircuit(2)
         # totally ignorning 1Q gates because we are just using this method for counting 2Q gate durations
-        qc.append(fSim(np.pi / 2, np.pi / 6), [0, 1])
-        qc.append(fSim(np.pi / 2, np.pi / 6), [0, 1])
-        qc.append(fSim(np.pi / 2, np.pi / 6), [0, 1])
-        qc.append(fSim(np.pi / 2, np.pi / 6), [0, 1])
+        qc.append(FSim(np.pi / 2, np.pi / 6), [0, 1])
+        qc.append(FSim(np.pi / 2, np.pi / 6), [0, 1])
+        qc.append(FSim(np.pi / 2, np.pi / 6), [0, 1])
+        qc.append(FSim(np.pi / 2, np.pi / 6), [0, 1])
         return qc
 
     # Reference: https://arxiv.org/pdf/2105.06074.pdf
@@ -423,9 +392,8 @@ class RootiSwapWeylDecomposition(TransformationPass):
         """
         # pylint: disable=cyclic-import
         from qiskit.quantum_info import Operator
-        from qiskit.quantum_info.synthesis.two_qubit_decompose import (
-            TwoQubitControlledUDecomposer,
-        )
+        from qiskit.quantum_info.synthesis.two_qubit_decompose import \
+            TwoQubitControlledUDecomposer
 
         if len(dag.qregs) > 1:
             raise TranspilerError(
@@ -438,7 +406,7 @@ class RootiSwapWeylDecomposition(TransformationPass):
 
         if isinstance(self.basis_gate, RiSwapGate):
             self.decomposer = self.riswapWeylDecomp
-        elif isinstance(self.basis_gate, fSim):
+        elif isinstance(self.basis_gate, FSim):
             self.decomposer = self.SYCDecomposer
         else:
             self.decomposer = TwoQubitBasisDecomposer(self.basis_gate)

@@ -134,20 +134,23 @@ else:
 from src.utils.custom_gates import ConversionGainGate
 class SpeedLimitedGate(ConversionGainGate):
     def __init__(self, p1, p2, g1, g2, t_el, speed_limit_function=spline):
-        super().__init__(p1, p2, g1, g2, t_el)
         self.g1 = g1 #conversion
         self.g2 = g2 #gain
         self.t_el = t_el
         self.slf = speed_limit_function
-        self.c = None
+        self.saved_cost = -1
+        super().__init__(p1, p2, g1, g2, t_el)
+        # XXX can only assign duration after init with real values
+        if all([isinstance(p, (int, float)) for p in self.params]):
+            self.duration = self.cost()
     
     @classmethod
     def from_gate(cls, ConversionGainGate):
         return cls(*ConversionGainGate.params, speed_limit_function=spline)
         
     def cost(self):
-        if self.c is not None:
-            return self.c
+        if self.saved_cost >= 0:
+            return self.saved_cost
 
         assert not (self.g1 == 0 and self.g2 ==0)
         norm = np.pi/2

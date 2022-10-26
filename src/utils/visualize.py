@@ -121,10 +121,15 @@ def unitary_2dlist_weyl(*unitary_list, **kwargs):
     w = WeylChamber();
     axs= fig.add_subplot(111, projection="3d")
     for i, inner_list in enumerate(unitary_list):
-        col = ['c', 'm', 'y', 'k', 'w'][i%5]
         coordinate_list = [c1c2c3(np.array(u)) for u in inner_list]
-        w.scatter(*zip(*coordinate_list), c=col, **kwargs)
+        if 'c' not in kwargs:
+            col = ['c', 'm', 'y', 'k', 'w'][i%5]
+            sp = w.scatter(*zip(*coordinate_list), c=col, **kwargs)
+        else:
+            sp = w.scatter(*zip(*coordinate_list), **kwargs)
     w.render(axs)
+    if 'c' in kwargs:
+        fig.colorbar(sp)
     return fig
 
 def coordinate_2dlist_weyl(*coordinate_list, **kwargs):
@@ -133,9 +138,14 @@ def coordinate_2dlist_weyl(*coordinate_list, **kwargs):
     w = WeylChamber();
     axs= fig.add_subplot(111, projection="3d")
     for i, inner_list in enumerate(coordinate_list):
-        col = ['r', 'g', 'b', 'y'][i%4]
-        w.scatter(*zip(*inner_list), c=col, **kwargs)
+        if 'c' not in kwargs:
+            col = ['c', 'm', 'y', 'k', 'w'][i%5]
+            sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
+        else:
+            sp = axs.scatter3D(*zip(*inner_list), **kwargs)
     w.render(axs)
+    if 'c' in kwargs:
+        fig.colorbar(sp)
     return fig
 
 def unitary_to_weyl(*unitary):

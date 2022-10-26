@@ -214,6 +214,7 @@ class TemplateOptimizer:
                     #method_str = "COBYLA" 
                     # #NOTE cobyla does not support bounds
                     #this is probably fine, but we need to convert the bounds to constraints
+                    #just use SLSQP instead
                     method_str = "SLSQP"
 
                 result = opt.minimize(
@@ -221,7 +222,7 @@ class TemplateOptimizer:
                     method=method_str,
                     x0=self.basis.parameter_guess(t=r_i),
                     callback=callbackF if self.use_callback else None,
-                    options={"maxiter": 400},
+                    options={"maxiter": 2500},
                     bounds=self.basis.bounds_list, #grab bounds list
                     constraints=self.basis.constraint_func #grab constraint function
                 )
@@ -240,6 +241,8 @@ class TemplateOptimizer:
 
                     if best_result < self.success_threshold:
                         break
+
+            logging.info(f"Cycle (k ={spanning_iter}), Best Loss={best_result}")
             
             #break over template extensions
             # already good enough, save time by stopping here
@@ -247,7 +250,7 @@ class TemplateOptimizer:
                 logging.info(f"Break on cycle {spanning_iter}")
                 break
 
-        logging.info(f"Loss={best_result}")
+        logging.info(f"Overall Best Loss={best_result}")
 
         if not self.use_callback:
             #if not saving into a list, just save the last value pass or fail

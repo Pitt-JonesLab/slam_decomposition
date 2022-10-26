@@ -209,7 +209,7 @@ class CircuitTemplate(VariationalTemplate):
                 #self.circuit.ry(*[next(self.gen_1q_params) for _ in range(1)], qubit)
 
         gate = next(self.gate_2q_base)
-        edge = next(next(self.gate_2q_edges)) #call cycle twice to increment gate then edge
+        edge = next(next(self.gate_2q_edges)) #call cycle twice to increment gate index then edge
         self.circuit.append(gate, edge)
         if not (final and self.no_exterior_1q):
             for qubit in edge:
@@ -269,7 +269,7 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #we update template to match circuit polytope shape
     #then tell optimizer range to be range(1) so it knows not to call build again
     def __init__(self, base_gates=[CustomCostGate], no_exterior_1q=False, preseed=False, chatty_build=True, cost_1q=0, bare_cost=False):
-        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[(0,1)], no_exterior_1q=no_exterior_1q, use_polytopes=True, preseed=preseed)
+        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[[(0,1)]], no_exterior_1q=no_exterior_1q, use_polytopes=True, preseed=preseed)
         #precomputed polytopes
         self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
 
