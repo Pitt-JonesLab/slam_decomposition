@@ -21,6 +21,7 @@ from monodromy.static.examples import (everything_polytope, exactly,
                                        identity_polytope)
 from qiskit.converters import circuit_to_dag
 from qiskit.quantum_info import Operator
+from typing import List
 
 MAX_ITERS = 10
 """Helper function for monodromy polytope package"""
@@ -93,11 +94,11 @@ def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
     return circuit_polytope
 
 #reference: monodromy/demo.py
-def gate_set_to_haar_expectation(*basis_gates:list[CustomCostGate], chatty=True):
+def gate_set_to_haar_expectation(*basis_gates:List[CustomCostGate], chatty=True):
     coverage_set, basis_gate_hash_dict = gate_set_to_coverage(*basis_gates, chatty=chatty)
     return coverage_to_haar_expectation(coverage_set, chatty=chatty)
 
-def gate_set_to_coverage(*basis_gates:list[CustomCostGate], chatty=True, cost_1q=0, bare_cost=False):
+def gate_set_to_coverage(*basis_gates:List[CustomCostGate], chatty=True, cost_1q=0, bare_cost=False):
     #first converts all individal gates to circuitpolytope objeect
     operations = []
     basis_gate_hash_dict = {}

@@ -1,4 +1,5 @@
 from abc import ABC
+from ast import Pass
 
 import numpy as np
 import qutip
@@ -25,6 +26,9 @@ class Hamiltonian(ABC):
     @staticmethod
     def construct_U(*args):
         raise NotImplementedError
+    
+class FluxQubitHamiltonian(Hamiltonian):
+    Pass
 
 class SnailEffectiveHamiltonian(Hamiltonian):
     """Used to find iSwap family gates"""

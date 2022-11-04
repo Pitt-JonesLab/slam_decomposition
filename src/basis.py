@@ -17,6 +17,9 @@ from .utils.custom_gates import *
 from .utils.data_utils import filename_encode, pickle_load, pickle_save
 from .utils.polytope_wrap import (gate_set_to_coverage,
                                   monodromy_range_from_target)
+import pickle
+import os
+from typing import List
 
 """
 Defines the variational object passed to the optimizer
@@ -24,6 +27,10 @@ Defines the variational object passed to the optimizer
 """
 
 class VariationalTemplate(ABC):
+    """NOTE: most of the functionality in the abstract class is deprecated
+    was originally designed for preseeding tasks
+    the more updated approaches are in the various subclasses circuittemplatev2 and mixedbasistemplate"""
+
     def __init__(self, preseed:bool, use_polytopes:bool):
         if self.filename is None:
             raise NotImplementedError
@@ -268,10 +275,33 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #this means monodromy_range_from_target needs to return a circuit polytope
     #we update template to match circuit polytope shape
     #then tell optimizer range to be range(1) so it knows not to call build again
-    def __init__(self, base_gates=[CustomCostGate], no_exterior_1q=False, preseed=False, chatty_build=True, cost_1q=0, bare_cost=False):
-        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[[(0,1)]], no_exterior_1q=no_exterior_1q, use_polytopes=True, preseed=preseed)
-        #precomputed polytopes
-        self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
+    def __init__(self, base_gates:List[CustomCostGate], chatty_build=True, cost_1q=0, bare_cost=False, coverage_saved_memory=True):
+
+        if cost_1q != 0:
+            logging.warning("rather than setting cost_1q, use bare_cost=True and scale the cost afterwards - that way don't have misses in saved memory.\
+                (see bgatev2script.py for implementation)")
+            raise ValueError("just don't do this lol")
+
+        super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[[(0,1)]], no_exterior_1q=False, use_polytopes=True, preseed=False)
+
+        if coverage_saved_memory:
+            file_hash = str(base_gates)
+            filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
+            
+            # try load from memory
+            if os.path.exists(filepath): #XXX hardcoded file path'
+                logging.info("loading polytope coverage from memory")
+                with open(filepath, "rb") as f:
+                    self.coverage, self.gate_hash = pickle.load(f)
+            else:
+                # if not in memory, compute and save
+                self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
+                with open(filepath, "wb") as f:
+                    pickle.dump((self.coverage, self.gate_hash), f)
+                    logging.info("saved polytope coverage to file")
+        else:
+            self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
+
 
     def set_polytope(self, circuit_polytope):
         self.circuit_polytope = circuit_polytope
@@ -285,6 +315,11 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
         super()._reset()
 
     def build(self, n_repetitions):
+        """the reason the build method is being overriden is specifically for mixed basis sets
+        we want to be able to build circuits which have an arbitrary order of basis gates so we have to use info from monodromy
+        monodromy communicates the order from a set polytope (which doesn't have access to gate object proper) via a hash
+        that lets override the gate_2q_base generator"""
+
         assert self.circuit_polytope is not None
         #convert circuit polytope into a qiskit circuit with variation 1q params
         gate_list = [self.gate_hash[gate_key] for gate_key in self.circuit_polytope.operations]

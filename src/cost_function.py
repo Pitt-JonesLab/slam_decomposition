@@ -5,11 +5,30 @@ from weylchamber import J_T_LI, bell_basis, c1c2c3, canonical_gate, g1g2g3
 import logging
 from qiskit.quantum_info import *
 from qiskit import QuantumCircuit
+from src.utils.custom_gates import BerkeleyGate
+from qiskit.circuit.library import SwapGate
+
 """
 Defines functions that the optimizer attempts to minimize, 
 Each function is some metric of fidelity between unitaries, where 0 means best and 1 means worst
 Experiment to find some metrics perform better/faster than others
 """
+
+class LineSegmentDistanceCost(ABC):
+    # distance from current weyl chamber point to a line segment in the chamber
+    # for example, used to optimize gate which reaches the line of gates which build SWAP in k=2
+    def __init__(self, line_segment):
+        self.line_segment = line_segment
+
+    def distance(self, qc):
+        c = c1c2c3(Operator(qc).data)
+        # return distance from c to the line segment
+        return np.linalg.norm(np.cross(self.line_segment[1]-self.line_segment[0], self.line_segment[0]-c)) / np.linalg.norm(self.line_segment[1]-self.line_segment[0])
+
+class BsqSwapCost(LineSegmentDistanceCost):
+    def __init__(self):
+        super().__init__(line_segment=[np.array(c1c2c3(BerkeleyGate().to_matrix())), np.array(c1c2c3(SwapGate().power(1/2).to_matrix()))]) # B gate to sqswap
+
 class EntanglementCostFunction(ABC):
     #concurrence, mutual info, negativity, entanglement of formation, entropy of entanglement
     def __init__(self, state='w'):

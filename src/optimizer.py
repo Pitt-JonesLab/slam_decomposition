@@ -8,7 +8,7 @@ from weylchamber import c1c2c3
 from src.basisv2 import CircuitTemplateV2
 
 from .basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplate, VariationalTemplate
-from .cost_function import UnitaryCostFunction, EntanglementCostFunction, BasicCostInverse
+from .cost_function import UnitaryCostFunction, EntanglementCostFunction, BasicCostInverse, LineSegmentDistanceCost
 from .sampler import SampleFunction
 
 from tqdm import tqdm
@@ -62,7 +62,9 @@ class TemplateOptimizer:
         if best_result <= self.success_threshold:
             # label target coordinate as success
             success_label = 1
-            logging.info(f"Success: {target_coordinates}")
+            #logging.info(f"Success: {target_coordinates}")
+            alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
+            logging.info(f"Success: {target_coordinates}, Found: {alternative_coordinate}")
         else:
             if not self.override_fail:
                 raise ValueError("Failed to converge within error threshold. Try increasing restart attempts or increasing temperature scaling on preseed.")
@@ -74,7 +76,7 @@ class TemplateOptimizer:
                 self.basis.build(n_repetitions=best_cycles)
             if self.basis.n_qubits == 2:
                 alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
-                logging.info(f"Fail: {target_coordinates}, Alternative: {alternative_coordinate}")
+                logging.info(f"Fail: {target_coordinates}, Found: {alternative_coordinate}")
             if self.preseeding:
                 self.basis.data_dict[alternative_coordinate] = DataDictEntry(1, 0, best_Xk, best_cycles)
 
@@ -167,6 +169,10 @@ class TemplateOptimizer:
             elif isinstance(self.objective, EntanglementCostFunction):
                 current_qc = self.basis.assign_Xk(xk)
                 objf_val = self.objective.entanglement_monotone(current_qc)
+
+            elif isinstance(self.objective, LineSegmentDistanceCost):
+                current_qc = self.basis.assign_Xk(xk)
+                objf_val = self.objective.distance(current_qc)
             else:
                 raise ValueError("Unrecognized Cost Function")
 
@@ -209,7 +215,8 @@ class TemplateOptimizer:
                 #Constraints definition (only for COBYLA and SLSQP)
                 method_str = "BFGS"
                 if self.basis.using_bounds:
-                    method_str = "L-BFGS-B"
+                    method_str = "L-BFGS-B" 
+                    method_str = "Nelder-Mead" #trying this out to debug
                 if self.basis.using_constraints:
                     #method_str = "COBYLA" 
                     # #NOTE cobyla does not support bounds
@@ -234,7 +241,7 @@ class TemplateOptimizer:
                     best_cycles = spanning_iter
                 
                 #break over starting attempts
-                if best_result < self.success_threshold or self.override_fail:
+                if best_result < self.success_threshold or (self.override_fail and r_i == self.training_restarts-1):
                     if self.use_callback:
                         self.training_loss.append(temp_training_loss)
                         self.coordinate_list.append(temp_coordinate_list)

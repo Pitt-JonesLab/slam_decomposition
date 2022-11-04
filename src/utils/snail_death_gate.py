@@ -89,13 +89,48 @@ coords.sort(key=lambda x: x[0])
 # add in point (1,0) to make sure bounded
 coords.append([.81,0])
 
-# %%
+
+# use conv_data and gain_data to see how voltage is related to the gc/gg terms in order to scale the axes properly
+# load from data conv_data and gain_data using h5py
+import h5py
+with h5py.File('../../../data/conv_data.h5', 'r') as hf:
+    #plt.plot(hf['DAC_list'][:], hf['g2_fit'][:], '-o', label='conv')
+    # save slope
+    conv_slope = np.average(hf['g2_fit'][:]/hf['DAC_list'][:])
+
+with h5py.File('../../../data/gain_data.h5', 'r') as hf:
+    #plt.plot(hf['DAC_list'][:], hf['g2_fit'][:], '-o', label='gain')
+    # save slope
+    gain_slope = np.average(hf['g2_fit'][:]/hf['DAC_list'][:])
+
+# plt.legend()
+# plt.xlabel('DAC')
+# plt.ylabel('g2')
+# #print slopes
+# print(conv_slope, gain_slope)
+
 #step 2.5 arbitrary scaling to convert DAC to Hamiltonian (rad/s) ?
-#decide to scale so x and y intercept are near pi/2
-#scale x axis
-x = [x[0]*0.64*np.pi for x in coords]
-# scale y axis
-y = [x[1]*1.7*np.pi for x in coords]
+real_scaling = 0
+
+if real_scaling:
+    #decide to scale so x and y intercept are near pi/2
+    #scale x axis
+    x = [x[0]*conv_slope for x in coords] #0.64*np.pi
+    # scale y axis
+    y = [x[1]*gain_slope for x in coords] #1.7*np.pi
+
+    # step 2.6 normalization so the maximum intercept is pi/2
+    # find max between x- and y-axis intercept
+    max_intercept = np.max([np.abs(x[-1]), np.abs(y[0])])
+    # scale x and y
+    x = [x[i]/max_intercept*np.pi/2 for i in range(len(x))]
+    y = [y[i]/max_intercept*np.pi/2 for i in range(len(y))]
+
+else:
+    #scale x axis
+    x = [x[0]*0.64*np.pi for x in coords] #
+    # scale y axis
+    y = [x[1]*1.7*np.pi for x in coords] #
 
 # %%
 # step 3 univariate spline
@@ -111,20 +146,20 @@ xs = np.linspace(0, max(x), N)
 # plt.ylim(0,max(s(xs)))
 
 #plot cnot gate
-gate_c = 0.25*np.pi
-gate_g = 0.25*np.pi
-if gate_c == 0:
-    #plt.plot([0, 0], [0, max(s(xs))], 'ro')
-    pass
-else:
-    ratio = gate_g/gate_c * xs
-    #plt.plot(xs, ratio, 'r--')
+# gate_c = 0.25*np.pi
+# gate_g = 0.25*np.pi
+# if gate_c == 0:
+#     #plt.plot([0, 0], [0, max(s(xs))], 'ro')
+#     pass
+# else:
+#     ratio = gate_g/gate_c * xs
+#     #plt.plot(xs, ratio, 'r--')
 
-if gate_c == 0:
-    idx = 0
-    #print(xs[idx], s(xs[idx]))
-else:
-    idx = max(np.argwhere(np.abs(ratio - s(xs)) < 0.01))
+# if gate_c == 0:
+#     idx = 0
+#     #print(xs[idx], s(xs[idx]))
+# else:
+#     idx = max(np.argwhere(np.abs(ratio - s(xs)) < 0.01))
     #print(xs[idx], ratio[idx])
 # plt.plot(xs[idx], s(xs[idx]), 'ro')
 # plt.show()
@@ -153,13 +188,13 @@ class SpeedLimitedGate(ConversionGainGate):
             return self.saved_cost
 
         assert not (self.g1 == 0 and self.g2 ==0)
-        norm = np.pi/2
+        #norm = np.pi/2 # TODO move norm from preprocessing into here
         # get upper bound of g terms from speed limit data
-        xs = np.linspace(0, np.pi/2, N)
+        xs = np.linspace(0, np.pi/2, N) #XXX, danger! assumes the max intercept was on the x-axis (assumes y-axis intercept is np.pi/2)
 
-        if self.g1 == 0:
+        if self.g1 == 0: #avoid case when ratio is undefined by only scaling 
             idx = 0
-            scaled_g1, scaled_g2 = float(xs[idx]), float(s(xs[idx]))
+            scaled_g1, scaled_g2 = float(xs[idx]), float(self.slf(xs[idx]))
         else:
             ratio = self.g2/self.g1 * xs
             tol = .001

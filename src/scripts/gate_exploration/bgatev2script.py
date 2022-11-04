@@ -20,6 +20,7 @@ from weylchamber import c1c2c3
 from src.utils.snail_death_gate import SpeedLimitedGate
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import pickle
 
 # %%
 # # verifying that relative phase doesn't change 2Q gate location
@@ -35,9 +36,9 @@ The math here is translating gates to left side of x-axis to remove duplicates""
 def build_gates():
     unitary_list = []
     coordinate_list = []
-    for k in np.linspace(0, 0.5, 17):
+    for k in np.linspace(0, 0.5, 17): #17
         inner_list = []
-        for p in np.linspace(0, 1, 21):
+        for p in np.linspace(0, 1, 21): #21
             gate = ConversionGainGate(0, 0, p*k*np.pi, (1-p)*k*np.pi)
             unitary= gate.to_matrix()
             c = list(c1c2c3(np.array(unitary)))
@@ -65,7 +66,7 @@ def collect_data(unitary_list, overwrite=False):
     """Using bare costs in mixedorderbasis template - this means the costs are in terms of number of gates
     means we need to scale by costs later - but don't have to recompute each time :)"""
     with h5py.File(filename, 'a') as hf:
-        g = hf.require_group('bare_cost')
+        g = hf.require_group('bare_cost_coverage') # 'bare_cost' is populated, trying '_coverage' to test if i can save coverage objects
         if overwrite:
             g.clear()
         for base_gate in tqdm(unitary_list[1:]): #skip the identity gate - can't build valid coverage from it
@@ -84,34 +85,56 @@ def collect_data(unitary_list, overwrite=False):
 def get_group_name(speed_method='linear', duration_1q=0):
     return f'{speed_method}_scaling_1q{duration_1q}'
 
-def cost_scaling(speed_method='linear', duration_1q=0):
+def cost_scaling(speed_method='linear', duration_1q=0, overwrite=True):
     """Use bare costs to add in costs of 2Q gate and 1Q gates"""
     group_name = get_group_name(speed_method, duration_1q)
     with h5py.File(filename, 'a') as hf:
         g = hf.require_group('bare_cost')
         g2 = hf.require_group(group_name)
+
+        #defined speed limit functions
+        #equation for offset circle
+        # center of circle is (-c, -c) with intercepts at np.pi/2 on x and y axes
+        c = np.pi/4
+        mid_sl = lambda x: 0.5 * (-2*c + np.sqrt(4*c**2 - 8*c*x  + 4*c*np.pi - 4*x**2 + np.pi**2))
+        squared_sl = lambda x: np.sqrt((np.pi/2)**2 - x**2)
+
         for v in g.values():
             params = v[0]
             scores = np.array(v[1])
 
             #reconstruct gate object to get cost
-            if 'dynamic' in speed_method:
-                gate = SpeedLimitedGate(*params)
+            if 'hardware' in speed_method:
+                gate = SpeedLimitedGate(*params) # speed_limit_function = spline
+            elif 'mid' in speed_method:
+                gate = SpeedLimitedGate(*params, speed_limit_function=mid_sl)
+            elif 'squared' in speed_method:
+                gate = SpeedLimitedGate(*params, speed_limit_function=squared_sl)
+            elif 'linear' in speed_method:
+                # spline is the hardware characterized speed limit which is constructed inside the module proper
+                gate = ConversionGainGate(*params) 
+            elif 'bare' in speed_method:
+                gate = ConversionGainGate(*params) 
             else:
-                gate = ConversionGainGate(*params)
+                raise ValueError("invalid speed_method")
 
-            if str(gate) in g2:
+            if str(gate) in g2 and not overwrite:
                 #print("already have this gate")
                 continue
-            
+
             #compute scaled costs
-            scaled_scores = scores * gate.cost() #scale by 2Q gate cost
+            # if bare don't scale
+            if 'bare' in speed_method:
+                scaled_scores = scores
+            else:
+                scaled_scores = scores * gate.cost() #scale by 2Q gate cost
+        
             scaled_scores += (scores + 1) * duration_1q #scale by 1Q gate cost
 
             #store
             if str(gate) in g2:
-                #print("already have this gate")
-                continue
+                # delete
+                del g2[str(gate)]
             g2.create_dataset(str(gate), data=[gate.params, scaled_scores])
 
 # %%
@@ -157,4 +180,5 @@ def pick_winner(group_name, metric=0):
         return winner_gate
 
 # # %%
-# collect_data()        
+unitary_list, coordinate_list = build_gates()
+collect_data(unitary_list, overwrite=1)  

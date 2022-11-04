@@ -67,24 +67,38 @@ from src.utils.custom_gates import RiSwapGate
 from src.utils.custom_gates import ConversionGainSmushGate, ConversionGainGate
 
 
-# if using riswap
-basis = CircuitTemplateV2(n_qubits=2, base_gates = [RiSwapGate], edge_params=[[(0,1)]])
-basis_str = "riswap"
+# if using riswap, I find that this does the same if we use 2Q gate no smushing (basically riswap is already optimal)
+# basis = CircuitTemplateV2(n_qubits=2, base_gates = [RiSwapGate], edge_params=[[(0,1)]])
+# basis_str = "riswap"
 
-# if using the 2Q gate
-# pp2 =lambda *vargs: ConversionGainGate(0,0 , vargs[0], vargs[1], t_el=1.0)
-# basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], param_vec_expand=[2,1,1])
-# basis_str = "CG2Q"
+# if using the 2Q gate, no phase
+duration_1q = 0.25
+varg_offset = 2
+t= 1.0
+pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , vargs[0], vargs[1], vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
+basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], vz_only=True, param_vec_expand=[varg_offset,round(t/duration_1q),round(t/duration_1q)])
+basis_str = "CG2Q"
+
+# pp3 =lambda *vargs: ConversionGainGate(vargs[0], vargs[1], vargs[2], vargs[3], t_el=1.0)
+# basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp3], edge_params=[[(0,1)]], param_vec_expand=[2,round(1.0/duration_1q),round(1.0/duration_1q)])
+# basis_str = "CG2Q+P"
 
 # need to build first before can assign bounds
 basis.build(5)
 basis.spanning_range = range(3,4)
 
-#bound all Qs to be >0
+#for all smush gates make bounds
+bounds_1q = 4*np.pi
 for el in basis.circuit.parameters:
     s_el = str(el)
     if 'Q' in s_el:
-        basis.add_bound(s_el, 0.5, 0)
+        basis.add_bound(s_el, bounds_1q, -bounds_1q)
+
+# manually set the gc, gg bounds
+for el in basis.circuit.parameters:
+    s_el = str(el)
+    if s_el in ["Q0", "Q1", "Q22", "Q23", "Q44", "Q45"]:
+        basis.add_bound(s_el, 0.5*np.pi, 0)
 
 # print out for confirmation 
 basis.circuit.draw(output='mpl')
@@ -107,7 +121,7 @@ s = [s for s in sampler][0]
 #success_thresholds = [0.99, 0.999, 0.9999, 0.99999, 0.999999]
 
 #Redo, want to save the success as a function of the cost
-cost_list = np.linspace(1, 1.5, 16)
+cost_list = np.linspace(1, 1.5, 27)
 fidelities = [None]*len(cost_list)
 for k, current_cost in enumerate(cost_list):
     objective1 = BasicCost()
@@ -124,7 +138,7 @@ for k, current_cost in enumerate(cost_list):
         #pass
     #rebuild optimizer to refresh the updated f_basis obj
     #NOTE setting the success threshold low since SWAP is very hard to find exactly
-    optimizer3 = TemplateOptimizer(basis=basis, objective=objective1, use_callback=False, override_fail=True, training_restarts=50)
+    optimizer3 = TemplateOptimizer(basis=basis, objective=objective1, use_callback=False, override_fail=True, training_restarts=5)
 
     _ret3 = optimizer3.approximate_target_U(s)
     current_cost = basis.circuit_cost(_ret3.Xk)
@@ -164,6 +178,7 @@ for k, current_cost in enumerate(cost_list):
 
         #save ret3
         g = hf.create_group(f"cost_{current_cost}")
+        g.create_dataset('cost', data=[current_cost])
         g.create_dataset('loss', data=[_ret3.loss_result])
         g.create_dataset('Xk', data=_ret3.Xk)
         g.create_dataset('cycles', data=[_ret3.cycles])

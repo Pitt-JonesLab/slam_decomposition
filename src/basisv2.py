@@ -97,10 +97,10 @@ class CircuitTemplateV2(VariationalTemplate):
             #     a = [float(el) for el in gate[0].params]
             #     c = ConversionGainSmushGate(*a).cost()
             elif gate[0].name in ["2QGate", "2QSmushGate"]:
-                #raise ValueError("BROKEN!")
             # fidelity = fidelity * c:
                 a = [float(el) for el in gate[0].params]
                 c = ConversionGainGate(a[0], a[1], a[2], a[3], a[-1]).cost()
+                #raise ValueError("BROKEN!")
             cost += c
         return cost
     
@@ -131,7 +131,7 @@ class CircuitTemplateV2(VariationalTemplate):
             return parent
         random_list = []
         #set defaults
-        default_bound = (-2*np.pi, 2*np.pi)
+        #default_bound = (-2*np.pi, 2*np.pi)
         default_bound = (-4*np.pi, 4*np.pi)
         dict_response_default = default_bound
         self.bounds_list = [] #sequence of (min,max) for each element in X passed to scipy optimze
