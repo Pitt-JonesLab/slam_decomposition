@@ -120,6 +120,7 @@ class ConversionGainGate(Gate):
         # XXX can only assign duration after init with real values
         if all([isinstance(p, (int, float)) for p in self.params]):
             self.duration = self.cost()
+            self.name = str(self)
 
     def __array__(self, dtype=None):
         self._array = ConversionGainPhaseHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))

@@ -106,28 +106,31 @@ def get_method_duration(group_name):
     duration_1q = float(group_name.split('_')[-1].replace('1q',''))
     return speed_method, duration_1q
 
-def atomic_cost_scaling(params, scores, speed_method='linear', duration_1q=0):
-    #defined speed limit functions
-    #equation for offset circle
-    # center of circle is (-c, -c) with intercepts at np.pi/2 on x and y axes
-    c = np.pi/4
-    mid_sl = lambda x: 0.5 * (-2*c + np.sqrt(4*c**2 - 8*c*x  + 4*c*np.pi - 4*x**2 + np.pi**2))
-    squared_sl = lambda x: np.sqrt((np.pi/2)**2 - x**2)
+def atomic_cost_scaling(params, scores, speed_method='linear', duration_1q=0, scaled_gate=None):
+    if scaled_gate is None:
+        #defined speed limit functions
+        #equation for offset circle
+        # center of circle is (-c, -c) with intercepts at np.pi/2 on x and y axes
+        c = np.pi/4
+        mid_sl = lambda x: 0.5 * (-2*c + np.sqrt(4*c**2 - 8*c*x  + 4*c*np.pi - 4*x**2 + np.pi**2))
+        squared_sl = lambda x: np.sqrt((np.pi/2)**2 - x**2)
 
-    #reconstruct gate object to get cost
-    if 'hardware' in speed_method:
-        gate = SpeedLimitedGate(*params) # speed_limit_function = spline
-    elif 'mid' in speed_method:
-        gate = SpeedLimitedGate(*params, speed_limit_function=mid_sl)
-    elif 'squared' in speed_method:
-        gate = SpeedLimitedGate(*params, speed_limit_function=squared_sl)
-    elif 'linear' in speed_method:
-        # spline is the hardware characterized speed limit which is constructed inside the module proper
-        gate = ConversionGainGate(*params) 
-    elif 'bare' in speed_method:
-        gate = ConversionGainGate(*params) 
+        #reconstruct gate object to get cost
+        if 'hardware' in speed_method:
+            gate = SpeedLimitedGate(*params) # speed_limit_function = spline
+        elif 'mid' in speed_method:
+            gate = SpeedLimitedGate(*params, speed_limit_function=mid_sl)
+        elif 'squared' in speed_method:
+            gate = SpeedLimitedGate(*params, speed_limit_function=squared_sl)
+        elif 'linear' in speed_method:
+            # spline is the hardware characterized speed limit which is constructed inside the module proper
+            gate = ConversionGainGate(*params) 
+        elif 'bare' in speed_method:
+            gate = ConversionGainGate(*params) 
+        else:
+            raise ValueError("invalid speed_method")
     else:
-        raise ValueError("invalid speed_method")
+        gate = scaled_gate
 
     #compute scaled costs
     # if bare don't scale
@@ -184,7 +187,7 @@ def plot_eharr(group_name, metric=0):
         cbar.set_label("E[haar]", rotation=90)
 
 # %%
-def pick_winner(group_name, metric=0, target_ops=None):
+def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True):
     # TODO add a tiebreaker between any ties
     """pick the gate with the lowest score for the given metric
     params:
@@ -199,30 +202,43 @@ def pick_winner(group_name, metric=0, target_ops=None):
                 scores = np.array(v[1])
                 z.append(scores[metric]) 
             winner = list(g.values())[np.argmin(z)]
-
+            winner_scaled_gate, winner_scaled_score = atomic_cost_scaling(params=winner[0], scores=winner[1], scaled_gate=None)
+        
         # minimize score over target operations
         else:
+
             winner = None
             speed_method, duration_1q = get_method_duration(group_name)
-            for v in tqdm(g.values()):
-                
+
+            for v in tqdm(g.values()) if tqdm_bool else g.values():
+
                 base_gate = ConversionGainGate(*v[0])
                 template = MixedOrderBasisCircuitTemplate(base_gates=[base_gate], chatty_build=0, bare_cost=True)
                 candidate_score = 0
+                scaled_gate = None # used for skipping reconstruction in the atomic cost scaling function
+
                 for target in target_ops:
                     target_score = monodromy_range_from_target(template, target_u = target.to_matrix())[0] 
-                    _, scaled_score = atomic_cost_scaling(params=v[0], scores=target_score, speed_method=speed_method, duration_1q=duration_1q)
+                    scaled_gate, scaled_score = atomic_cost_scaling(params=v[0], scores=target_score, speed_method=speed_method, duration_1q=duration_1q, scaled_gate=scaled_gate)
                     candidate_score += scaled_score
+                
                 if winner is None or candidate_score < winner_score:
                     winner = v
                     winner_score = candidate_score
+                    winner_scaled_gate = scaled_gate
+                    winner_scaled_score = scaled_score
+
+            #log weigted score and normalized score
+            logging.info(f"winner score: {winner_score}, normalized score: {winner_score/len(target_ops)}")
 
         winner_gate = ConversionGainGate(*winner[0]) #0 is params, 1 is scores
         # log winner params, scores, cost
         logging.info(f'winner: {winner_gate}, scores: {winner[1][:-2]}, cost: {winner_gate.cost()}')
+        logging.info(f'scaled scores: {winner_scaled_score}, scaled cost: {winner_scaled_gate.cost()}')
 
-        unitary_to_weyl(winner_gate.to_matrix()); #uncomment to see the gate in weyl space
-        return winner_gate
+        if plot:
+            unitary_to_weyl(winner_gate.to_matrix()); #uncomment to see the gate in weyl space
+        return winner_gate, winner_scaled_gate
 
 # # %%
 if __name__ == "__main__":

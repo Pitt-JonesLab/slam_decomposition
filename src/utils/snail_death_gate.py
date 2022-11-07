@@ -93,12 +93,14 @@ coords.append([.81,0])
 # use conv_data and gain_data to see how voltage is related to the gc/gg terms in order to scale the axes properly
 # load from data conv_data and gain_data using h5py
 import h5py
-with h5py.File('../../../data/conv_data.h5', 'r') as hf:
+# XXX harcoded paths
+fp = '/home/evm9/decomposition_EM/data/'
+with h5py.File(f'{fp}conv_data.h5', 'r') as hf:
     #plt.plot(hf['DAC_list'][:], hf['g2_fit'][:], '-o', label='conv')
     # save slope
     conv_slope = np.average(hf['g2_fit'][:]/hf['DAC_list'][:])
 
-with h5py.File('../../../data/gain_data.h5', 'r') as hf:
+with h5py.File(f'{fp}gain_data.h5', 'r') as hf:
     #plt.plot(hf['DAC_list'][:], hf['g2_fit'][:], '-o', label='gain')
     # save slope
     gain_slope = np.average(hf['g2_fit'][:]/hf['DAC_list'][:])

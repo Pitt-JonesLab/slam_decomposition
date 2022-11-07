@@ -276,6 +276,7 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #we update template to match circuit polytope shape
     #then tell optimizer range to be range(1) so it knows not to call build again
     def __init__(self, base_gates:List[CustomCostGate], chatty_build=True, cost_1q=0, bare_cost=True, coverage_saved_memory=True):
+        self.homogenous = len(base_gates) == 1
 
         if cost_1q != 0 or bare_cost==False:
             logging.warning("rather than setting cost_1q, use bare_cost=True and scale the cost afterwards - that way don't have misses in saved memory.\
@@ -320,7 +321,7 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
         self.circuit_polytope = None
         super()._reset()
 
-    def build(self, n_repetitions):
+    def build(self, n_repetitions, scaled_gate = None):
         """the reason the build method is being overriden is specifically for mixed basis sets
         we want to be able to build circuits which have an arbitrary order of basis gates so we have to use info from monodromy
         monodromy communicates the order from a set polytope (which doesn't have access to gate object proper) via a hash
@@ -329,5 +330,12 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
         assert self.circuit_polytope is not None
         #convert circuit polytope into a qiskit circuit with variation 1q params
         gate_list = [self.gate_hash[gate_key] for gate_key in self.circuit_polytope.operations]
+
+        # NOTE: overriding the 2Q gate if we want to use a speed limited gate (has a different duration attirbute)
+        if scaled_gate is not None:
+            if not self.homogenous:
+                raise ValueError("Can't use this hacky substitute method for mixed basis sets")
+            gate_list = [scaled_gate]
+
         self.gate_2q_base = cycle(gate_list)
         super().build(n_repetitions=len(gate_list))

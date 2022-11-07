@@ -73,19 +73,22 @@ from src.utils.custom_gates import ConversionGainSmushGate, ConversionGainGate
 
 # if using the 2Q gate, no phase
 duration_1q = 0.25
-varg_offset = 2
 t= 1.0
-pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , vargs[0], vargs[1], vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
-basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], vz_only=True, param_vec_expand=[varg_offset,round(t/duration_1q),round(t/duration_1q)])
-basis_str = "CG2Q"
 
-# pp3 =lambda *vargs: ConversionGainGate(vargs[0], vargs[1], vargs[2], vargs[3], t_el=1.0)
-# basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp3], edge_params=[[(0,1)]], param_vec_expand=[2,round(1.0/duration_1q),round(1.0/duration_1q)])
-# basis_str = "CG2Q+P"
+
+# varg_offset = 2
+# pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , vargs[0], vargs[1], vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
+# basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], vz_only=True, param_vec_expand=[varg_offset,round(t/duration_1q),round(t/duration_1q)])
+# basis_str = "CG2Q"
+
+varg_offset = 4
+pp3 =lambda *vargs: ConversionGainSmushGate(vargs[0], vargs[1], vargs[2], vargs[3], vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
+basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp3], edge_params=[[(0,1)]], param_vec_expand=[2,round(1.0/duration_1q),round(1.0/duration_1q)])
+basis_str = "CG2Q+P"
 
 # need to build first before can assign bounds
 basis.build(5)
-basis.spanning_range = range(3,4)
+basis.spanning_range = range(1,2)
 
 #for all smush gates make bounds
 bounds_1q = 4*np.pi
@@ -110,10 +113,10 @@ basis.circuit.draw(output='mpl')
 
 from src.sampler import HaarSample, GateSample
 #sampler = HaarSample(seed=0,n_samples=1) #don't care
-from qiskit.circuit.library import CXGate, CZGate, SwapGate
+from qiskit.circuit.library import CXGate, CZGate, SwapGate, iSwapGate
 #sampler = GateSample(gate = CZGate())
 #sampler = GateSample(gate = CZGate())
-sampler = GateSample(gate = SwapGate())
+sampler = GateSample(gate = iSwapGate().power(1/2))
 s = [s for s in sampler][0]
 
 # %%
