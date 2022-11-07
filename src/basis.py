@@ -275,30 +275,36 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
     #this means monodromy_range_from_target needs to return a circuit polytope
     #we update template to match circuit polytope shape
     #then tell optimizer range to be range(1) so it knows not to call build again
-    def __init__(self, base_gates:List[CustomCostGate], chatty_build=True, cost_1q=0, bare_cost=False, coverage_saved_memory=True):
+    def __init__(self, base_gates:List[CustomCostGate], chatty_build=True, cost_1q=0, bare_cost=True, coverage_saved_memory=True):
 
-        if cost_1q != 0:
+        if cost_1q != 0 or bare_cost==False:
             logging.warning("rather than setting cost_1q, use bare_cost=True and scale the cost afterwards - that way don't have misses in saved memory.\
                 (see bgatev2script.py for implementation)")
             raise ValueError("just don't do this lol")
+        
+        if not all([isinstance(gate, ConversionGainGate) for gate in base_gates]):
+            raise ValueError("all base gates must be ConversionGainGate")
 
         super().__init__(n_qubits=2, base_gates=base_gates, edge_params=[[(0,1)]], no_exterior_1q=False, use_polytopes=True, preseed=False)
 
         if coverage_saved_memory:
-            file_hash = str(base_gates)
+            # used list comprehension so each CG gate has its own str function called
+            file_hash = str([str(g) for g in base_gates])
+
             filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
             
             # try load from memory
             if os.path.exists(filepath): #XXX hardcoded file path'
-                logging.info("loading polytope coverage from memory")
+                logging.debug("loading polytope coverage from memory")
                 with open(filepath, "rb") as f:
                     self.coverage, self.gate_hash = pickle.load(f)
             else:
                 # if not in memory, compute and save
+                logging.debug(f"computing polytope coverage for {file_hash}")
                 self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
                 with open(filepath, "wb") as f:
                     pickle.dump((self.coverage, self.gate_hash), f)
-                    logging.info("saved polytope coverage to file")
+                    logging.debug("saved polytope coverage to file")
         else:
             self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
 

@@ -124,6 +124,16 @@ class ConversionGainGate(Gate):
     def __array__(self, dtype=None):
         self._array = ConversionGainPhaseHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
         return self._array.full()
+
+    #overwrite string representation
+    def __str__(self):
+        g1 = self.params[2]
+        g2 = self.params[3]
+        t = self.params[4]
+        # truncate to 8 decimal places
+        s= f"2QGate({g1:.8f}, {g2:.8f}, {t:.8f})"
+        return s
+  
     
     def cost(self):
         norm = np.pi/2
