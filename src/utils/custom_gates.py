@@ -76,11 +76,16 @@ class CustomCostGate(Gate):
 #         return UnitaryGate(np.matrix.getH(self.__array__()))
 
 class CirculatorSNAILGate(Gate):
-    def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1, name:str="3QGate"):
-        super().__init__(name, 3, [p1, p2, p3, g1, g2, g3, t_el], name)
+    def __init__(self, p1:ParameterValueType, p2:ParameterValueType, p3:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, g3:ParameterValueType, t_el: ParameterValueType = 1):
+        super().__init__("3QGate", 3, [p1, p2, p3, g1, g2, g3, t_el], "3QGate")
         # XXX can only assign duration after init with real values
         if all([isinstance(p, (int, float)) for p in self.params]):
             self.duration = self.cost()
+
+    #NOTE: we don't want this param in the constr ctor, it messes len(signature(gate).parameters) in template construction
+    def set_str(self, str):
+        self._label = str
+        self._name = str
 
     def __array__(self, dtype=None):
         self._array = CirculatorHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
@@ -107,12 +112,14 @@ class CirculatorSNAILGate(Gate):
 class VSwap(CirculatorSNAILGate):
     def __init__(self,t_el: ParameterValueType = 1,) -> None:
         v_nn = 4/np.sqrt(2) #1.5iswap
-        super().__init__(*[np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0], t_el=t_el, name="VSWAP")
+        super().__init__(*[np.pi / 2, np.pi / 2, 0, np.pi / v_nn, np.pi / v_nn, 0], t_el=t_el)
+        self.set_str("VSWAP")
 
 class DeltaSwap(CirculatorSNAILGate):
-    def __init__(self) -> None:
+    def __init__(self, t_el: ParameterValueType = 1) -> None:
         nn = 3 * np.sqrt(3) / 2
-        super().__init__(*[np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn], t_el=1, name="ΔSWAP")
+        super().__init__(*[np.pi / 2, -np.pi / 2, np.pi / 2, np.pi / nn, np.pi / nn, np.pi / nn], t_el=t_el)
+        self.set_str("Δ-iSWAP")
 
 class ConversionGainGate(Gate):
     def __init__(self, p1:ParameterValueType, p2:ParameterValueType, g1:ParameterValueType, g2:ParameterValueType, t_el: ParameterValueType = 1):
@@ -359,6 +366,15 @@ class FSim(Gate):
             ],
             dtype=dtype,
         )
+
+from src.hamiltonian import FSimHamiltonian
+class FSimHamiltonianGate(Gate):
+    def __init__(self, g: ParameterValueType, eta: ParameterValueType, t: ParameterValueType):
+        super().__init__("fsim", 2, [g, eta, t])
+
+    def __array__(self, dtype=None):
+        self._array = FSimHamiltonian.construct_U(*[float(el) for el in self.params[0:-1]], t= float(self.params[-1]))
+        return self._array.full()
 
 
 class SYC(FSim):

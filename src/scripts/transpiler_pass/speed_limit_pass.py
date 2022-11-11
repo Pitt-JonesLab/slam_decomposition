@@ -75,7 +75,7 @@ class SpeedGateSubstitute(TransformationPass):
         if self.strategy == 'basic_overall':
             """Here, we define a single metric to pick a winner gate to be used for all decompositions
             Metrics pick most efficient for either SWAP, CNOT, or Haar"""
-            winner_gate, scaled_winner_gate = pick_winner(self.group_name, metric=self.basic_metric)
+            winner_gate, scaled_winner_gate = pick_winner(self.group_name, metric=self.basic_metric, plot=False)
             #that way we only have to compute a single coverage set
             #NOTE winner_gate goes to constructor so hits the saved polytope coverage set
             template = MixedOrderBasisCircuitTemplate(base_gates=[winner_gate])
@@ -101,7 +101,7 @@ class SpeedGateSubstitute(TransformationPass):
             #first, need frqeuncy of each gate
             # NOTE this feels unoptimized, because we are consolidating 1Q gates, so more misses (?)
             target_ops = [g.op for g in dag.two_qubit_ops()]
-            winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops) #XXX unoptimized !
+            winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, plot=False) #XXX unoptimized !
             logging.info("Found winner, begin substitution")
 
             template = MixedOrderBasisCircuitTemplate(base_gates=[winner_gate])
@@ -137,7 +137,7 @@ class SpeedGateSubstitute(TransformationPass):
                 if len(target_ops) == 0:
                     continue
                 
-                winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, tqdm_bool=False)
+                winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, tqdm_bool=False, plot=False)
 
                 logging.info(f"Found winner for {edge} edge, begin substitution")
 
@@ -176,11 +176,11 @@ class pass_manager_slam(PassManager):
         super().__init__(passes)
 
 class pass_manager_basic(PassManager):
-    def __init__(self, gate='iswap', duration_1q=0):
+    def __init__(self, gate='sqiswap', duration_1q=0):
         passes = []
         # collect 2Q blocks
         passes.extend([Unroll3qOrMore(), Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
-        if gate == 'iswap':
+        if gate == 'sqiswap':
             passes.extend([decomposer(basis_gate=RiSwapGate(1/2))])
         elif gate == 'cx':
             passes.extend([decomposer(basis_gate=CXGate())])

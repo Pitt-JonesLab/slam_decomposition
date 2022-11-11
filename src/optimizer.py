@@ -63,8 +63,9 @@ class TemplateOptimizer:
             # label target coordinate as success
             success_label = 1
             #logging.info(f"Success: {target_coordinates}")
-            alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
-            logging.info(f"Success: {target_coordinates}, Found: {alternative_coordinate}")
+            if self.basis.n_qubits == 2:
+                alternative_coordinate = c1c2c3(self.basis.eval(best_Xk))
+                logging.info(f"Success: {target_coordinates}, Found: {alternative_coordinate}")
         else:
             if not self.override_fail:
                 raise ValueError("Failed to converge within error threshold. Try increasing restart attempts or increasing temperature scaling on preseed.")
@@ -149,10 +150,12 @@ class TemplateOptimizer:
         return total_cost
 
     def approximate_from_distribution(self, sampler:SampleFunction):
+        target_data = []
         for index, target in enumerate(sampler):
             logging.info(f"Starting sample iter {index}")
-            self.approximate_target_U(target_U=target)
-        return self.training_loss, self.coordinate_list, self.best_cycle_list
+            td = self.approximate_target_U(target_U=target)
+            target_data.append(td)
+        return self.training_loss, self.coordinate_list, target_data
             
     def _run(self, target_u, target_spanning_range):
         self.ii=0
@@ -165,7 +168,7 @@ class TemplateOptimizer:
                 #optionally, multiply decomposition fidelity objf_val by circuit fidelity
                 if isinstance(self.objective, BasicCostInverse):
                     objf_val = 1 - (objf_val * self.basis.circuit_fidelity(xk))
-            
+
             elif isinstance(self.objective, EntanglementCostFunction):
                 current_qc = self.basis.assign_Xk(xk)
                 objf_val = self.objective.entanglement_monotone(current_qc)
@@ -216,13 +219,14 @@ class TemplateOptimizer:
                 method_str = "BFGS"
                 if self.basis.using_bounds:
                     method_str = "L-BFGS-B" 
-                    method_str = "Nelder-Mead" #trying this out to debug
+                    #method_str = "Nelder-Mead" #trying this out to debug
                 if self.basis.using_constraints:
                     #method_str = "COBYLA" 
                     # #NOTE cobyla does not support bounds
                     #this is probably fine, but we need to convert the bounds to constraints
                     #just use SLSQP instead
                     method_str = "SLSQP"
+                #method_str = "Nelder-Mead" #trying this out to debug
 
                 result = opt.minimize(
                     fun=objective_func,

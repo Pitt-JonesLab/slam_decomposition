@@ -132,10 +132,15 @@ def unitary_2dlist_weyl(*unitary_list, **kwargs):
         fig.colorbar(sp)
     return fig
 
-def coordinate_2dlist_weyl(*coordinate_list, **kwargs):
+def coordinate_2dlist_weyl(*coordinate_list, elev=20, azim=-50, **kwargs):
     plt.close()
     fig = plt.figure()
     w = WeylChamber();
+    w.elev = elev
+    w.azim = azim
+    if (elev, azim) == (90, -90):
+        w.show_c3_label = False
+    w.labels = {}
     axs= fig.add_subplot(111, projection="3d")
     for i, inner_list in enumerate(coordinate_list):
         if 'c' not in kwargs:
@@ -143,9 +148,11 @@ def coordinate_2dlist_weyl(*coordinate_list, **kwargs):
             sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
         else:
             sp = axs.scatter3D(*zip(*inner_list), **kwargs)
+    
     w.render(axs)
     if 'c' in kwargs:
-        fig.colorbar(sp)
+        #make colorbar smaller
+        fig.colorbar(sp, shrink=0.5)
     return fig
 
 def unitary_to_weyl(*unitary):

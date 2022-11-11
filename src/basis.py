@@ -335,7 +335,8 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
         if scaled_gate is not None:
             if not self.homogenous:
                 raise ValueError("Can't use this hacky substitute method for mixed basis sets")
-            gate_list = [scaled_gate]
+            gate_list = [scaled_gate]*len(gate_list)
 
         self.gate_2q_base = cycle(gate_list)
+        assert n_repetitions == len(gate_list)
         super().build(n_repetitions=len(gate_list))

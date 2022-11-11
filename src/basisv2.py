@@ -71,6 +71,12 @@ class CircuitTemplateV2(VariationalTemplate):
         #deprecated feature
         self.trotter=False
     
+    def reconstruct(self, ret):
+        """Reconstructs the circuit from the optimization result"""
+        self.build(ret.cycles)
+        print("Cost:", self.circuit_cost(Xk=ret.Xk))
+        return self.assign_Xk(ret.Xk)
+
     def circuit_cost(self, Xk):
         #NOTE: this doesn't necessarily correlate to a fidelity measure
         #for now, consider to just be an abstract score used in constraint building
@@ -89,7 +95,7 @@ class CircuitTemplateV2(VariationalTemplate):
             elif gate[0].name in ["3QGate", "VSWAP", "ΔSWAP"]:
                 #cast ParameterExpression to list(float)
                 #XXX I believe the gate.params doesn't preserve the order so splatting is not correct
-                raise ValueError("BROKEN!")
+                #raise ValueError("BROKEN!")
                 a = [float(el) for el in gate[0].params]
                 c = CirculatorSNAILGate(*a).cost()
             # elif gate[0].name in ["2QSmushGate"]:
@@ -249,7 +255,7 @@ class CircuitTemplateV2(VariationalTemplate):
 
         # inspect to find how many parameters our gate requires
         # now using self.param_vec_expand to handle when parameter is a vector
-        num2qparams = len(signature(gate).parameters)
+        num2qparams = len(signature(gate).parameters) #is +1 because of self, but goes away in range()
         if self.param_vec_expand is not None:
             num2qparams = sum(self.param_vec_expand)
             

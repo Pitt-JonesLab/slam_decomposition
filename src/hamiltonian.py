@@ -161,28 +161,27 @@ class ConversionGainSmush(Hamiltonian):
 #             totalUi = Ui @ totalUi
 #         return totalUi
 
-# class FSimHamiltonian(Hamiltonian):
-#     """https://arxiv.org/pdf/1910.11333.pdf"""
-#     def __init__(self):
-#         #a = qutip.operators.create(N=2)
-#         I2 = qutip.operators.identity(2)
-#         sp1 = qutip.tensor(qutip.operators.sigmap(), I2)
-#         sp2 = qutip.tensor(I2,qutip.operators.sigmap())
-#         sm1 = qutip.tensor(qutip.operators.sigmam(), I2)
-#         sm2 = qutip.tensor(I2,qutip.operators.sigmam())
-#         sz1 = qutip.tensor(qutip.operators.sigmaz(), I2)
-#         sz2 = qutip.tensor(I2, qutip.operators.sigmaz())
+class FSimHamiltonian(Hamiltonian):
+    """https://arxiv.org/pdf/1910.11333.pdf"""
+    def __init__(self):
+        #a = qutip.operators.create(N=2)
+        I2 = qutip.operators.identity(2)
+        sp1 = qutip.tensor(qutip.operators.sigmap(), I2)
+        sp2 = qutip.tensor(I2,qutip.operators.sigmap())
+        sm1 = qutip.tensor(qutip.operators.sigmam(), I2)
+        sm2 = qutip.tensor(I2,qutip.operators.sigmam())
+        sz1 = qutip.tensor(qutip.operators.sigmaz(), I2)
+        sz2 = qutip.tensor(I2, qutip.operators.sigmaz())
 
-#         H_1 = sp1*sm2 + sm1*sp2
-#         H_2 = sz1*sz2
-#         self.H = lambda g, eta: g * H_1 + (g**2/np.abs(eta)) * H_2
+        H_1 = sp1*sm2 + sm1*sp2
+        H_2 = sz1*sz2
+        self.H = lambda g, eta: g * H_1 + (g**2/np.abs(eta)) * H_2
 
-#     #static method creates an instance of class, acting like a factory
-#     @staticmethod
-#     def construct_U(g, eta): #, t=1):
-#         t=1
-#         h_instance = FSimHamiltonian()
-#         return h_instance._construct_U_lambda(g, eta)(t)
+    #static method creates an instance of class, acting like a factory
+    @staticmethod
+    def construct_U(g, eta, t=1):
+        h_instance = FSimHamiltonian()
+        return h_instance._construct_U_lambda(g, eta)(t)
 
 
 class CirculatorHamiltonian(Hamiltonian):

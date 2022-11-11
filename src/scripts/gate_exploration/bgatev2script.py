@@ -34,7 +34,8 @@ import time
 """Here we are building the set of gates to collect data over
 The math here is translating gates to left side of x-axis to remove duplicates"""
 
-def build_gates():
+#FIXME want both symmetries of gc and gg even if at same coordinate
+def build_gates(elim_extra_weyl=True):
     unitary_list = []
     coordinate_list = []
     for k in np.linspace(0, 0.5, 17): #17
@@ -43,8 +44,10 @@ def build_gates():
             gate = ConversionGainGate(0, 0, p*k*np.pi, (1-p)*k*np.pi)
             unitary= gate.to_matrix()
             c = list(c1c2c3(np.array(unitary)))
-            if c[0] > 0.5:
-                c[0] = -1*c[0] + 1
+
+            if elim_extra_weyl:
+                if c[0] > 0.5:
+                    c[0] = -1*c[0] + 1
             
             if c in inner_list or any(c in inner for inner in coordinate_list):
                 continue
@@ -143,7 +146,7 @@ def atomic_cost_scaling(params, scores, speed_method='linear', duration_1q=0, sc
     return gate, scaled_scores
 
 
-def cost_scaling(speed_method='linear', duration_1q=0, overwrite=True):
+def cost_scaling(speed_method='linear', duration_1q=0, overwrite=1, query_params=None):
     """Use bare costs to add in costs of 2Q gate and 1Q gates"""
     group_name = get_group_name(speed_method, duration_1q)
     with h5py.File(filename, 'a') as hf:
@@ -155,6 +158,8 @@ def cost_scaling(speed_method='linear', duration_1q=0, overwrite=True):
             scores = np.array(v[1])
             gate, scaled_scores = atomic_cost_scaling(params=params, scores=scores, speed_method=speed_method, duration_1q=duration_1q)
 
+            if query_params is not None and np.allclose(params, query_params):
+                return gate, scaled_scores
             if str(gate) in g2 and not overwrite:
                 #print("already have this gate")
                 continue
@@ -193,47 +198,44 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
     params:
         metric = 0 is haar, 1 is cnot, 2 is swap"""
     with h5py.File(filename, 'r') as hf:
-        g = hf.require_group(group_name)
+        # FIXME deprecated use of presaved groups so all the scaling is done in the same place
+        g = hf.require_group('bare_cost') #switching to use bare_cost
+        speed_method, duration_1q = get_method_duration(group_name) #but still use the custom group name to pass these parameters
 
-        # find best gate
-        if metric in [0,1,2] and target_ops is None:
-            z = []
-            for v in g.values():
-                scores = np.array(v[1])
-                z.append(scores[metric]) 
-            winner = list(g.values())[np.argmin(z)]
-            winner_scaled_gate, winner_scaled_score = atomic_cost_scaling(params=winner[0], scores=winner[1], scaled_gate=None)
-        
-        # minimize score over target operations
-        else:
+        # minimize score over target operations or provided metric
+        winner = None
+    
+        for v in tqdm(g.values()) if tqdm_bool else g.values():
 
-            winner = None
-            speed_method, duration_1q = get_method_duration(group_name)
+            base_gate = ConversionGainGate(*v[0])
+            template = MixedOrderBasisCircuitTemplate(base_gates=[base_gate], chatty_build=0, bare_cost=True)
+            candidate_score = 0
+            scaled_gate = None # used for skipping reconstruction in the atomic cost scaling function
 
-            for v in tqdm(g.values()) if tqdm_bool else g.values():
+            if metric in [0,1,2] and target_ops is None:
+                target_score = v[1][metric] 
+                scaled_gate, scaled_score = atomic_cost_scaling(params=v[0], scores=target_score, speed_method=speed_method, duration_1q=duration_1q, scaled_gate=scaled_gate)
+                candidate_score = scaled_score
 
-                base_gate = ConversionGainGate(*v[0])
-                template = MixedOrderBasisCircuitTemplate(base_gates=[base_gate], chatty_build=0, bare_cost=True)
-                candidate_score = 0
-                scaled_gate = None # used for skipping reconstruction in the atomic cost scaling function
-
+            else:
                 for target in target_ops:
-                    target_score = monodromy_range_from_target(template, target_u = target.to_matrix())[0] 
-                    scaled_gate, scaled_score = atomic_cost_scaling(params=v[0], scores=target_score, speed_method=speed_method, duration_1q=duration_1q, scaled_gate=scaled_gate)
-                    candidate_score += scaled_score
-                
-                if winner is None or candidate_score < winner_score:
-                    winner = v
-                    winner_score = candidate_score
-                    winner_scaled_gate = scaled_gate
-                    winner_scaled_score = scaled_score
+                        target_score = monodromy_range_from_target(template, target_u = target.to_matrix())[0] 
+                        scaled_gate, scaled_score = atomic_cost_scaling(params=v[0], scores=target_score, speed_method=speed_method, duration_1q=duration_1q, scaled_gate=scaled_gate)
+                        candidate_score += scaled_score
+            
+            if winner is None or candidate_score < winner_score:
+                winner = v
+                winner_score = candidate_score
+                winner_scaled_gate = scaled_gate
+                winner_scaled_score = scaled_score
 
-            #log weigted score and normalized score
-            logging.info(f"winner score: {winner_score}, normalized score: {winner_score/len(target_ops)}")
 
         winner_gate = ConversionGainGate(*winner[0]) #0 is params, 1 is scores
         # log winner params, scores, cost
         logging.info(f'winner: {winner_gate}, scores: {winner[1][:-2]}, cost: {winner_gate.cost()}')
+        if not (metric in [0,1,2] and target_ops is None):
+            #log weigted score and normalized score
+            logging.info(f"winner score: {winner_score}, normalized score: {winner_score/len(target_ops)}")
         logging.info(f'scaled scores: {winner_scaled_score}, scaled cost: {winner_scaled_gate.cost()}')
 
         if plot:

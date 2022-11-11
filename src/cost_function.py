@@ -87,10 +87,10 @@ class UnitaryCostFunction(ABC):
     def __init__(self):
         #experimenting with this
         #normalize cost using max_cost = c(swap, identity)
-        swap = np.array([[1,0,0,0], [0,0,1,0], [0,1,0,0], [0,0,0,1]])
-        id = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0],[0,0,0,1]])
+        # swap = np.array([[1,0,0,0], [0,0,1,0], [0,1,0,0], [0,0,0,1]])
+        # id = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0],[0,0,0,1]])
         self.normalization = 1 #self.unitary_fidelity(id, swap)
-        logging.debug(self.normalization)
+        # logging.debug(self.normalization)
 
     def unitary_fidelity(self, current_u, target_u):
         raise NotImplementedError
@@ -108,6 +108,23 @@ class BasicCost(UnitaryCostFunction):
     def unitary_fidelity(self, current_u, target_u):
         h = np.matrix(target_u).getH()
         return 1 - np.abs(np.trace(np.matmul(h, current_u)))/ np.array(current_u).shape[0]
+
+class ContinuousUnitaryCostFunction(BasicCost):
+    """Used to fit a template to a unitary behavior at all timesteps rather than just the final state"""
+    def __init__(self, timesteps):
+        super().__init__()
+        self.timesteps = timesteps
+
+    def unitary_fidelity(self, current_u, target_u):
+        #combine the unitary and its square root 
+        #used for fitting a continuous time evolution, at t=1 and t=1/2
+        from qiskit.extensions import UnitaryGate
+        cost = 0
+        for i in np.linspace(0, 1, self.timesteps+1): # +1 because skip 0
+            current_u_frac = UnitaryGate(current_u).power(i).to_matrix()
+            target_u_frac = UnitaryGate(target_u).power(i).to_matrix()
+            cost += super().unitary_fidelity(current_u_frac, target_u_frac)
+        return cost
 
 class SquareCost(UnitaryCostFunction):
     def unitary_fidelity(self, current_u, target_u):
