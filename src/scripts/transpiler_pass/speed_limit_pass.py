@@ -52,7 +52,7 @@ class fooAnalysis(AnalysisPass):
         logging.info(f"Duration: {d}")
 
 class SpeedGateSubstitute(TransformationPass):
-    def __init__(self, speed_method, duration_1q, strategy, basic_metric, coupling_map):
+    def __init__(self, speed_method, duration_1q, strategy, basic_metric, coupling_map, lambda_weight=0.47):
         super().__init__()
         
         self.speed_method = speed_method
@@ -60,6 +60,7 @@ class SpeedGateSubstitute(TransformationPass):
         self.strategy = strategy
         self.basic_metric = basic_metric
         self.coupling_map = coupling_map
+        self.lambda_weight = lambda_weight
 
         # makes sure the data exists first
         cost_scaling(speed_method=speed_method, duration_1q=duration_1q)
@@ -72,13 +73,16 @@ class SpeedGateSubstitute(TransformationPass):
     def run(self, dag: DAGCircuit):
         """Run the pass on `dag`."""
 
-        if self.strategy == 'basic_overall':
+        if self.strategy == 'basic_overall' or self.strategy == 'lambda_weight' or self.strategy == 'basic_smush' or self.strategy == 'lambda_smush':
             """Here, we define a single metric to pick a winner gate to be used for all decompositions
-            Metrics pick most efficient for either SWAP, CNOT, or Haar"""
-            winner_gate, scaled_winner_gate = pick_winner(self.group_name, metric=self.basic_metric, plot=False)
+            Metrics pick most efficient for either SWAP, CNOT, or Haar
+            OR using lambda * d[cnot] + (1-lambda) * d[swap] as winner metric"""
+            metric = self.basic_metric if ("basic" in self.strategy) else (-1, self.lambda_weight)
+            smush_bool = True if ("smush" in self.strategy) else False
+            winner_gate, scaled_winner_gate = pick_winner(self.group_name, metric=metric, plot=False, smush_bool=smush_bool)
             #that way we only have to compute a single coverage set
             #NOTE winner_gate goes to constructor so hits the saved polytope coverage set
-            template = MixedOrderBasisCircuitTemplate(base_gates=[winner_gate])
+            template = MixedOrderBasisCircuitTemplate(base_gates=[winner_gate], smush_bool=smush_bool)
             
             logging.info("Found winner, begin substitution")
 
@@ -94,7 +98,7 @@ class SpeedGateSubstitute(TransformationPass):
                 #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
                 sub_qc = template.assign_Xk(template.parameter_guess())
                 sub_dag = circuit_to_dag(sub_qc)
-                dag.substitute_node_with_dag(node, sub_dag)
+                dag.substitute_node_with_dag(node, sub_dag)          
 
         elif self.strategy == 'weighted_overall':
             """Here, we are counting gates that appear in the circuit in order to define a winner metric"""
@@ -169,6 +173,7 @@ class SpeedGateSubstitute(TransformationPass):
 class pass_manager_slam(PassManager):
     def __init__(self, strategy='basic_overall', speed_method='linear', duration_1q=0, basic_metric=0, coupling_map=None):
         passes = []
+        passes.extend([CountOps(), fooAnalysis(duration_1q)])
         passes.extend([SpeedGateSubstitute(strategy=strategy, speed_method=speed_method, duration_1q=duration_1q, basic_metric=basic_metric, coupling_map=coupling_map)])
         #combine 1Q gates
         passes.extend([Optimize1qGates()])
@@ -178,6 +183,7 @@ class pass_manager_slam(PassManager):
 class pass_manager_basic(PassManager):
     def __init__(self, gate='sqiswap', duration_1q=0):
         passes = []
+        passes.extend([CountOps(), fooAnalysis(duration_1q)])
         # collect 2Q blocks
         passes.extend([Unroll3qOrMore(), Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
         if gate == 'sqiswap':

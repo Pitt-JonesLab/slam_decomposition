@@ -131,9 +131,20 @@ def gate_set_to_coverage(*basis_gates:List[CustomCostGate], chatty=True, cost_1q
         # this idea can't be used if using mixed basis gate sets because we need to know relative costs
         if bare_cost and len(basis_gates) != 1:
             raise ValueError("bare_cost only works for single 2Q gate sets")
+<<<<<<< HEAD
         op_cost = gate.cost() + cost_1q
         if bare_cost:
             op_cost = 1
+=======
+
+        if hasattr(gate, "cost"):
+            op_cost = gate.cost() + cost_1q
+        elif bare_cost:
+            op_cost = 1
+        else:
+            op_cost = 1
+        
+>>>>>>> master
 
         operations.append(
             CircuitPolytope(

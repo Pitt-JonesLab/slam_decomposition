@@ -126,7 +126,11 @@ class ConversionGainGate(Gate):
         super().__init__("2QGate", 2, [p1, p2, g1, g2, t_el], "2QGate")
         # XXX can only assign duration after init with real values
         if all([isinstance(p, (int, float)) for p in self.params]):
+<<<<<<< HEAD
             self.duration = self.cost()
+=======
+            self.duration = self.cost() # XXX not really duration since always normalized to norm=1
+>>>>>>> master
             self.name = str(self)
 
     def __array__(self, dtype=None):
@@ -141,7 +145,22 @@ class ConversionGainGate(Gate):
         # truncate to 8 decimal places
         s= f"2QGate({g1:.8f}, {g2:.8f}, {t:.8f})"
         return s
+<<<<<<< HEAD
   
+=======
+    
+    def normalize_duration(self, new_duration):
+        # scales g terms such that t is new_duration
+        # this is useful for loading gates from a file, matching file hashes
+        # save the old duration
+        old_duration = self.duration
+        t = self.params[-1]
+        self.params[2] = self.params[2] * t / new_duration
+        self.params[3] = self.params[3] * t / new_duration
+        self.params[-1] = new_duration
+        # assert the duration has not hcnaged
+        assert self.duration == old_duration
+>>>>>>> master
     
     def cost(self):
         norm = np.pi/2
