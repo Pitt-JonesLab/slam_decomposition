@@ -153,6 +153,7 @@ class ConversionGainGate(Gate):
         self.params[-1] = new_duration
         # assert the duration has not hcnaged
         assert self.duration == old_duration
+        self = ConversionGainGate(*self.params)
     
     def cost(self):
         norm = np.pi/2

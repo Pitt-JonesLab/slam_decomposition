@@ -9,37 +9,37 @@ import sys
 
 sys.path.append("../../../")
 
+import pickle
 from fractions import Fraction
 
 import matplotlib.pyplot as plt
-import pickle
 import numpy as np
 import scipy.spatial as ss
+from src.basis import MixedOrderBasisCircuitTemplate
 from monodromy.backend.lrs import LRSBackend
-from monodromy.coordinates import (
-    monodromy_to_positive_canonical_coordinate,
-    monodromy_to_positive_canonical_polytope,
-    positive_canonical_to_monodromy_coordinate,
-    unitary_to_monodromy_coordinate,
-)
+from monodromy.coordinates import (monodromy_to_positive_canonical_coordinate,
+                                   monodromy_to_positive_canonical_polytope,
+                                   positive_canonical_to_monodromy_coordinate,
+                                   unitary_to_monodromy_coordinate)
 from monodromy.coverage import CircuitPolytope, deduce_qlr_consequences
 from monodromy.haar import distance_polynomial_integrals
-from monodromy.static.examples import everything_polytope, exactly, identity_polytope
-from qiskit.circuit.library import CXGate, SwapGate
+from monodromy.static.examples import (everything_polytope, exactly,
+                                       identity_polytope)
+from qiskit.circuit.library import (CPhaseGate, CXGate, IGate, SwapGate,
+                                    iSwapGate)
 from qiskit.quantum_info import Operator
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm
 from weylchamber import WeylChamber, c1c2c3
 
 from src.basisv2 import CircuitTemplateV2
-from src.utils.custom_gates import (
-    BerkeleyGate,
-    ConversionGainGate,
-    ConversionGainSmushGate,
-)
-from src.utils.visualize import coordinate_2dlist_weyl
+from src.cost_function import SquareCost
+from src.optimizer import TemplateOptimizer
+from src.sampler import GateSample
+from src.utils.custom_gates import (BerkeleyGate, ConversionGainGate,
+                                    ConversionGainSmushGate)
 from src.utils.visualize import _plot_circuit_polytope as debug_plot
-from src.utils.visualize import unitary_2dlist_weyl
+from src.utils.visualize import coordinate_2dlist_weyl, unitary_2dlist_weyl
 
 fpath = "/home/evm9/decomposition_EM/images"
 
@@ -78,14 +78,15 @@ def get_circuit_polytope(*basis_gate):
 duration_1q = 0.25
 N = 50
 if __name__ == "__main__":
+    # NOTE iters should be k when polytope is everything_polytope
     # gc, gg, t, str, iters
-    iswap = np.pi / 2, 0, 1, "iSwap", 1
+    iswap = np.pi / 2, 0, 1, "iSwap", 3
     sqiswap = np.pi / 2, 0, 1 / 2, "sqiSwap", 3
     cnot = np.pi / 4, np.pi / 4, 1, "CNOT", 3
     sqcnot = np.pi / 4, np.pi / 4, 1 / 2, "sqCNOT", 6
     b = 3 * np.pi / 8, np.pi / 8, 1, "B", 2
     sqb = 3 * np.pi / 8, np.pi / 8, 1 / 2, "sqB", 4
-    gate_list = [b]  # , sqiswap, cnot, sqcnot, b, sqb]
+    gate_list = [iswap]  # , sqiswap, cnot, sqcnot, b, sqb]
     no_save = 1
 
     results = {}
@@ -103,14 +104,28 @@ if __name__ == "__main__":
         swap_score = None
         haar_score = 0
         running_vol = 0
-        # k = 0
-        # # while base_vol is None or base_vol < 1:
-        # k += 1
-        # NOTE to be efficient can stop at iters, but to build coverage set we need to include 100% coverage
+
+
+        # try loading from previous runs the coverage set
+        MixedOrderBasisCircuitTemplate()
+
+
         for k in range(1, iters + 1):
 
             logging.info(f"K = {k}")
+            
+            # if k is at end, set it to full coverage and skip the rest
+            # if full coverage, parallel drive of course can't extend volume
+            if k == iters:
+                base_vol, extended_vol = 1, 1
+                haar_score += k * (extended_vol - running_vol)
+                running_vol += extended_vol
+                logging.info(f"Extended {extended_vol}")
+                coverage_set.append(everything_polytope)
+                gate_dict[str(k)] = [1, 1, 1, 1, 1]
+                break
 
+            # Setting up the template
             p_expand = [
                 2,
                 round(t / duration_1q),
@@ -141,7 +156,7 @@ if __name__ == "__main__":
             #         basis.add_bound(s_el, bounds_1q, 0)
             # basis.circuit.draw()
 
-            # first, extending points via randomization
+            # Extending points via randomization
             progress = tqdm(range(N))
             for i in progress:
                 params = basis.parameter_guess()
@@ -157,17 +172,12 @@ if __name__ == "__main__":
             coordinate_list = list(map(lambda x: np.array(c1c2c3(x)), unitary_list))
 
 
-
             # second, we want to extend the points AGAIN using optimizer
             # the idea is that if CX or SWAP are far away, the randomizer won't be able to find them
             # a simple idea is to train to each of the vertics of the weyl chamber
             # every point we hit along the way is a new point that is added to the extended points
             # NOTE the template will use exterior 1Q gates such that can use SquareCost rather than coordinate optimizer
-            from qiskit.circuit.library import CXGate, IGate, SwapGate, iSwapGate, CPhaseGate
-
-            from src.cost_function import SquareCost
-            from src.optimizer import TemplateOptimizer
-            from src.sampler import GateSample
+            
             for target_vertex in [CPhaseGate(theta=0), CXGate(), SwapGate(), iSwapGate()]:
                 varg_offset = 0 #set to 4 if want to use phase, and change 0s to vargs in pp2 constructor below
                 pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , gc, gg, vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
@@ -177,8 +187,8 @@ if __name__ == "__main__":
                 sampler = GateSample(gate = target_vertex)
                 s = [s for s in sampler][0]
                 optimizer3 = TemplateOptimizer(basis=basis, objective=SquareCost(), use_callback=True, override_fail=True, success_threshold = 1e-10, training_restarts=3)
-                ret3 = optimizer3.approximate_from_distribution(sampler) #get coordinate list
-                coordinate_list += ret3[1][0]
+                ret3 = optimizer3.approximate_from_distribution(sampler) 
+                coordinate_list += ret3[1][0] #get coordinate list
 
 
             # third, extend points via symmetry

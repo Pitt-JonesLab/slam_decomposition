@@ -52,7 +52,7 @@ class fooAnalysis(AnalysisPass):
         logging.info(f"Duration: {d}")
 
 class SpeedGateSubstitute(TransformationPass):
-    def __init__(self, speed_method, duration_1q, strategy, basic_metric, coupling_map, lambda_weight=0.47):
+    def __init__(self, speed_method, duration_1q, strategy, basic_metric, coupling_map, lambda_weight=0.47, family_extension=False):
         super().__init__()
         
         self.speed_method = speed_method
@@ -61,9 +61,10 @@ class SpeedGateSubstitute(TransformationPass):
         self.basic_metric = basic_metric
         self.coupling_map = coupling_map
         self.lambda_weight = lambda_weight
+        self.family_extension = family_extension
 
-        # makes sure the data exists first
-        cost_scaling(speed_method=speed_method, duration_1q=duration_1q)
+        # makes sure the data exists first # cost scaling is deprecated
+        # cost_scaling(speed_method=speed_method, duration_1q=duration_1q)
         self.group_name = get_group_name(speed_method, duration_1q)
 
         # NOTE force requires so that only 2Q ops exist in dag
@@ -79,7 +80,7 @@ class SpeedGateSubstitute(TransformationPass):
             OR using lambda * d[cnot] + (1-lambda) * d[swap] as winner metric"""
             metric = self.basic_metric if ("basic" in self.strategy) else (-1, self.lambda_weight)
             smush_bool = True if ("smush" in self.strategy) else False
-            winner_gate, scaled_winner_gate = pick_winner(self.group_name, metric=metric, plot=False, smush_bool=smush_bool)
+            winner_gate, scaled_winner_gate = pick_winner(self.group_name, metric=metric, plot=False, smush_bool=smush_bool, family_extension=self.family_extension)
             #that way we only have to compute a single coverage set
             #NOTE winner_gate goes to constructor so hits the saved polytope coverage set
             template = MixedOrderBasisCircuitTemplate(base_gates=[winner_gate], smush_bool=smush_bool)
@@ -90,7 +91,7 @@ class SpeedGateSubstitute(TransformationPass):
             for node in dag.two_qubit_ops():
                 target = Operator(node.op).data
 
-                reps = monodromy_range_from_target(template, target_u =target)[0] 
+                reps = monodromy_range_from_target(template, target_u =target, family_extension=self.family_extension)[0] 
                 
                 #NOTE, when we build, actually use the scaled_winner_gate which has the proper duration attiriubte
                 template.build(reps, scaled_winner_gate)
@@ -105,7 +106,7 @@ class SpeedGateSubstitute(TransformationPass):
             #first, need frqeuncy of each gate
             # NOTE this feels unoptimized, because we are consolidating 1Q gates, so more misses (?)
             target_ops = [g.op for g in dag.two_qubit_ops()]
-            winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, plot=False) #XXX unoptimized !
+            winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, plot=False, family_extension=self.family_extension) #XXX unoptimized !
             logging.info("Found winner, begin substitution")
 
             template = MixedOrderBasisCircuitTemplate(base_gates=[winner_gate])
@@ -114,7 +115,7 @@ class SpeedGateSubstitute(TransformationPass):
             for node in dag.two_qubit_ops():
                 target = Operator(node.op).data
 
-                reps = monodromy_range_from_target(template, target_u =target)[0] 
+                reps = monodromy_range_from_target(template, target_u =target, family_extension=self.family_extension)[0] 
                 
                 template.build(reps, scaled_winner_gate)
                 #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
@@ -141,7 +142,7 @@ class SpeedGateSubstitute(TransformationPass):
                 if len(target_ops) == 0:
                     continue
                 
-                winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, tqdm_bool=False, plot=False)
+                winner_gate, scaled_winner_gate  = pick_winner(self.group_name, metric=-1, target_ops=target_ops, tqdm_bool=False, plot=False, family_extension=self.family_extension)
 
                 logging.info(f"Found winner for {edge} edge, begin substitution")
 
@@ -152,7 +153,7 @@ class SpeedGateSubstitute(TransformationPass):
                     if set(edge) == set((node.qargs[0].index, node.qargs[1].index)):
                         target = Operator(node.op).data
 
-                        reps = monodromy_range_from_target(template, target_u =target)[0] 
+                        reps = monodromy_range_from_target(template, target_u =target, family_extension=self.family_extension)[0] 
                         
                         template.build(reps, scaled_winner_gate)
                         #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
@@ -171,10 +172,10 @@ class SpeedGateSubstitute(TransformationPass):
 
 #speed-limit aware manager
 class pass_manager_slam(PassManager):
-    def __init__(self, strategy='basic_overall', speed_method='linear', duration_1q=0, basic_metric=0, coupling_map=None):
+    def __init__(self, strategy='basic_overall', speed_method='linear', duration_1q=0, basic_metric=0, family_extension=0, coupling_map=None):
         passes = []
         passes.extend([CountOps(), fooAnalysis(duration_1q)])
-        passes.extend([SpeedGateSubstitute(strategy=strategy, speed_method=speed_method, duration_1q=duration_1q, basic_metric=basic_metric, coupling_map=coupling_map)])
+        passes.extend([SpeedGateSubstitute(strategy=strategy, speed_method=speed_method, duration_1q=duration_1q, basic_metric=basic_metric, coupling_map=coupling_map, family_extension=family_extension)])
         #combine 1Q gates
         passes.extend([Optimize1qGates()])
         passes.extend([CountOps(), fooAnalysis(duration_1q)])

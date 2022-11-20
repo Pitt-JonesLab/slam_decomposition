@@ -286,6 +286,20 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
         if not all([isinstance(gate, ConversionGainGate) for gate in base_gates]):
             raise ValueError("all base gates must be ConversionGainGate")
 
+        
+        # set gc < gg so that we can use the same polytope for both cases
+        #XXX note this means the gate_hash will refer to the wrong gate, but in speedlimit pass we override build() with scaled_gate param anyway
+        new_base_gates = []
+        for gate in base_gates:
+            if gate.params[2] < gate.params[3]:
+                new_base_gates.append(gate)
+            else:
+                new_params = gate.params
+                # swap gc and gg
+                new_params[2], new_params[3] = new_params[3], new_params[2]
+                temp_new_gate = ConversionGainGate(*new_params)
+                new_base_gates.append(temp_new_gate)
+        base_gates = new_base_gates
         # assuming bare costs we should normalize the gate duration to 1
         for gate in base_gates:
             gate.normalize_duration(1)

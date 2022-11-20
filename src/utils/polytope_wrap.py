@@ -7,10 +7,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.basis import CircuitTemplate
 from src.utils.custom_gates import CustomCostGate
-
 from fractions import Fraction
 from sys import stdout
-
+from qiskit import QuantumCircuit
 import numpy as np
 from monodromy.coordinates import unitary_to_monodromy_coordinate
 from monodromy.coverage import (CircuitPolytope, build_coverage_set,
@@ -43,6 +42,7 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
     #old method when polytopes not precomputed
     #NOTE possible deprecated not sure when this would ever be none
     if basis.coverage is None:
+        raise ValueError("Deprecated method, use precomputed coverages")
         iters = 0
         while (iters == 0 or not circuit_polytope.has_element(target_coords)) and iters < MAX_ITERS:
             iters+=1
@@ -57,14 +57,18 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
         # new method, now we can iterate over precomputed polytopes
         # we want to find the first polytoped (when sorted by cost) that contains target
         # this sorting might be redundant but we will do it just in case
+        found_cover = -1
         sorted_polytopes = sorted(basis.coverage, key=lambda k: k.cost)
         for i, circuit_polytope in enumerate(sorted_polytopes):
             if circuit_polytope.has_element(target_coords):
                 #set polytope
                 basis.set_polytope(circuit_polytope)
                 #return a default range
-                return range(i,i+1)
-        raise ValueError("Monodromy did not find a polytope containing U")
+                found_cover = i
+                break
+        if found_cover == -1:
+            raise ValueError("Monodromy did not find a polytope containing U")
+        return range(found_cover,found_cover+1)
     
 def get_polytope_from_circuit(basis: CircuitTemplate) -> ConvexPolytope:
     from qiskit import QuantumCircuit

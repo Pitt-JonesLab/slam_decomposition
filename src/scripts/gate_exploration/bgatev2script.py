@@ -13,9 +13,11 @@ import numpy as np
 
 # %%
 from src.utils.custom_gates import ConversionGainGate
+from src.sampler import GateSample
+from src.optimizer import TemplateOptimizer
 from src.utils.polytope_wrap import (
     monodromy_range_from_target,
-    coverage_to_haar_expectation,
+    coverage_to_haar_expectation
 )
 from src.basis import CircuitTemplate, MixedOrderBasisCircuitTemplate
 from src.utils.visualize import (
@@ -23,8 +25,10 @@ from src.utils.visualize import (
     unitary_2dlist_weyl,
     coordinate_2dlist_weyl,
 )
-from src.utils.custom_gates import CustomCostGate
+from src.utils.custom_gates import CustomCostGate, ConversionGainGate
+from src.cost_function import SquareCost
 from src.utils.custom_gates import ConversionGainSmushGate
+from src.basisv2 import CircuitTemplateV2
 from qiskit.circuit.library import CXGate, SwapGate
 from weylchamber import c1c2c3
 from src.utils.snail_death_gate import SpeedLimitedGate
@@ -123,6 +127,10 @@ def collect_data(unitary_list, overwrite=False):
                 f"(BARE) SCORES: haar: {haar_score}, cnot: {cnot_score}, swap: {swap_score}"
             )
 
+            # also add the gate when gc and gg are switched
+            # NOTE we know that switching gc and gg make a locally invariant gate so we don't need to compute their coverage separately
+            # TODO
+
             # FIXME adding a None to end of score list makes so not a jagged 2d array - can fix better later
             # XXX is a problem if changing size of base_gate.params
             g.create_dataset(
@@ -144,8 +152,63 @@ def get_method_duration(group_name):
     return speed_method, duration_1q
 
 
+def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, cost_1q=.1, use_smush=False):
+    """Function used to instantiate a circuit using 1Q gate simplification rules"""
+    # check if template basis unitary is equal to target unitary using numpy
+   
+    child_gate = next(basis.gate_2q_base)
+    
+    # if child gate is locally equivalent to target gate, then we want to see if they can be equal using phase and VZ gates
+    if np.all(np.isclose(c1c2c3(child_gate.to_matrix()), c1c2c3(target_u))):
+        phase_lambda = lambda p1, p2: ConversionGainGate(p1, p2, child_gate.params[2], child_gate.params[3], t_el=child_gate.params[-1])
+        template = CircuitTemplateV2(base_gates = [phase_lambda], maximum_span_guess=1, vz_only=True)
+        template.spanning_range = range(1,2)
+        optimizer3 = TemplateOptimizer(basis=template, objective=SquareCost(), override_fail=True, success_threshold = 1e-10, training_restarts=1)
+        ret3 = optimizer3.approximate_target_U(target_U = target_u)
+        if ret3.success_label:
+            # basis.no_exterior_1q = True
+            basis.vz_only = True
+            basis.build(1)
+            return basis, basis_factor
+
+    # first get necessary range using basis
+    ki = monodromy_range_from_target(basis, target_u)[0]
+    # cost to beat
+    best_cost = (ki+1)*cost_1q  + ki * basis_factor
+
+    assert ki >= 1, "Monodromy range must be at least 1, if the target is identity case not coded yet"
+
+    if ki == 1:
+        basis.no_exterior_1q = False
+        basis.build(1)
+        return basis, 1.2
+
+    # construct the older sibling, based on parity of ki
+    if ki % 2 == 0:
+        sib_basis_factor = 2 * basis_factor
+    else:
+        sib_basis_factor = 3 * basis_factor
+    older_sibling = ConversionGainGate(*child_gate.params[:-1], t_el=child_gate.params[-1] * sib_basis_factor)
+
+    older_sibling.normalize_duration(1)
+
+    # stop condition, if sibling is bigger than iswap
+    if older_sibling.params[2] + older_sibling.params[3] <= np.pi/2:
+        #new basis using older sibling
+        sibling_basis = MixedOrderBasisCircuitTemplate(base_gates=[older_sibling], chatty_build=False, use_smush_polytope=use_smush)
+        sibling_decomp, sib_score = recursive_sibling_check(sibling_basis, target_u, use_smush=use_smush, basis_factor=sib_basis_factor, cost_1q=cost_1q)
+    else:
+        sib_score = np.inf
+
+    # if length of qc is shorter using the siblings decomp template, else use self template
+    if sib_score < best_cost:
+        return sibling_decomp, sib_score
+    else:
+        basis.build(ki)
+        return basis, (ki+1)*cost_1q + ki*basis_factor
+
 def atomic_cost_scaling(
-    params, scores, speed_method="linear", duration_1q=0, scaled_gate=None
+    params, scores, speed_method="linear", duration_1q=0, scaled_gate=None, use_smush=False, family_extension=False
 ):
     if scaled_gate is None:
         # defined speed limit functions
@@ -182,25 +245,74 @@ def atomic_cost_scaling(
     else:
         scaled_scores = scores * gate.cost()  # scale by 2Q gate cost
 
-    scaled_scores += (scores + 1) * duration_1q  # scale by 1Q gate cost
+    # do check over parent family gates to see how many if interior gates are needed
+    # TODO compute haar
+    if family_extension:
+        basis = ConversionGainGate(*params)
+        template = MixedOrderBasisCircuitTemplate(base_gates=[basis], chatty_build=False, use_smush_polytope=use_smush)
+        from qiskit.circuit.library import SwapGate
+        for score_index, gate_target in enumerate([CXGate().to_matrix(), SwapGate().to_matrix()]):
+            ret = recursive_sibling_check(template, gate_target, cost_1q=duration_1q, basis_factor=gate.cost())
+            scaled_scores[score_index+1] = ret[1] # add 1 to index to skip over Haar score
+    else:
+        scaled_scores += (scores + 1) * duration_1q  # scale by 1Q gate cost
     return gate, scaled_scores
 
 
-def cost_scaling(speed_method="linear", duration_1q=0, overwrite=1, query_params=None):
+def cost_scaling(speed_method="linear", duration_1q=0, overwrite=1, query_params=None, family_extension=False, use_smush=False):
     """Use bare costs to add in costs of 2Q gate and 1Q gates"""
+    # TODO needs to be deprecated in favor of atomic_cost_scaling
+    # loading from saved makes messy using family and smush
+
     group_name = get_group_name(speed_method, duration_1q)
     with h5py.File(filename, "a") as hf:
         g = hf.require_group("bare_cost")
         g2 = hf.require_group(group_name)
 
         for v in g.values():
+
             params = v[0]
-            scores = np.array(v[1])
+            
+            # only allow family on cnot, b, swap
+            pass_flag = False
+            if family_extension:
+                logging.warning("Family Extension only covers CNOT, B, and SWAP family gates")
+            if family_extension and (params[2] == 0 or params[3] == 0):
+                #iswap family
+                pass_flag = True
+            elif family_extension and (params[2]/params[3] == 3 or params[3]/params[2] == 3):
+                #cnot family
+                pass_flag = True
+            elif family_extension and (params[2] == params[3]):
+                # cnot family
+                pass_flag = True
+            if not pass_flag:
+                continue
+
+            base_gate = ConversionGainGate(*params)
+
+            try:
+                template = MixedOrderBasisCircuitTemplate(
+                    base_gates=[base_gate], chatty_build=0, bare_cost=True, use_smush_polytope=use_smush
+                )
+            except Exception as e: # this would fail if we we tried to load a smush gate but wasn't precomputed
+                if 'Polytope not in memory' in str(e):
+                    continue # this is expected since we only precomputed for the 6 main gates, so just skip
+                else:
+                    raise e
+            # grabbing smush scores saved as an attribute
+            if template.scores is not None:
+                scores = np.array(template.scores)
+            else:
+                scores = np.array(v[1])
+
             gate, scaled_scores = atomic_cost_scaling(
                 params=params,
                 scores=scores,
                 speed_method=speed_method,
                 duration_1q=duration_1q,
+                family_extension=family_extension,
+                use_smush=use_smush
             )
 
             if query_params is not None and np.allclose(params, query_params):
@@ -241,7 +353,7 @@ def plot_eharr(group_name, metric=0):
 
 
 # %%
-def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True, smush_bool=False):
+def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True, smush_bool=False, family_extension=False):
     # TODO add a tiebreaker between any ties
     """pick the gate with the lowest score for the given metric
     params:
@@ -274,7 +386,7 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
 
             if metric in [0, 1, 2] and target_ops is None:
                 if template.scores is not None:
-                    target_score = template.scores
+                    target_score = template.scores[metric]
                 else:
                     target_score = v[1][metric]
                 scaled_gate, scaled_score = atomic_cost_scaling(
@@ -283,6 +395,8 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     speed_method=speed_method,
                     duration_1q=duration_1q,
                     scaled_gate=scaled_gate,
+                    family_extension=family_extension,
+                    use_smush=smush_bool
                 )
                 candidate_score = scaled_score
 
@@ -304,6 +418,8 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     speed_method=speed_method,
                     duration_1q=duration_1q,
                     scaled_gate=scaled_gate,
+                    family_extension=family_extension,
+                    use_smush=smush_bool
                 )
                 candidate_score = scaled_score
 
@@ -318,6 +434,8 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                         speed_method=speed_method,
                         duration_1q=duration_1q,
                         scaled_gate=scaled_gate,
+                        family_extension=family_extension,
+                        use_smush=smush_bool
                     )
                     candidate_score += scaled_score
 
