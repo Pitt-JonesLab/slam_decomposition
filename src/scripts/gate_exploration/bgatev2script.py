@@ -13,6 +13,7 @@ import numpy as np
 
 # %%
 from src.utils.custom_gates import ConversionGainGate
+from qiskit import QuantumCircuit
 from src.sampler import GateSample
 from src.optimizer import TemplateOptimizer
 from src.utils.polytope_wrap import (
@@ -152,11 +153,17 @@ def get_method_duration(group_name):
     return speed_method, duration_1q
 
 
-def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, cost_1q=.1, use_smush=False):
-    """Function used to instantiate a circuit using 1Q gate simplification rules"""
+def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, rec_iter_factor=1, cost_1q=.1, use_smush=False):
+    """Function used to instantiate a circuit using 1Q gate simplification rules
+    basis_factor is duration of root basis gate"""
     # check if template basis unitary is equal to target unitary using numpy
    
     child_gate = next(basis.gate_2q_base)
+
+    # check if target_u is identity
+    if np.allclose(target_u, np.eye(4)):
+        qc = QuantumCircuit(2)
+        return qc, 0
     
     # if child gate is locally equivalent to target gate, then we want to see if they can be equal using phase and VZ gates
     if np.all(np.isclose(c1c2c3(child_gate.to_matrix()), c1c2c3(target_u))):
@@ -174,7 +181,7 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, c
     # first get necessary range using basis
     ki = monodromy_range_from_target(basis, target_u)[0]
     # cost to beat
-    best_cost = (ki+1)*cost_1q  + ki * basis_factor
+    child_cost = (ki+1)*cost_1q  + ki * basis_factor
 
     assert ki >= 1, "Monodromy range must be at least 1, if the target is identity case not coded yet"
 
@@ -185,10 +192,11 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, c
 
     # construct the older sibling, based on parity of ki
     if ki % 2 == 0:
-        sib_basis_factor = 2 * basis_factor
+        rec_iter_factor = 2
     else:
-        sib_basis_factor = 3 * basis_factor
-    older_sibling = ConversionGainGate(*child_gate.params[:-1], t_el=child_gate.params[-1] * sib_basis_factor)
+        rec_iter_factor = 3
+    sib_basis_factor = rec_iter_factor * basis_factor
+    older_sibling = ConversionGainGate(*child_gate.params[:-1], t_el=child_gate.params[-1] * rec_iter_factor)
 
     older_sibling.normalize_duration(1)
 
@@ -196,16 +204,16 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, c
     if older_sibling.params[2] + older_sibling.params[3] <= np.pi/2:
         #new basis using older sibling
         sibling_basis = MixedOrderBasisCircuitTemplate(base_gates=[older_sibling], chatty_build=False, use_smush_polytope=use_smush)
-        sibling_decomp, sib_score = recursive_sibling_check(sibling_basis, target_u, use_smush=use_smush, basis_factor=sib_basis_factor, cost_1q=cost_1q)
+        sibling_decomp, sib_score = recursive_sibling_check(sibling_basis, target_u, use_smush=use_smush, basis_factor=sib_basis_factor, rec_iter_factor=rec_iter_factor, cost_1q=cost_1q)
     else:
         sib_score = np.inf
 
     # if length of qc is shorter using the siblings decomp template, else use self template
-    if sib_score < best_cost:
+    if sib_score < child_cost:
         return sibling_decomp, sib_score
     else:
         basis.build(ki)
-        return basis, (ki+1)*cost_1q + ki*basis_factor
+        return basis, child_cost
 
 def atomic_cost_scaling(
     params, scores, speed_method="linear", duration_1q=0, scaled_gate=None, use_smush=False, family_extension=False
@@ -274,7 +282,7 @@ def cost_scaling(speed_method="linear", duration_1q=0, overwrite=1, query_params
             params = v[0]
             
             # only allow family on cnot, b, swap
-            pass_flag = False
+            pass_flag = False or not family_extension
             if family_extension:
                 logging.warning("Family Extension only covers CNOT, B, and SWAP family gates")
             if family_extension and (params[2] == 0 or params[3] == 0):
