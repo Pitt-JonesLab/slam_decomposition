@@ -104,7 +104,7 @@ def _plot_circuit_polytope(
         "blue",
         "orange",
         "purple",
-        "yellow",
+        "cyan",
         "black",
         "pink",
         "brown",
