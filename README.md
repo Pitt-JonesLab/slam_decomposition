@@ -1,4 +1,4 @@
-# SLAM [Speed-Limit g(A)te opti(M)izations]
+# SLAM [Speed-Limit Analysis decoMposition]
 Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
 
 Example Usage [slighlty deprecated]:
