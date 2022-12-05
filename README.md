@@ -1,4 +1,4 @@
-# decomposition_EM
+# SLAM [Speed-Limit g(A)te opti(M)izations]
 Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
 
 Example Usage [slighlty deprecated]:
