@@ -74,6 +74,14 @@ def get_circuit_polytope(*basis_gate):
         convex_subpolytopes=circuit_polytope.convex_subpolytopes,
     )
 
+monkey_patch_data = [
+    [1.35, 1, 2],
+    [1.87, 2, 3],
+    [2.10, 1, 3],
+    [3.05, 1, 6],
+    [1.51, 1, 2],
+    [2.33, 2, 4]
+]
 
 duration_1q = 0.25
 N = 3000
@@ -87,10 +95,11 @@ if __name__ == "__main__":
     b = 3 * np.pi / 8, np.pi / 8, 1, "B", 2
     sqb = 3 * np.pi / 8, np.pi / 8, 1 / 2, "sqB", 4
     gate_list = [iswap, sqiswap, cnot, sqcnot, b, sqb]
-    no_save = 1
+    # gate_list = [b]
+    no_save = 0
 
     results = {}
-    for gate in gate_list:
+    for gate_iter, gate in enumerate(gate_list):
         gc, gg, t, gate_str, iters = gate
         logging.info("=========================================")
         logging.info(f"Gate: {gate_str}")
@@ -109,17 +118,23 @@ if __name__ == "__main__":
 
 
         # try loading from previous runs the coverage set
-        #NOT IMPLEMENTED
-        # load_gate = ConversionGainGate(0,0, gc, gg, t)
-        # loaded_coverage_set = None
-        # try:
-        #     template = MixedOrderBasisCircuitTemplate(base_gates=[load_gate], use_smush_polytope=True)
-        #     loaded_coverage_set = template.coverage
-        # except Exception as e:
-        #     if "Smush Polytope not in memory" in str(e):
-        #         pass
-        #     else:
-        #         raise e
+        # NOT IMPLEMENTED
+        load_gate = ConversionGainGate(0,0, gc, gg, t)
+        loaded_coverage_set = None
+        try:
+            template = MixedOrderBasisCircuitTemplate(base_gates=[load_gate], use_smush_polytope=True)
+            loaded_coverage_set = template.coverage
+            loaded_hash = template.gate_hash
+            loaded_scores = monkey_patch_data[gate_iter]
+            print("here")
+        
+        except Exception as e:
+            if "Smush Polytope not in memory" in str(e):
+                pass
+                print("not here")
+            else:
+                raise e
+    
 
         for k in range(1, iters + 1):
 
@@ -138,6 +153,11 @@ if __name__ == "__main__":
                 # so just manually build with 4 vertices
                 circuit_poly = get_circuit_polytope(*([ConversionGainGate(0, 0, gc, gg, t)] * k))
                 coverage_set.append(circuit_poly)
+                # I forgot to add this line 
+                if cnot_score is None:
+                    cnot_score = iters
+                if swap_score is None:
+                    swap_score = iters
                 gate_dict[str(k)] = [1, 1, 1, 1, 1]
                 break
 
@@ -204,11 +224,15 @@ if __name__ == "__main__":
                 basis.spanning_range = range(k, k+1)
                 sampler = GateSample(gate = target_vertex)
                 s = [s for s in sampler][0]
-                optimizer3 = TemplateOptimizer(basis=basis, objective=SquareCost(), use_callback=True, override_fail=True, success_threshold = 1e-10, training_restarts=1)
+                optimizer3 = TemplateOptimizer(basis=basis, objective=SquareCost(), use_callback=True, override_fail=True, success_threshold = 1e-10, training_restarts=3)
                 ret3 = optimizer3.approximate_from_distribution(sampler) 
                 coordinate_list += ret3[1][0] #get coordinate list
 
             logging.info(f"Done with targeted search")
+
+            if coordinate_list == []:
+                logging.info("No points found")
+                break
 
             # third, extend points via symmetry
             # TODO, take every coordinate and add its conjugate reflection to the unitary_list
@@ -224,7 +248,7 @@ if __name__ == "__main__":
                     left_coord_list.append([1-x, y, z])  
                     right_coord_list.append([1-x, y, z])              
 
-            # only keep left side, should fix non convex issues
+            # keep coordinate lists separate so union doesn't include volume between them
             coordinate_list = [left_coord_list,right_coord_list]
             logging.info("Done generating points via sy mmetry")
 
@@ -322,6 +346,7 @@ if __name__ == "__main__":
 
             logging.info(f"Done with k={k} analytics")
 
+        print("here3")
         results[gate_str] = gate_dict
         logging.info(f"Haar Score: {haar_score}")
 
@@ -344,7 +369,13 @@ if __name__ == "__main__":
                 str([str(gate)]) + "smush"
             )  # wrap in list for consistency with mixedbasistemplate
             print(file_hash)
+            # print(loaded_coverage_set)
             filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
+            if len(coverage_set) <= 0:
+                with open(filepath, "wb") as f:
+                    pickle.dump(loaded_coverage_set, loaded_hash, loaded_scores)
+                    logging.info("No new coverage, saving old coverage")
+            
             with open(filepath, "wb") as f:
                 pickle.dump((coverage_set, gate_hash, [haar_score, cnot_score, swap_score]), f)
                 logging.info("saved polytope coverage to file")

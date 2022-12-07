@@ -314,26 +314,34 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
 
             filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
             
-            # try load from memory
-            if os.path.exists(filepath): #XXX hardcoded file path'
-                logging.debug("loading polytope coverage from memory")
-                with open(filepath, "rb") as f:
-                    #NOTE this is hacky monkey patch, if we had more time we would transfer the old values to use this formatting
-                    # non smushes use the h5 data loads, but we wanted to make variations of the gate so overriding that h5 data by storing an optional value in the class
-                    if use_smush_polytope:
-                        self.coverage, self.gate_hash, self.scores = pickle.load(f)
-                    else:
-                        self.coverage, self.gate_hash = pickle.load(f)
-                        self.scores = None
-            elif use_smush_polytope:
-                raise ValueError("Smush Polytope not in memory, need to compute using extened_volume.py")
-            else:
-                # if not in memory, compute and save
-                logging.warning(f"No saved polytope! computing polytope coverage for {file_hash}")
-                self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
-                with open(filepath, "wb") as f:
-                    pickle.dump((self.coverage, self.gate_hash), f)
-                    logging.debug("saved polytope coverage to file")
+            while True:
+                # try load from memory
+                if os.path.exists(filepath): #XXX hardcoded file path'
+                    logging.debug("loading polytope coverage from memory")
+                    with open(filepath, "rb") as f:
+                        #NOTE this is hacky monkey patch, if we had more time we would transfer the old values to use this formatting
+                        # non smushes use the h5 data loads, but we wanted to make variations of the gate so overriding that h5 data by storing an optional value in the class
+                        if use_smush_polytope:
+                            self.coverage, self.gate_hash, self.scores = pickle.load(f)
+                            return 
+                        else:
+                            self.coverage, self.gate_hash = pickle.load(f)
+                            self.scores = None
+                            return
+                elif use_smush_polytope:
+                    raise ValueError("Smush Polytope not in memory, need to compute using extened_volume.py")
+                    logging.warning("Failed to load smush, using non-smush instead")
+                    file_hash = file_hash[:-5]
+                    use_smush_polytope = False
+                    filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
+                else:
+                    # if not in memory, compute and save
+                    logging.warning(f"No saved polytope! computing polytope coverage for {file_hash}")
+                    self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
+                    with open(filepath, "wb") as f:
+                        pickle.dump((self.coverage, self.gate_hash), f)
+                        logging.debug("saved polytope coverage to file")
+                    return
         else:
             self.coverage, self.gate_hash = gate_set_to_coverage(*base_gates, chatty=chatty_build, cost_1q=cost_1q, bare_cost=bare_cost)
 

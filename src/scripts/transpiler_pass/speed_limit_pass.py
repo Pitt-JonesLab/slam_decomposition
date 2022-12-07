@@ -8,16 +8,19 @@ sys.path.append("../../../")
 from weyl_decompose import RootiSwapWeylDecomposition as decomposer
 from qiskit.transpiler.passes import Collect2qBlocks, ConsolidateBlocks, Unroll3qOrMore, Optimize1qGates
 from src.utils.custom_gates import RiSwapGate
-from qiskit.circuit.library import CXGate
+from qiskit.circuit.library import CXGate, XGate
+from qiskit import QuantumCircuit
 from qiskit.converters import circuit_to_dag
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.quantum_info import Operator
 from src.basis import MixedOrderBasisCircuitTemplate
 from src.utils.polytope_wrap import monodromy_range_from_target
+from src.scripts.gate_exploration.bgatev2script import recursive_sibling_check
 from src.scripts.gate_exploration.bgatev2script import get_group_name, cost_scaling, pick_winner
 from qiskit.transpiler.basepasses import AnalysisPass
 from qiskit.transpiler.passes import CountOps
 from qiskit.dagcircuit import DAGOpNode, DAGCircuit
+from src.utils.custom_gates import CustomCostGate
 from qiskit.transpiler import PassManager
 from tqdm import tqdm
 
@@ -91,15 +94,37 @@ class SpeedGateSubstitute(TransformationPass):
             for node in dag.two_qubit_ops():
                 target = Operator(node.op).data
 
-                reps = monodromy_range_from_target(template, target_u =target, family_extension=self.family_extension)[0] 
+                if self.family_extension:
+                    ret = recursive_sibling_check(template, target, cost_1q=self.duration_1q, basis_factor=scaled_winner_gate.duration, use_smush=smush_bool)
+                    sub_template = ret[0] # should already be built
+                    # XXX template isn't using scaled gates will break the fooAnalysis
+                    # print("here")
+                    # idea is to substitute a dummy gate that contains the duration attribute
+                    # note the actual unitary doesn't matter since we're just using the duration
+                    # problem is that the 1Q gates are not used so don't get simplified away
+                    # need to check if subtemplate has 1Q gates then subtract duration_1q from the dummy cost
+                    # this is very hacky, don't like
+                    # XXX lets just assume it always has 1Q gates
+                    dummy_single = CustomCostGate(str = "dummy1q", unitary=XGate(), duration = self.duration_1q, num_qubits=1)
+                    dummy_gate = CustomCostGate(unitary=target, duration=ret[1]-(2*self.duration_1q), str="dummy")
+                    sub_qc = QuantumCircuit(2)
+                    # sub_qc.append(dummy_single, [0])
+                    # sub_qc.append(dummy_single, [1])
+                    sub_qc.append(dummy_gate, [0,1])
+                    # sub_qc.append(dummy_single, [0])
+                    # sub_qc.append(dummy_single, [1])
+                    sub_dag = circuit_to_dag(sub_qc)
+                    dag.substitute_node_with_dag(node, sub_dag)
+                else:
+                    reps = monodromy_range_from_target(template, target_u =target)[0] 
                 
-                #NOTE, when we build, actually use the scaled_winner_gate which has the proper duration attiriubte
-                template.build(reps, scaled_winner_gate)
+                    #NOTE, when we build, actually use the scaled_winner_gate which has the proper duration attiriubte
+                    template.build(reps, scaled_winner_gate)
 
-                #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
-                sub_qc = template.assign_Xk(template.parameter_guess())
-                sub_dag = circuit_to_dag(sub_qc)
-                dag.substitute_node_with_dag(node, sub_dag)          
+                    #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
+                    sub_qc = template.assign_Xk(template.parameter_guess())
+                    sub_dag = circuit_to_dag(sub_qc)
+                    dag.substitute_node_with_dag(node, sub_dag)          
 
         elif self.strategy == 'weighted_overall':
             """Here, we are counting gates that appear in the circuit in order to define a winner metric"""
@@ -115,7 +140,7 @@ class SpeedGateSubstitute(TransformationPass):
             for node in dag.two_qubit_ops():
                 target = Operator(node.op).data
 
-                reps = monodromy_range_from_target(template, target_u =target, family_extension=self.family_extension)[0] 
+                reps = monodromy_range_from_target(template, target_u =target)[0] 
                 
                 template.build(reps, scaled_winner_gate)
                 #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
@@ -153,7 +178,7 @@ class SpeedGateSubstitute(TransformationPass):
                     if set(edge) == set((node.qargs[0].index, node.qargs[1].index)):
                         target = Operator(node.op).data
 
-                        reps = monodromy_range_from_target(template, target_u =target, family_extension=self.family_extension)[0] 
+                        reps = monodromy_range_from_target(template, target_u =target)[0] 
                         
                         template.build(reps, scaled_winner_gate)
                         #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration

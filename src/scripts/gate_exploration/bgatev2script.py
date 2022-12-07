@@ -166,7 +166,7 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, r
         return qc, 0
     
     # if child gate is locally equivalent to target gate, then we want to see if they can be equal using phase and VZ gates
-    if np.all(np.isclose(c1c2c3(child_gate.to_matrix()), c1c2c3(target_u))):
+    if False and np.all(np.isclose(c1c2c3(child_gate.to_matrix()), c1c2c3(target_u))):
         phase_lambda = lambda p1, p2: ConversionGainGate(p1, p2, child_gate.params[2], child_gate.params[3], t_el=child_gate.params[-1])
         template = CircuitTemplateV2(base_gates = [phase_lambda], maximum_span_guess=1, vz_only=True)
         template.spanning_range = range(1,2)
@@ -216,7 +216,7 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, r
         return basis, child_cost
 
 def atomic_cost_scaling(
-    params, scores, speed_method="linear", duration_1q=0, scaled_gate=None, use_smush=False, family_extension=False
+    params, scores, speed_method="linear", duration_1q=0, scaled_gate=None, use_smush=False, family_extension=False, metric=None
 ):
     if scaled_gate is None:
         # defined speed limit functions
@@ -259,9 +259,26 @@ def atomic_cost_scaling(
         basis = ConversionGainGate(*params)
         template = MixedOrderBasisCircuitTemplate(base_gates=[basis], chatty_build=False, use_smush_polytope=use_smush)
         from qiskit.circuit.library import SwapGate
-        for score_index, gate_target in enumerate([CXGate().to_matrix(), SwapGate().to_matrix()]):
+        targets = []
+        #TODO XXX FIXME, metric is (-1, lambda)
+        # custom_score = (lambda_weight * cnot_score + (1 - lambda_weight) * swap_score)
+        if metric is None:
+            targets = [CXGate().to_matrix(), SwapGate().to_matrix()]
+        if metric == 0:
+            raise NotImplementedError("Fam scaling not implemented for haar, calculate it by hand lol")
+        if metric == 1:
+            targets = [CXGate().to_matrix()]
+        if metric == 2:
+            targets = [SwapGate().to_matrix()]
+        for score_index, gate_target in enumerate(targets):
             ret = recursive_sibling_check(template, gate_target, cost_1q=duration_1q, basis_factor=gate.cost())
-            scaled_scores[score_index+1] = ret[1] # add 1 to index to skip over Haar score
+            if len(targets) == 1:
+                return gate, ret[1]
+            else:
+                scaled_scores[score_index+1] = ret[1] # add 1 to index to skip over Haar score
+        if len(targets) ==1:
+            scaled_scores[0] = (scores + 1) * duration_1q  # scale by 1Q gate cost
+            return gate, scaled_scores
     else:
         scaled_scores += (scores + 1) * duration_1q  # scale by 1Q gate cost
     return gate, scaled_scores
@@ -388,6 +405,9 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     continue # this is expected since we only precomputed for the 6 main gates, so just skip
                 else:
                     raise e
+
+            if np.any(np.array(template.scores) == None):
+                continue
  
             candidate_score = 0
             scaled_gate = None  # used for skipping reconstruction in the atomic cost scaling function
@@ -404,7 +424,8 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     duration_1q=duration_1q,
                     scaled_gate=scaled_gate,
                     family_extension=family_extension,
-                    use_smush=smush_bool
+                    use_smush=smush_bool,
+                    metric = metric
                 )
                 candidate_score = scaled_score
 
@@ -427,7 +448,8 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     duration_1q=duration_1q,
                     scaled_gate=scaled_gate,
                     family_extension=family_extension,
-                    use_smush=smush_bool
+                    use_smush=smush_bool,
+                    metric=metric
                 )
                 candidate_score = scaled_score
 
@@ -443,7 +465,8 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                         duration_1q=duration_1q,
                         scaled_gate=scaled_gate,
                         family_extension=family_extension,
-                        use_smush=smush_bool
+                        use_smush=smush_bool,
+                        metric=metric
                     )
                     candidate_score += scaled_score
 

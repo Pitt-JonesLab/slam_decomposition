@@ -22,15 +22,24 @@ qc.draw(output='mpl')
 class CustomCostGate(Gate):
     #want to build a gate progamatically from a unitary
     #cost value used in expected haar calcuation
-    def __init__(self, unitary, str, cost=1):
+    def __init__(self, unitary, str, cost=1, duration=1, num_qubits=2):
         self.unitary = unitary
         self.str= str
-        self.c = cost #i.e. duration
-        super().__init__(str, num_qubits=2, params=[], label=str)
-    
+        self.c = cost
+        
+        # self.global_phase = 0 #idk why the dag method requires this
+        super().__init__(str, num_qubits=num_qubits, params=[], label=str)
+        self.duration  = duration # duration is attribution not duration
     @classmethod
     def from_gate(cls, gate:Gate, cost:float):
         return cls(gate.to_matrix(), str(gate), cost=cost)
+
+    # we use this duration property in the speed limit pass sub
+    # we build a dummy gate that sets duration such that fooanalysis counts correctly
+    # the fam substitution messes up our custom scaled gates but this is a nice work around
+    # def duration(self):
+    #     return self.d
+
 
     def cost(self):
         return self.c
