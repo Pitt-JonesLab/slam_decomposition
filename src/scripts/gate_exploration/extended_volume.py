@@ -246,7 +246,7 @@ if __name__ == "__main__":
                     right_coord_list.append([1-x,y,z])
                 elif x > 0.5:
                     left_coord_list.append([1-x, y, z])  
-                    right_coord_list.append([1-x, y, z])              
+                    right_coord_list.append([x, y, z])              
 
             # keep coordinate lists separate so union doesn't include volume between them
             coordinate_list = [left_coord_list,right_coord_list]
