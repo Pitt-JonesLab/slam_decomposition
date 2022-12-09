@@ -5,25 +5,25 @@ import numpy as np
 from os import path
 
 from config import srcpath
-datapath = "{srcpath}/data/Q1_11.07mA_snailPump_length0.5_prepareE_False_freqG_9070_freqC_695-11_processed.json"
+datapath = f"{srcpath}/data/Q1_11.07mA_snailPump_length0.5_prepareE_False_freqG_9070_freqC_695-11_processed.json"
 dd = json.load(open(datapath))
 g2_conv = dd["g2_conv"]
 g2_gain = dd["g2_gain"]
 g_pct = np.array(dd["g_pct"])
 
 
-plt.figure()
-plt.pcolormesh(g2_conv, g2_gain, g_pct.T, shading='auto', cmap='RdBu', vmin=0, vmax=1)
-plt.xlabel(f"g2eff_conv (MHz)")
-plt.ylabel(f"g2eff_gain (MHz)")
+# plt.figure()
+# plt.pcolormesh(g2_conv, g2_gain, g_pct.T, shading='auto', cmap='RdBu', vmin=0, vmax=1)
+# plt.xlabel(f"g2eff_conv (MHz)")
+# plt.ylabel(f"g2eff_gain (MHz)")
 
-# plt.xticks(np.linspace(0, 50, 6), map(str, np.linspace(0, 50, 6, dtype=int)))
-# plt.yticks(np.linspace(0, 15, 4), map(str, np.linspace(0, 15, 4, dtype=int)))
+# # plt.xticks(np.linspace(0, 50, 6), map(str, np.linspace(0, 50, 6, dtype=int)))
+# # plt.yticks(np.linspace(0, 15, 4), map(str, np.linspace(0, 15, 4, dtype=int)))
 
 
-cbar = plt.colorbar()
-cbar.set_label("g pct", rotation=90)
-cbar.set_ticks([0.0, 0.5, 1.0])
+# cbar = plt.colorbar()
+# cbar.set_label("g pct", rotation=90)
+# cbar.set_ticks([0.0, 0.5, 1.0])
 
 # namign variables to match old version
 glist = g_pct

@@ -330,7 +330,7 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
                             self.scores = None
                             return
                 elif use_smush_polytope:
-                    raise ValueError("Smush Polytope not in memory, need to compute using extened_volume.py")
+                    raise ValueError("Smush Polytope not in memory, need to compute using parallel_drive_volume.py")
                     logging.warning("Failed to load smush, using non-smush instead")
                     file_hash = file_hash[:-5]
                     use_smush_polytope = False

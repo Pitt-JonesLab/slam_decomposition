@@ -92,7 +92,7 @@ if __name__ == "__main__":
     sqb = 3 * np.pi / 8, np.pi / 8, 1 / 2, "sqB", 4
     gate_list = [iswap, sqiswap, cnot, sqcnot, b, sqb]
     # gate_list = [b]
-    no_save = 0
+    no_save = 1
 
     results = {}
     for gate_iter, gate in enumerate(gate_list):
