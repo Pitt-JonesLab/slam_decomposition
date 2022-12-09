@@ -1,0 +1,656 @@
+INFO:root:=========================================
+INFO:root:Gate: iSwap
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.4000000000267413
+INFO:root:Overall Best Loss=0.4000000000267413
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.5, 3.97e-06, 9.3e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=2.437939849997406e-10
+INFO:root:Overall Best Loss=2.437939849997406e-10
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.5, 6.29e-06, 3.1e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.21715728757755282
+INFO:root:Overall Best Loss=0.21715728757755282
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.5, 0.25000285, 0.24999715)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.04882225348881375
+INFO:root:Overall Best Loss=0.04882225348881375
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.5, 0.38685571, 0.11218408)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.7012536792917132
+INFO:root:Unique Vol 0.7012536792917132
+INFO:root:Running Vol 0.7012536792917132
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.7012536792917132
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=9.117007149228584e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=9.117007149228584e-11
+INFO:root:Success: (0.0, 0.0, 0.0), Found: (0.99999486, 2.32e-06, 9.7e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=3.0214275525963785e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=3.0214275525963785e-11
+INFO:root:Success: (0.5, 0.0, 0.0), Found: (0.49999971, 1.99e-06, 8e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=1.9957080432675411e-10
+INFO:root:Overall Best Loss=1.9957080432675411e-10
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.50000135, 0.49999424, 0.49999214)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=9.14189834944068e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=9.14189834944068e-11
+INFO:root:Success: (0.5, 0.5, 0.0), Found: (0.50000032, 0.4999991, 3.93e-06)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9999999999945101
+INFO:root:Unique Vol 0.29874632070279683
+INFO:root:Running Vol 0.9999999999945101
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] True
+INFO:root:D[B] True
+INFO:root:Volume: 0.9999999999945101
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Extended 1
+INFO:root:Haar Score: 1.2987463207137768
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: sqiSwap
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.6828427670322833
+INFO:root:Overall Best Loss=0.6828427670322833
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.25, 0.00032724, 0.00028129)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.11715730909182709
+INFO:root:Overall Best Loss=0.11715730909182709
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.25, 9.714e-05, 5.717e-05)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.46247593434451073
+INFO:root:Overall Best Loss=0.46247593434451073
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.75, 0.12633578, 0.12366422)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.2641779596319347
+INFO:root:Overall Best Loss=0.2641779596319347
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.25, 0.19689096, 0.05310904)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.007541311031792931
+INFO:root:Unique Vol 0.007541311031792931
+INFO:root:Running Vol 0.007541311031792931
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.007541311031792931
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=4.534095321417908e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=4.534095321417908e-11
+INFO:root:Success: (0.0, 0.0, 0.0), Found: (3.06e-06, 2.64e-06, 1.2e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=1.9313693977451862e-09
+INFO:root:Overall Best Loss=1.9313693977451862e-09
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.50002731, 1.19e-05, 6.58e-06)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.21108383779577766
+INFO:root:Overall Best Loss=0.21108383779577766
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.69689096, 0.29534611, 0.29532678)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.011071091283958445
+INFO:root:Overall Best Loss=0.011071091283958445
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.44690372, 0.44687698, 2e-07)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.7901173636843226
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.8903180512392713
+INFO:root:Unique Vol 0.8827767402074784
+INFO:root:Running Vol 0.8903180512392713
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.8903180512392713
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Extended 1
+INFO:root:Haar Score: 2.102140637728936
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: CNOT
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.40000000000571734
+INFO:root:Overall Best Loss=0.40000000000571734
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.5, -0.0, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=5.428779648042337e-11
+INFO:root:Break on cycle 1
+INFO:root:Overall Best Loss=5.428779648042337e-11
+INFO:root:Success: (0.5, 0.0, 0.0), Found: (0.5, 0.0, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.6000000000187368
+INFO:root:Overall Best Loss=0.6000000000187368
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.5, 0.0, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.40000000014181825
+INFO:root:Overall Best Loss=0.40000000014181825
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.5, 0.0, 0.0)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.026221125748875335
+INFO:root:Unique Vol 0.026221125748875335
+INFO:root:Running Vol 0.026221125748875335
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.026221125748875335
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=2.4888757721441834e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=2.4888757721441834e-11
+INFO:root:Success: (0.0, 0.0, 0.0), Found: (0.9999989, 6.6e-07, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=4.2545300615870474e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=4.2545300615870474e-11
+INFO:root:Success: (0.5, 0.0, 0.0), Found: (0.50000067, 8.1e-07, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.4000000001029228
+INFO:root:Overall Best Loss=0.4000000001029228
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.50000083, 0.49999472, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=1.9908041881677718e-10
+INFO:root:Overall Best Loss=1.9908041881677718e-10
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.49999879, 0.49999812, 0.0)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.6446696371059322
+INFO:root:Unique Vol 0.6184485113570568
+INFO:root:Running Vol 0.6446696371059322
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.6446696371059322
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Extended 1
+INFO:root:Haar Score: 2.3291092371451922
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: sqCNOT
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.1171572876186111
+INFO:root:Overall Best Loss=0.1171572876186111
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.75, 0.0, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.11715728776062395
+INFO:root:Overall Best Loss=0.11715728776062395
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.25, 0.0, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.6000000000140158
+INFO:root:Overall Best Loss=0.6000000000140158
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.75, 0.0, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.45857864391596637
+INFO:root:Overall Best Loss=0.45857864391596637
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.75, -0.0, 0.0)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.00013209397978281191
+INFO:root:Unique Vol 0.00013209397978281191
+INFO:root:Running Vol 0.00013209397978281191
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.00013209397978281191
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=8.716916077844417e-12
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=8.716916077844417e-12
+INFO:root:Success: (0.0, 0.0, 0.0), Found: (1.47e-06, 3.9e-07, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=1.3937058063184793e-08
+INFO:root:Overall Best Loss=1.3937058063184793e-08
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.49991816, 1.581e-05, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.5000000000757684
+INFO:root:Overall Best Loss=0.5000000000757684
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.25000114, 0.24999886, 0.0)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.2171572876176885
+INFO:root:Overall Best Loss=0.2171572876176885
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.74999999, 0.24999999, 0.0)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.02914756013969056
+INFO:root:Unique Vol 0.02901546615990775
+INFO:root:Running Vol 0.02914756013969056
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.02914756013969056
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=1.0634269020926013e-09
+INFO:root:Overall Best Loss=1.0634269020926013e-09
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.99997988, 1.045e-05, 7e-08)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=6.599043533839222e-11
+INFO:root:Break on cycle 3
+INFO:root:Overall Best Loss=6.599043533839222e-11
+INFO:root:Success: (0.5, 0.0, 0.0), Found: (0.50000031, 2.67e-06, 9e-08)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=0.3000000002112384
+INFO:root:Overall Best Loss=0.3000000002112384
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.74999751, 0.24999959, 0.24999792)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=0.05973750895962715
+INFO:root:Overall Best Loss=0.05973750895962715
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.62499971, 0.37499971, 0.0)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.49999999999999994
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.5000000004989468
+INFO:root:Unique Vol 0.4708524403592562
+INFO:root:Running Vol 0.5000000004989468
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.5000000004989468
+INFO:root:Done with k=3 analytics
+INFO:root:K = 4
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 4
+INFO:root:Cycle (k =4), Best Loss=4.563049937900132e-11
+INFO:root:Break on cycle 4
+INFO:root:Overall Best Loss=4.563049937900132e-11
+INFO:root:Success: (0.0, 0.0, 0.0), Found: (0.99999643, 1.55e-06, 6.7e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 4
+INFO:root:Cycle (k =4), Best Loss=4.179445678431648e-11
+INFO:root:Break on cycle 4
+INFO:root:Overall Best Loss=4.179445678431648e-11
+INFO:root:Success: (0.5, 0.0, 0.0), Found: (0.4999975, 2.82e-06, 3.9e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 4
+INFO:root:Cycle (k =4), Best Loss=0.1500000008076906
+INFO:root:Overall Best Loss=0.1500000008076906
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.33333659, 0.3333337, 0.33332971)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 4
+INFO:root:Cycle (k =4), Best Loss=3.155874261917546e-08
+INFO:root:Overall Best Loss=3.155874261917546e-08
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.50008366, 0.49990739, 1.883e-05)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.9598826363156776
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9598826237962252
+INFO:root:Unique Vol 0.45988262329727847
+INFO:root:Running Vol 0.9598826237962252
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9598826237962252
+INFO:root:Done with k=4 analytics
+INFO:root:K = 5
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 5
+INFO:root:Cycle (k =5), Best Loss=2.376389085512187e-10
+INFO:root:Overall Best Loss=2.376389085512187e-10
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (8.36e-06, 4.55e-06, 8e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 5
+INFO:root:Cycle (k =5), Best Loss=1.0693934626715418e-10
+INFO:root:Overall Best Loss=1.0693934626715418e-10
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.50000058, 6.25e-06, 7.7e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 5
+INFO:root:Cycle (k =5), Best Loss=0.04019237923369645
+INFO:root:Overall Best Loss=0.04019237923369645
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.4166713, 0.41666638, 0.41666232)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 5
+INFO:root:Cycle (k =5), Best Loss=6.727529644479091e-11
+INFO:root:Break on cycle 5
+INFO:root:Overall Best Loss=6.727529644479091e-11
+INFO:root:Success: (0.5, 0.5, 0.0), Found: (0.50000054, 0.49999813, 1.58e-06)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.9998625428762983
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9998625394568625
+INFO:root:Unique Vol 0.0399799156606373
+INFO:root:Running Vol 0.9998625394568625
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9998625394568625
+INFO:root:Done with k=5 analytics
+INFO:root:K = 6
+INFO:root:Extended 1
+INFO:root:Haar Score: 3.510975182128492
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: B
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.4000000007457978
+INFO:root:Overall Best Loss=0.4000000007457978
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.5, 1.975e-05, 1.176e-05)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=3.4644676016881704e-10
+INFO:root:Overall Best Loss=3.4644676016881704e-10
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.5, 1.129e-05, 6.75e-06)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.45984470169974023
+INFO:root:Overall Best Loss=0.45984470169974023
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.5, 0.09836914, 0.0983678)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.1747843322739362
+INFO:root:Overall Best Loss=0.1747843322739362
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.5, 0.19490966, 0.05496636)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.29577457437227894
+INFO:root:Unique Vol 0.29577457437227894
+INFO:root:Running Vol 0.29577457437227894
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.29577457437227894
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Extended 1
+INFO:root:Haar Score: 1.7042254256277212
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: sqB
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.11715734075333795
+INFO:root:Overall Best Loss=0.11715734075333795
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.25, 0.00012599, 0.00012491)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.11715729908274641
+INFO:root:Overall Best Loss=0.11715729908274641
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.25, 7.073e-05, 1.994e-05)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.5372100971676319
+INFO:root:Overall Best Loss=0.5372100971676319
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.25, 0.0634465, 0.06155349)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 1
+INFO:root:Cycle (k =1), Best Loss=0.3553633934424204
+INFO:root:Overall Best Loss=0.3553633934424204
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.75, 0.09844623, 0.02655377)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.002508784347831931
+INFO:root:Unique Vol 0.002508784347831931
+INFO:root:Running Vol 0.002508784347831931
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.002508784347831931
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=3.75118824891274e-11
+INFO:root:Break on cycle 2
+INFO:root:Overall Best Loss=3.75118824891274e-11
+INFO:root:Success: (0.0, 0.0, 0.0), Found: (0.99999628, 1e-06, 8.8e-07)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=2.0927293453709694e-08
+INFO:root:Overall Best Loss=2.0927293453709694e-08
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.50010095, 1.83e-05, 3.63e-06)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.34201946670418004
+INFO:root:Overall Best Loss=0.34201946670418004
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.72344586, 0.25000052, 0.1703378)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 2
+INFO:root:Cycle (k =2), Best Loss=0.08658769390813958
+INFO:root:Overall Best Loss=0.08658769390813958
+INFO:root:Fail: (0.5, 0.5, 0.0), Found: (0.65162318, 0.34836334, 1.88e-06)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.49999999999999994
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.4999999999987793
+INFO:root:Unique Vol 0.4974912156509474
+INFO:root:Running Vol 0.4999999999987793
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.4999999999987793
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Done with randomization
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.0, 0.0, 0.0)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=1.364444557339084e-09
+INFO:root:Overall Best Loss=1.364444557339084e-09
+INFO:root:Fail: (0.0, 0.0, 0.0), Found: (0.99997618, 8.05e-06, 5.8e-06)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.0, 0.0)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=2.0406842882181309e-10
+INFO:root:Overall Best Loss=2.0406842882181309e-10
+INFO:root:Fail: (0.5, 0.0, 0.0), Found: (0.49999732, 3.37e-06, 2.15e-06)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.5)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=0.11272540415735999
+INFO:root:Overall Best Loss=0.11272540415735999
+INFO:root:Fail: (0.5, 0.5, 0.5), Found: (0.35747194, 0.35721975, 0.35720066)
+INFO:root:Starting sample iter 0
+INFO:root:Begin search: (0.5, 0.5, 0.0)
+INFO:root:Starting opt on template size 3
+INFO:root:Cycle (k =3), Best Loss=8.030853759777301e-11
+INFO:root:Break on cycle 3
+INFO:root:Overall Best Loss=8.030853759777301e-11
+INFO:root:Success: (0.5, 0.5, 0.0), Found: (0.50000157, 0.49999481, 5e-07)
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.9958104342810903
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9958104342784044
+INFO:root:Unique Vol 0.4958104342796251
+INFO:root:Running Vol 0.9958104342784044
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9958104342784044
+INFO:root:Done with k=3 analytics
+INFO:root:K = 4
+INFO:root:Extended 1
+INFO:root:Haar Score: 2.501680781374984
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
