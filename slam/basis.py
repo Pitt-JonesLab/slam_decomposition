@@ -14,12 +14,13 @@ from weylchamber import c1c2c3
 
 from slam.hamiltonian import Hamiltonian
 from slam.utils.gates.custom_gates import *
-from slam.utils.data_utils import filename_encode, pickle_load, pickle_save
+from deprecate.data_utils import filename_encode, pickle_load, pickle_save
 from slam.utils.monodromy.polytope_wrap import (gate_set_to_coverage,
                                   monodromy_range_from_target)
 import pickle
 import os
 from typing import List
+from config import srcpath
 
 """
 Defines the variational object passed to the optimizer
@@ -312,7 +313,7 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
             if use_smush_polytope:
                 file_hash += "smush"
 
-            filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
+            filepath = f"{srcpath}/data/polytopes/polytope_coverage_{file_hash}.pkl"
             
             while True:
                 # try load from memory
@@ -333,7 +334,7 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
                     logging.warning("Failed to load smush, using non-smush instead")
                     file_hash = file_hash[:-5]
                     use_smush_polytope = False
-                    filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
+                    filepath = f"{srcpath}/data/polytopes/polytope_coverage_{file_hash}.pkl"
                 else:
                     # if not in memory, compute and save
                     logging.warning(f"No saved polytope! computing polytope coverage for {file_hash}")

@@ -5,8 +5,7 @@ import numpy as np
 from os import path
 
 from config import srcpath
-datapath = "data/Q1_11.07mA_snailPump_length0.5_prepareE_False_freqG_9070_freqC_695-11_processed.json"
-datapath = srcpath + datapath
+datapath = "{srcpath}/data/Q1_11.07mA_snailPump_length0.5_prepareE_False_freqG_9070_freqC_695-11_processed.json"
 dd = json.load(open(datapath))
 g2_conv = dd["g2_conv"]
 g2_gain = dd["g2_gain"]

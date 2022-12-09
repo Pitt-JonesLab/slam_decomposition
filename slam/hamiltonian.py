@@ -4,7 +4,7 @@ from ast import Pass
 import numpy as np
 import qutip
 
-from slam.utils.data_utils import filename_encode
+from deprecate.data_utils import filename_encode
 
 """
 Hamiltonians defined in terms of raising/lowering operators

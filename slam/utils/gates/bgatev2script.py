@@ -76,7 +76,8 @@ def build_gates(elim_extra_weyl=True):
 # %%
 import h5py
 
-filename = "/home/evm9/decomposition_EM/data/cg_gates.h5"
+from config import srcpath
+filename = f"{srcpath}/data/cg_gates.h5"
 
 
 def collect_data(unitary_list, overwrite=False):

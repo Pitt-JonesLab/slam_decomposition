@@ -6,7 +6,8 @@ import scipy.spatial as ss
 from tqdm import tqdm
 from monodromy.coordinates import monodromy_to_positive_canonical_polytope
 
-fpath = "/home/evm9/decomposition_EM/images"
+from config import srcpath
+fpath_images = f"{srcpath}/images"
 
 
 def plot_coverage_set(coverage_set, save=False, filename=None, **kwargs):
@@ -24,7 +25,7 @@ def plot_coverage_set(coverage_set, save=False, filename=None, **kwargs):
             circuit_polytope, fig=fig, index=index, save=False
         )  # , override_connect=index in kwargs.get("override_connect_indices", []))
     if save and filename is not None:
-        plt.savefig(f"{fpath}/{filename}.pdf", format="pdf")
+        plt.savefig(f"{fpath_images}/{filename}.pdf", format="pdf")
 
 
 def _plot_circuit_polytope(
@@ -190,7 +191,7 @@ def _plot_circuit_polytope(
     #    f, ax = _make_shape(total_coords, ax)
 
     if save and filename is not None:
-        plt.savefig("{fpath}/{filename}.svg", format="svg")
+        plt.savefig("{fpath_images}/{filename}.svg", format="svg")
     return fig
 
 

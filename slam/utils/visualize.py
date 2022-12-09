@@ -6,7 +6,8 @@ import scipy.spatial as ss
 from tqdm import tqdm
 from monodromy.coordinates import monodromy_to_positive_canonical_polytope
 
-fpath = "/home/evm9/decomposition_EM/images"
+from config import srcpath
+fpath_images = srcpath + "images"
 
 
 # pretty print matrix from Chao

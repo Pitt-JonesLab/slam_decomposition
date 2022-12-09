@@ -37,8 +37,8 @@ from slam.utils.gates.custom_gates import (BerkeleyGate, ConversionGainGate,
 from slam.utils.visualize import _plot_circuit_polytope as debug_plot
 from slam.utils.visualize import coordinate_2dlist_weyl, unitary_2dlist_weyl
 
-fpath = "/home/evm9/decomposition_EM/images"
-
+from slam.utils.visualize import fpath_images
+from config import srcpath
 
 # super hacky because haar_volume wasn't working
 # XXX this works because function only uses convex_subpolytopes attribute which we use
@@ -268,8 +268,8 @@ if __name__ == "__main__":
             if not no_save:
                 fig = unitary_2dlist_weyl(unitary_list, c=color, no_bar=1)
                 name = f"smush_{k}_k_{t}_t_{gc}_gc_{gg}_gg"
-                fig.savefig(f"{fpath}/extended_{gate_str}_k{k}.svg", format="svg")
-                fig.savefig(f"{fpath}/extended_{gate_str}_k{k}.pdf", format="pdf")
+                fig.savefig(f"{fpath_images}/extended_{gate_str}_k{k}.svg", format="svg")
+                fig.savefig(f"{fpath_images}/extended_{gate_str}_k{k}.pdf", format="pdf")
                 logging.info("Done generating unitary plot")
 
             """Solve for volumes"""
@@ -366,7 +366,7 @@ if __name__ == "__main__":
             )  # wrap in list for consistency with mixedbasistemplate
             print(file_hash)
             # print(loaded_coverage_set)
-            filepath = f"/home/evm9/decomposition_EM/data/polytopes/polytope_coverage_{file_hash}.pkl"
+            filepath = f"{srcpath}/data/polytopes/polytope_coverage_{file_hash}.pkl"
             if len(coverage_set) <= 0:
                 with open(filepath, "wb") as f:
                     pickle.dump(loaded_coverage_set, loaded_hash, loaded_scores)
