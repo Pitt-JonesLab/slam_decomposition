@@ -7,15 +7,12 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-import sys
-sys.path.append("../../../")
-
 import numpy as np
 
 # %%
-from src.hamiltonian import ConversionGainPhaseHamiltonian
-from src.basisv2 import CircuitTemplateV2
-from src.utils.custom_gates import ConversionGainGate
+from slam.hamiltonian import ConversionGainPhaseHamiltonian
+from slam.basisv2 import CircuitTemplateV2
+from slam.utils.gates.custom_gates import ConversionGainGate
 pp =lambda p1, p2: ConversionGainGate(p1, p2, np.pi/4, np.pi/4)
 basis = CircuitTemplateV2(n_qubits=2, base_gates=[pp], no_exterior_1q=0, vz_only=1)
 basis.build(1)
@@ -27,7 +24,7 @@ gc = 0*np.pi/2
 gg = 0*np.pi
 
 # %%
-from src.utils.custom_gates import ConversionGainSmushGate
+from slam.utils.gates.custom_gates import ConversionGainSmushGate
 
 # NOTE first variable is tracking an offset (basically set it to 2 if counting the phase variables)
 p_expand = [4, round(t/duration_1q), round(t/duration_1q)]
@@ -55,7 +52,7 @@ for el in basis.circuit.parameters:
 basis.circuit.draw()
 
 # %%
-from src.utils.visualize import unitary_2dlist_weyl, coordinate_2dlist_weyl
+from slam.utils.visualize import unitary_2dlist_weyl, coordinate_2dlist_weyl
 from qiskit.quantum_info import Operator
 from weylchamber import c1c2c3
 import h5py

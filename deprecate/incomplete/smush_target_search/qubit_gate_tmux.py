@@ -3,29 +3,26 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-import sys
-sys.path.append("../../../")
-
 import numpy as np
-from src.utils.visualize import plotMatrix
+from slam.utils.visualize import plotMatrix
 
 import matplotlib.pyplot as plt
 # %matplotlib widget
 from qiskit import QuantumCircuit, BasicAer, execute
 from qiskit.visualization import plot_histogram
 from qiskit.quantum_info import mutual_information, Statevector, partial_trace, concurrence, entanglement_of_formation
-from src.basisv2 import CircuitTemplateV2
-from src.utils.custom_gates import CirculatorSNAILGate
-from src.cost_function import BasicCostInverse, BasicCost, BasicReducedCost
-from src.optimizer import TemplateOptimizer
+from slam.basisv2 import CircuitTemplateV2
+from slam.utils.gates.custom_gates import CirculatorSNAILGate
+from slam.cost_function import BasicCostInverse, BasicCost, BasicReducedCost
+from slam.optimizer import TemplateOptimizer
 import h5py
 
 # %% [markdown]
 # Using a wrapper lambda to fix parameter values in the basis gate for all search time. (Alternative is to fix only at beginning by overriding the beginning parameter guess - say if want to start near some known value but on new attempt let other variable that were previously fixed have some wiggle room)
 
 # %%
-# from src.basisv2 import CircuitTemplateV2
-# from src.utils.custom_gates import CirculatorSNAILGate
+# from slam.basisv2 import CircuitTemplateV2
+# from slam.utils.gates.custom_gates import CirculatorSNAILGate
 # bind_lambda = lambda g_ab, t: CirculatorSNAILGate(0, 0, 0, np.pi/2, 0, 0, t)
 # basis = CircuitTemplateV2(n_qubits=3, base_gates = [bind_lambda], edge_params=[[(0,1,2)]])
 # basis.build(2)
@@ -40,14 +37,14 @@ import h5py
 # This template is same as from continuous_basis now, we have 2 iswap gates that are free to adjust their times. However, we have a 3rd qubit ancilla. That probably is not very helpful - we should remove it and just rewrite the gate class to be more adaptive. I think this test is at least a good way to quantify how much harder the increased hilbert space is for training - keeping the 3rd qubit just as ancilla.
 
 # %%
-# from src.cost_function import BasicCostInverse, BasicCost
+# from slam.cost_function import BasicCostInverse, BasicCost
 # objective1 = BasicCost()
 # objective2 = BasicCostInverse()
-# from src.optimizer import TemplateOptimizer
+# from slam.optimizer import TemplateOptimizer
 # optimizer = TemplateOptimizer(basis=basis, objective=objective1, use_callback=False, override_fail=True)
 
 # %%
-# from src.sampler import HaarSample
+# from slam.sampler import HaarSample
 # sampler = HaarSample(seed=0,n_samples=1)
 # s = [s for s in sampler][0]
 # s = np.kron(s, np.eye(2))
@@ -62,9 +59,9 @@ import h5py
 # circuit.draw(output='mpl')
 
 # %%
-from src.basisv2 import CircuitTemplateV2
-from src.utils.custom_gates import RiSwapGate
-from src.utils.custom_gates import ConversionGainSmushGate, ConversionGainGate
+from slam.basisv2 import CircuitTemplateV2
+from slam.utils.gates.custom_gates import RiSwapGate
+from slam.utils.gates.custom_gates import ConversionGainSmushGate, ConversionGainGate
 
 
 # if using riswap, I find that this does the same if we use 2Q gate no smushing (basically riswap is already optimal)
@@ -107,11 +104,11 @@ for el in basis.circuit.parameters:
 basis.circuit.draw(output='mpl')
 
 # %%
-# from src.sampler import HaarSample
+# from slam.sampler import HaarSample
 # sampler = HaarSample(seed=0,n_samples=1)
 # s = [s for s in sampler][0]
 
-from src.sampler import HaarSample, GateSample
+from slam.sampler import HaarSample, GateSample
 #sampler = HaarSample(seed=0,n_samples=1) #don't care
 from qiskit.circuit.library import CXGate, CZGate, SwapGate, iSwapGate
 #sampler = GateSample(gate = CZGate())

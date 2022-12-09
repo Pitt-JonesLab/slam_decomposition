@@ -3,29 +3,26 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-import sys
-sys.path.append("../../../")
-
 import numpy as np
-from src.utils.visualize import plotMatrix
+from slam.utils.visualize import plotMatrix
 
 import matplotlib.pyplot as plt
 # %matplotlib widget
 from qiskit import QuantumCircuit, BasicAer, execute
 from qiskit.visualization import plot_histogram
 from qiskit.quantum_info import mutual_information, Statevector, partial_trace, concurrence, entanglement_of_formation
-from src.basisv2 import CircuitTemplateV2
-from src.utils.custom_gates import CirculatorSNAILGate
-from src.cost_function import BasicCostInverse, BasicCost, BasicReducedCost
-from src.optimizer import TemplateOptimizer
+from slam.basisv2 import CircuitTemplateV2
+from slam.utils.gates.custom_gates import CirculatorSNAILGate
+from slam.cost_function import BasicCostInverse, BasicCost, BasicReducedCost
+from slam.optimizer import TemplateOptimizer
 import h5py
 
 # %%
 # use the ideas from smush volume to find a gaet taht can include sqiswap in its extended primative set
 
-from src.hamiltonian import ConversionGainPhaseHamiltonian
-from src.basisv2 import CircuitTemplateV2
-from src.utils.custom_gates import ConversionGainGate
+from slam.hamiltonian import ConversionGainPhaseHamiltonian
+from slam.basisv2 import CircuitTemplateV2
+from slam.utils.gates.custom_gates import ConversionGainGate
 pp =lambda p1, p2: ConversionGainGate(p1, p2, np.pi/4, np.pi/4)
 basis = CircuitTemplateV2(n_qubits=2, base_gates=[pp], no_exterior_1q=0, vz_only=1)
 basis.build(1)
@@ -38,7 +35,7 @@ duration_1q = .1
 # gg = 0*np.pi/4
 
 # %%
-from src.utils.custom_gates import ConversionGainSmushGate
+from slam.utils.gates.custom_gates import ConversionGainSmushGate
 
 # NOTE first variable is tracking an offset (basically set it to 2 if counting the phase variables)
 offset = 4 # 2 if only phase, 4 if c and g
@@ -68,11 +65,11 @@ for el in basis.circuit.parameters:
 basis.circuit.draw()
 
 # %%
-# from src.sampler import HaarSample
+# from slam.sampler import HaarSample
 # sampler = HaarSample(seed=0,n_samples=1)
 # s = [s for s in sampler][0]
-from src.utils.custom_gates import RiSwapGate, BerkeleyGate
-from src.sampler import HaarSample, GateSample
+from slam.utils.gates.custom_gates import RiSwapGate, BerkeleyGate
+from slam.sampler import HaarSample, GateSample
 #sampler = GateSample(gate = RiSwapGate(1/2))
 sampler = GateSample(gate = BerkeleyGate())
 s = [s for s in sampler][0]
