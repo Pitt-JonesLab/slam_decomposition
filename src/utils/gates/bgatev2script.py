@@ -183,7 +183,7 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, r
     # cost to beat
     child_cost = (ki+1)*cost_1q  + ki * basis_factor
 
-    assert ki >= 1, "Monodromy range must be at least 1, if the target is identity case not coded yet"
+    assert ki >= 1, "Monodromy range must be at least 1, taget is identity gate case not implemented"
 
     if ki == 1:
         basis.no_exterior_1q = False

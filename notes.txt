@@ -1,8 +1,0 @@
-TODO:
-1- build an experiment class that holds parameters, handles saving data, handles parallelization
-2- ready glinka for running set of experiments
-3- need to rerun asymptote data but clean up the plots a bit
-
-parallelization is having issues with all the import garbage!!!! 
-
-check out SNAIL+phase
