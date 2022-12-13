@@ -248,6 +248,23 @@ class OptimizedSqiswapSub(TransformationPass):
                 sub_iswap.duration = scaled_iswap.duration * scale_factor
                 sub_qc.append(sub_iswap, [0,1])
             
+            # target gate is some other gate
+            else:
+                continue
+                # use monodromy coverage rules
+                # check for both iswap and sqiswap and take which ever is shorter
+                template = MixedOrderBasisCircuitTemplate(base_gates=[scaled_iswap], use_smush_polytope=True)
+                reps = monodromy_range_from_target(template, target_u =target)[0]
+                template.build(reps, scaled_iswap)
+                #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
+                sub_qc = template.assign_Xk(template.parameter_guess())
+                print(sub_qc[2][0].duration)
+                #TODO
+                raise NotImplementedError("WIP")
+
+                # requires continue so don't hit the remaining substitution code
+                continue
+            
             # add random 1Q unitaries to the sub circuit with np.random.random()
             sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
             sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)

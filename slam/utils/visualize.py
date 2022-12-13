@@ -7,7 +7,7 @@ from tqdm import tqdm
 from monodromy.coordinates import monodromy_to_positive_canonical_polytope
 
 from config import srcpath
-fpath_images = srcpath + "images"
+fpath_images = srcpath + "/images"
 
 
 # pretty print matrix from Chao
@@ -174,7 +174,7 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, **kwar
     axs = fig.add_subplot(111, projection="3d")
     for i, inner_list in enumerate(coordinate_list):
         if "c" not in kwargs:
-            col = ["c", "m", "y", "k", "w"][i % 5]
+            col = ["c", "m", "y", "k", "r"][i % 5]
             sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
         else:
             sp = axs.scatter3D(*zip(*inner_list), **kwargs)

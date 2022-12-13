@@ -2,7 +2,7 @@ import logging
 from typing import no_type_check
 
 logger = logging.getLogger()
-logging.basicConfig(filename="gg.log", level=logging.INFO)
+logging.basicConfig(filename="extended_vol.log", level=logging.INFO)
 
 
 import pickle
@@ -33,8 +33,8 @@ from slam.cost_function import SquareCost
 from slam.optimizer import TemplateOptimizer
 from slam.sampler import GateSample
 from slam.utils.gates.custom_gates import (BerkeleyGate, ConversionGainGate,
-                                    ConversionGainSmushGate)
-from slam.utils.visualize import _plot_circuit_polytope as debug_plot
+                                    ConversionGainSmushGate, CanonicalGate)
+# from slam.utils.visualize import _plot_circuit_polytope as debug_plot
 from slam.utils.visualize import coordinate_2dlist_weyl, unitary_2dlist_weyl
 
 from slam.utils.visualize import fpath_images
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     b = 3 * np.pi / 8, np.pi / 8, 1, "B", 2
     sqb = 3 * np.pi / 8, np.pi / 8, 1 / 2, "sqB", 4
     gate_list = [iswap, sqiswap, cnot, sqcnot, b, sqb]
-    # gate_list = [b]
-    no_save = 1
+    gate_list = [iswap, sqiswap]
+    no_save = 0
 
     results = {}
     for gate_iter, gate in enumerate(gate_list):
@@ -122,12 +122,12 @@ if __name__ == "__main__":
             loaded_coverage_set = template.coverage
             loaded_hash = template.gate_hash
             loaded_scores = monkey_patch_data[gate_iter]
-            print("here")
+            print("monkey patching")
         
         except Exception as e:
             if "Smush Polytope not in memory" in str(e):
                 pass
-                print("not here")
+                # print("not here")
             else:
                 raise e
     
@@ -212,7 +212,7 @@ if __name__ == "__main__":
             # every point we hit along the way is a new point that is added to the extended points
             # NOTE the template will use exterior 1Q gates such that can use SquareCost rather than coordinate optimizer
             
-            for target_vertex in [CPhaseGate(theta=0), CXGate(), SwapGate(), iSwapGate()]:
+            for target_vertex in [CPhaseGate(theta=0), CXGate(), SwapGate(), iSwapGate(), CanonicalGate(np.pi / 4, np.pi / 8, np.pi/8)]:
                 varg_offset = 0 #set to 4 if want to use phase, and change 0s to vargs in pp2 constructor below
                 pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , gc, gg, vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
                 basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], vz_only=False, param_vec_expand=[varg_offset,round(t/duration_1q),round(t/duration_1q)])
