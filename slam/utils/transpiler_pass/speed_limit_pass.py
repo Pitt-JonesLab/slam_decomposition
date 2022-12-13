@@ -1,25 +1,33 @@
 import logging
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-from slam.utils.transpiler_pass.weyl_decompose import RootiSwapWeylDecomposition as decomposer
-from qiskit.transpiler.passes import Collect2qBlocks, ConsolidateBlocks, Unroll3qOrMore, Optimize1qGates
-from slam.utils.gates.custom_gates import RiSwapGate
-from qiskit.circuit.library import CXGate, XGate
+import numpy as np
 from qiskit import QuantumCircuit
+from qiskit.circuit.library import CXGate, XGate
 from qiskit.converters import circuit_to_dag
-from qiskit.transpiler.basepasses import TransformationPass
+from qiskit.dagcircuit import DAGCircuit, DAGOpNode
 from qiskit.quantum_info import Operator
-from slam.basis import MixedOrderBasisCircuitTemplate
-from slam.utils.monodromy.polytope_wrap import monodromy_range_from_target
-from slam.utils.gates.bgatev2script import recursive_sibling_check
-from slam.utils.gates.bgatev2script import get_group_name, cost_scaling, pick_winner
-from qiskit.transpiler.basepasses import AnalysisPass
-from qiskit.transpiler.passes import CountOps
-from qiskit.dagcircuit import DAGOpNode, DAGCircuit
-from slam.utils.gates.custom_gates import CustomCostGate
 from qiskit.transpiler import PassManager
+from qiskit.transpiler.basepasses import AnalysisPass, TransformationPass
+from qiskit.transpiler.passes import (Collect2qBlocks, ConsolidateBlocks,
+                                      CountOps, Optimize1qGates,
+                                      Unroll3qOrMore)
 from tqdm import tqdm
+from weylchamber import c1c2c3
+
+from slam.basis import MixedOrderBasisCircuitTemplate
+from slam.utils.gates.bare_candidates import get_group_name
+from slam.utils.gates.custom_gates import (ConversionGainGate, CustomCostGate,
+                                           RiSwapGate)
+from slam.utils.gates.duraton_scaling import atomic_cost_scaling, cost_scaling
+from slam.utils.gates.family_extend import recursive_sibling_check
+from slam.utils.gates.winner_selection import pick_winner
+from slam.utils.monodromy.polytope_wrap import monodromy_range_from_target
+from slam.utils.transpiler_pass.weyl_decompose import \
+    RootiSwapWeylDecomposition as decomposer
+
 
 class fooAnalysis(AnalysisPass):
     """print duration of the circuit (iswap = 1 unit)"""
@@ -192,6 +200,81 @@ class SpeedGateSubstitute(TransformationPass):
         logging.warning("1Q gates are not being set to accurate values, just placeholders for fast counting")
         return dag 
 
+
+class OptimizedSqiswapSub(TransformationPass):
+    """Replace CX-family gates with iSwap-fam identity, and SWAP gates with iSwap-fam identity"""
+    def __init__(self, duration_1q=0, speed_method='linear'):
+        super().__init__()
+        self.duration_1q = duration_1q
+        self.speed_method = speed_method
+
+    def run(self, dag):
+        """Run the OptimizedSqiswapSub pass on `dag`."""        
+        # first, we need to get a duration scaled iswap gate
+        iswap = ConversionGainGate(0,0, np.pi/2, 0, t_el=1)
+        scaled_iswap, _ = atomic_cost_scaling(params=iswap.params, scores=np.array([0]), speed_method=self.speed_method, duration_1q=self.duration_1q)
+
+        # second, we iterate over the 2Q gates and replace them with the scaled iswap gate
+        for node in dag.two_qubit_ops():
+            # convert node to weyl coordinate
+            target = Operator(node.op).data
+            target_coord = c1c2c3(target)
+
+            sub_qc = QuantumCircuit(2)
+            # add random 1Q unitaries to the sub circuit with np.random.random()
+            sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
+            sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)
+
+            # if target coord is a controlled unitary
+            if target_coord[1] == 0 and target_coord[2] == 0:
+                # with parallel drive, CX==iSwap, sqCX==sqiswap, etc
+                scale_factor = target_coord[0]/.5 #divide by .5 because is x coord of CX
+                sub_iswap = ConversionGainGate(*scaled_iswap.params[:-1], t_el=scaled_iswap.params[-1]*scale_factor)
+                sub_iswap.normalize_duration(1)
+                sub_iswap.duration = scaled_iswap.duration * scale_factor
+                sub_qc.append(sub_iswap, [0,1])
+            
+            # if target coord is a swap
+            elif target_coord == (0.5, 0.5, 0.5):
+                #with parallel drive, SWAP is 1 parallel-driven iSwap followed by a sqiswap
+                sub_qc.append(scaled_iswap, [0,1])
+                # add random 1Q gates
+                sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
+                sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)
+                # add sqiswap
+                scale_factor = 1/2
+                sub_iswap = ConversionGainGate(*scaled_iswap.params[:-1], t_el=scaled_iswap.params[-1]*scale_factor)
+                sub_iswap.normalize_duration(1)
+                sub_iswap.duration = scaled_iswap.duration * scale_factor
+                sub_qc.append(sub_iswap, [0,1])
+            
+            # add random 1Q unitaries to the sub circuit with np.random.random()
+            sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
+            sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)
+
+            # make the substitution
+            sub_dag = circuit_to_dag(sub_qc)
+            dag.substitute_node_with_dag(node, sub_dag)
+        
+        return dag
+                         
+
+# optimized sqiswap pass manager (with dummy substitution)
+class pass_manager_optimized_sqiswap(PassManager):
+    def __init__(self, duration_1q=0, speed_method='linear'):
+        passes = []
+        passes.extend([CountOps(), fooAnalysis(duration_1q)])
+        # collapse 2Q gates
+        passes.extend([Unroll3qOrMore(), Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
+        # every CX-family gate is replaced using iSwap-fam identity
+        # every SWAP gate is repalced using iSwap-fam identity
+        passes.extend([OptimizedSqiswapSub(duration_1q=duration_1q, speed_method=speed_method)])
+        # collapse 1Q gates
+        passes.extend([Optimize1qGates()])
+        passes.extend([CountOps(), fooAnalysis(duration_1q)])
+        super().__init__(passes)
+        logging.warning("1Q gates are not being set to accurate values, just placeholders for fast counting")
+
 #speed-limit aware manager
 class pass_manager_slam(PassManager):
     def __init__(self, strategy='basic_overall', speed_method='linear', duration_1q=0, basic_metric=0, family_extension=0, coupling_map=None):
@@ -208,6 +291,7 @@ class pass_manager_basic(PassManager):
         passes = []
         passes.extend([CountOps(), fooAnalysis(duration_1q)])
         # collect 2Q blocks
+        #FIXME, it is probably faster to not consolidate, and have some smarter means of duplicate target substitution
         passes.extend([Unroll3qOrMore(), Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
         if gate == 'sqiswap':
             passes.extend([decomposer(basis_gate=RiSwapGate(1/2))])

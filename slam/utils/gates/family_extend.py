@@ -65,6 +65,7 @@ def recursive_sibling_check(basis:CircuitTemplate, target_u, basis_factor = 1, r
     older_sibling.normalize_duration(1)
 
     # stop condition, if sibling is bigger than iswap
+    #TODO, what we can check is a mixed basis (e.g. rather than 3 sqiswaps becoming 1.5 iswap and fail, make it 1 iswap and 1 sqiswap)
     if older_sibling.params[2] + older_sibling.params[3] <= np.pi/2:
         #new basis using older sibling
         sibling_basis = MixedOrderBasisCircuitTemplate(base_gates=[older_sibling], chatty_build=False, use_smush_polytope=use_smush)
