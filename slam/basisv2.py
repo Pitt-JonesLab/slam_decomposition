@@ -68,7 +68,16 @@ class CircuitTemplateV2(VariationalTemplate):
 
         #deprecated feature
         self.trotter=False
-    
+
+    def get_spanning_range(self, target_u):
+        if not self.use_polytopes:
+            return self.spanning_range
+        else:
+            #call monodromy polytope helper
+            #import put here so files that don't use monodromy can still import this file
+            from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
+            return monodromy_range_from_target(self, target_u)
+
     def reconstruct(self, ret):
         """Reconstructs the circuit from the optimization result"""
         self.build(ret.cycles)
