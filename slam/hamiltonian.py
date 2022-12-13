@@ -5,9 +5,10 @@ import numpy as np
 import qutip
 
 from hashlib import sha1
+from config import srcpath
 def filename_encode(arg):
     hash = sha1(arg.encode()).hexdigest() 
-    return f"/home/evm9/decomposition_EM/data/{hash}.pkl"
+    return f"{srcpath}/data/{hash}.pkl"
 
 """
 Hamiltonians defined in terms of raising/lowering operators
