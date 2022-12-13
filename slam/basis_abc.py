@@ -7,7 +7,6 @@ from weylchamber import c1c2c3
 
 from slam.utils.gates.custom_gates import *
 from slam.utils.data_utils import pickle_load, pickle_save
-from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
 """
 Defines the variational object passed to the optimizer
 #TODO: this should extend Qiskit's NLocal class

@@ -29,7 +29,7 @@ Wait actually, what if before we try decomp, we look at the shortest gates that 
 I'll leave this as a TODO for now because it still breaks for 3Q+ and that's what I want working first
 3. Define a cost of the circuit using the Q-params, should be the circuit fidelity which can be used with decomposition fidelity to find total f
 """
-from slam.basis import VariationalTemplate
+from slam.basis_abc import VariationalTemplate
 class CircuitTemplateV2(VariationalTemplate):
     def __init__(self, n_qubits=2, base_gates=[RiSwapGate], edge_params=[[(0, 1)]], no_exterior_1q=False, use_polytopes=False, maximum_span_guess=5, preseed=False, vz_only=False, param_vec_expand=None):
         """Initalizes a qiskit.quantumCircuit object with unbound 1Q gate parameters"""
