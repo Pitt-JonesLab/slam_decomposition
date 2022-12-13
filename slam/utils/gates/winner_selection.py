@@ -2,7 +2,7 @@ import logging
 logger = logging.getLogger()
 
 from slam.utils.gates.custom_gates import ConversionGainGate
-from slam.utils.monodromy.polytope_wrap import monodromy_range_from_target
+from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
 from slam.basis import MixedOrderBasisCircuitTemplate
 from slam.utils.visualize import unitary_to_weyl
 from slam.utils.gates.snail_death_gate import SpeedLimitedGate

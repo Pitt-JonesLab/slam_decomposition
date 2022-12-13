@@ -24,7 +24,7 @@ from slam.utils.gates.custom_gates import (ConversionGainGate, CustomCostGate,
 from slam.utils.gates.duraton_scaling import atomic_cost_scaling, cost_scaling
 from slam.utils.gates.family_extend import recursive_sibling_check
 from slam.utils.gates.winner_selection import pick_winner
-from slam.utils.monodromy.polytope_wrap import monodromy_range_from_target
+from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
 from slam.utils.transpiler_pass.weyl_decompose import \
     RootiSwapWeylDecomposition as decomposer
 

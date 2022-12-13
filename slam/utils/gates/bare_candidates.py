@@ -3,7 +3,7 @@ logger = logging.getLogger()
 
 import numpy as np
 from slam.utils.gates.custom_gates import ConversionGainGate
-from slam.utils.monodromy.polytope_wrap import monodromy_range_from_target, coverage_to_haar_expectation
+from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target, coverage_to_haar_expectation
 from slam.basis import MixedOrderBasisCircuitTemplate
 from slam.utils.gates.custom_gates import ConversionGainGate
 from qiskit.circuit.library import CXGate, SwapGate

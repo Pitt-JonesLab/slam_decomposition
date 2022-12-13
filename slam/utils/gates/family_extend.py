@@ -7,7 +7,7 @@ import numpy as np
 from slam.utils.gates.custom_gates import ConversionGainGate
 from qiskit import QuantumCircuit
 from slam.optimizer import TemplateOptimizer
-from slam.utils.monodromy.polytope_wrap import monodromy_range_from_target
+from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
 from slam.basis import CircuitTemplate, MixedOrderBasisCircuitTemplate
 from slam.utils.gates.custom_gates import ConversionGainGate
 from slam.cost_function import SquareCost
