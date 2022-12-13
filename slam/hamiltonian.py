@@ -4,7 +4,10 @@ from ast import Pass
 import numpy as np
 import qutip
 
-from deprecate.data_utils import filename_encode
+from hashlib import sha1
+def filename_encode(arg):
+    hash = sha1(arg.encode()).hexdigest() 
+    return f"/home/evm9/decomposition_EM/data/{hash}.pkl"
 
 """
 Hamiltonians defined in terms of raising/lowering operators
