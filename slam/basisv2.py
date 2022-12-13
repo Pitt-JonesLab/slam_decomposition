@@ -16,8 +16,6 @@ from weylchamber import c1c2c3
 from slam.hamiltonian import Hamiltonian
 from slam.utils.gates.custom_gates import *
 from slam.utils.data_utils import filename_encode, pickle_load, pickle_save
-from slam.utils.polytopes.polytope_wrap import (gate_set_to_coverage,
-                                  monodromy_range_from_target)
 
 """
 Defines the variational object passed to the optimizer
