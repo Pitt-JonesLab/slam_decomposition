@@ -4,7 +4,6 @@ import numpy as np
 from weylchamber import WeylChamber, c1c2c3
 import scipy.spatial as ss
 from tqdm import tqdm
-from monodromy.coordinates import monodromy_to_positive_canonical_polytope
 
 from config import srcpath
 fpath_images = srcpath + "/images"
@@ -183,6 +182,23 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, **kwar
     if "c" in kwargs and not no_bar:
         # make colorbar smaller
         fig.colorbar(sp, shrink=0.4)
+    return fig
+
+def update_coordinate_2dlist_weyl(fig, *coordinate_list, **kwargs):
+    # same as above but updates existing figure
+    axs = fig.get_axes()[0]
+    #clear axs
+    axs.cla()
+    w = WeylChamber()
+    w.labels= {}
+    for i, inner_list in enumerate(coordinate_list):
+        if "c" not in kwargs:
+            col = ["c", "m", "y", "k", "r"][i % 5]
+            sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
+        else:
+            sp = axs.scatter3D(*zip(*inner_list), **kwargs)
+#    fig.colorbar(sp, shrink=0.4)
+    w.render(axs)
     return fig
 
 
