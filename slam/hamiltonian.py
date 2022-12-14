@@ -130,6 +130,36 @@ class ConversionGainSmush(Hamiltonian):
             totalUi = Ui @ totalUi
         return totalUi
 
+class ConversionGainSmush1QPhase(Hamiltonian):
+    def __init__(self):
+        a = qutip.operators.create(N=2)
+        I2 = qutip.operators.identity(2)
+        A = qutip.tensor(a, I2)
+        B = qutip.tensor(I2, a)
+        # construct Hamiltonian
+        # fmt: off
+        def foo_H(phi_a, phi_b, phi_c, phi_g, gc, gg, gx, gy):
+            H_x = (np.exp(1j * phi_a)*A + np.exp(-1j * phi_a)*A.dag())
+            H_y = (np.exp(1j * phi_b)*B + np.exp(-1j * phi_a)*B.dag())
+            H_c = np.exp(1j * phi_c) * A * B.dag() + np.exp(-1j * phi_c) * A.dag() * B
+            H_g = np.exp(1j * phi_g) * A * B + np.exp(-1j * phi_g) * A.dag() * B.dag()
+            return gx* H_x + gy * H_y + gc * H_c + gg * H_g
+        # fmt: on
+        self.H = foo_H
+
+    @staticmethod
+    def construct_U(phi_a, phi_b, phi_c, phi_g, gc, gg, gxvector, gyvector, t=1):
+        h_instance = ConversionGainSmush1QPhase()
+        assert len(gxvector) == len(gyvector)
+        N = len(gxvector)
+        timestep = t / N
+        #timestep = 0.1 #1:10 1Q to 2Q gate duration
+        totalUi = np.eye(4)
+        for it in range(N):
+            Ui = h_instance._construct_U_lambda(phi_a, phi_b, phi_c, phi_g, gc, gg, gxvector[it], gyvector[it])(timestep).full()
+            totalUi = Ui @ totalUi
+        return totalUi
+
 
 # #XXX not working yet, how do I want the gxvector, gyvector params to see by Basis?
 # class TimeDependentHamiltonian(Hamiltonian):

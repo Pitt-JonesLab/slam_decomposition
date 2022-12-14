@@ -5,8 +5,7 @@ from qiskit.circuit.gate import Gate
 from qiskit.circuit.parameterexpression import ParameterValueType
 from typing import List
 from qiskit.extensions import UnitaryGate
-from slam.hamiltonian import CirculatorHamiltonian, ConversionGainPhaseHamiltonian, ConversionGainSmush
-
+from slam.hamiltonian import CirculatorHamiltonian, ConversionGainPhaseHamiltonian, ConversionGainSmush, ConversionGainSmush1QPhase
 """
 Library of useful gates that aren't defined natively in qiskit
 
@@ -191,6 +190,29 @@ class ConversionGainSmushGate(Gate):
         #sum the g terms, ignore the x and y terms
         #idea is that 1Q gates drive qubits not SNAIL so don't contribute to speed limit
         c = (sum(abs(np.array(self.params[2:4]))) * self.params[-1])/norm
+        return c
+
+class ConversionGainSmush1QPhaseGate(Gate):
+    def __init__(self, pa:ParameterValueType, pb: ParameterValueType, pc:ParameterValueType, pg: ParameterValueType, gc: ParameterValueType, gg: ParameterValueType, gx: List[ParameterValueType], gy: List[ParameterValueType], t_el: ParameterValueType=1):
+        self.xy_len = len(gx)
+        assert len(gx) == len(gy)
+        self.t_el = t_el
+        super().__init__("2QSmushGate1QPhase", 2, [pa, pb, pc, pg, gc, gg, *gx, *gy, t_el], "2QSmushGate1QPhase")
+        # XXX can only assign duration after init with real values
+        # XXX vectors will break this type checking
+        # XXX not checking if time is real valued!! 
+        if all([isinstance(p, (int, float)) for p in self.params[0:6]]):
+            self.duration = self.cost()
+
+    def __array__(self, dtype=None):
+        self._array = ConversionGainSmush1QPhase.construct_U(float(self.params[0]), float(self.params[1]), float(self.params[2]), float(self.params[3]), float(self.params[4]), float(self.params[5]), [float(el) for el in self.params[6:6+self.xy_len]], [float(el) for el in self.params[6+self.xy_len:-1]], t= float(self.params[-1]))
+        return self._array #don't need full() since multiplication happens inside the construct_U function
+    
+    def cost(self):
+        norm = np.pi/2
+        #sum the g terms, ignore the x and y terms
+        #idea is that 1Q gates drive qubits not SNAIL so don't contribute to speed limit
+        c = (sum(abs(np.array(self.params[4:6]))) * self.params[-1])/norm
         return c
 
 class CParitySwap(Gate):

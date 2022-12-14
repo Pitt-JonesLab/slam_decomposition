@@ -9,14 +9,17 @@ from qiskit.quantum_info import Operator
 from weylchamber import c1c2c3
 from slam.utils.visualize import coordinate_2dlist_weyl, update_coordinate_2dlist_weyl
 from slam.basisv2 import CircuitTemplateV2
-from slam.utils.gates.custom_gates import ConversionGainSmushGate
+from slam.utils.gates.custom_gates import ConversionGainSmushGate, ConversionGainSmush1QPhaseGate
+import matplotlib.pyplot as plt
 
 
 class ParallelDrivenGateWidget():
-    def __init__(self, N=10, gc=np.pi/2, gg=0, phase_c=0, phase_g=0) -> None:
+    def __init__(self, N=10, gc=np.pi/2, gg=0, phase_a=0, phase_b=0, phase_c=0, phase_g=0) -> None:
         self.N = N
         self.gc = gc
         self.gg = gg
+        self.phase_a = phase_a
+        self.phase_b = phase_b
         self.phase_c = phase_c
         self.phase_g = phase_g
         self.t= .1
@@ -29,7 +32,8 @@ class ParallelDrivenGateWidget():
     def construct_basis(self):
 
         varg_offset = 0
-        pp2 =lambda *vargs: ConversionGainSmushGate(self.phase_c,self.phase_g, self.gc, self.gg, vargs[varg_offset:varg_offset+round(self.t/self.duration_1q)], vargs[varg_offset+round(self.t/self.duration_1q):], t_el=self.t)
+        #ConversionGainSmushGate
+        pp2 =lambda *vargs: ConversionGainSmush1QPhaseGate(self.phase_a, self.phase_b, self.phase_c,self.phase_g, self.gc, self.gg, vargs[varg_offset:varg_offset+round(self.t/self.duration_1q)], vargs[varg_offset+round(self.t/self.duration_1q):], t_el=self.t)
         basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], no_exterior_1q=True, param_vec_expand=[varg_offset,round(self.t/self.duration_1q),round(self.t/self.duration_1q)])
         basis.build(1)
         # basis.circuit.draw(output='mpl');
@@ -39,17 +43,31 @@ class ParallelDrivenGateWidget():
         for _ in range(self.N):
             qc = qc.compose(basis.circuit)
         self.qc = qc
+    
+    def plot(self):
+        self.fig = coordinate_2dlist_weyl(*self.coordinate_list);
+        plt.show()
 
     def widget_wrap(self, q0, q1):
         self.prepare_parameters(q0, q1)
-        self.iterate_time()
+        self.iterate_time() 
         if self.fig is not None:
             self.fig = update_coordinate_2dlist_weyl(self.fig, *self.coordinate_list)
-            self.fig.show()
+            # self.fig.show()
         else:
             self.fig = coordinate_2dlist_weyl(*self.coordinate_list);
-            self.fig.show()
-
+            plt.show()
+    
+    def widget_wrap_nonuniform(self, g0_vector, g1_vector):
+        self.prepare_parameters_nonuniform(g0_vector, g1_vector)
+        self.iterate_time() 
+        if self.fig is not None:
+            self.fig = update_coordinate_2dlist_weyl(self.fig, *self.coordinate_list)
+            # self.fig.show()
+        else:
+            self.fig = coordinate_2dlist_weyl(*self.coordinate_list);
+            plt.show()
+       
     def prepare_parameters(self, q0, q1):
         i = 0
         out = self.qc.copy()
@@ -58,12 +76,32 @@ class ParallelDrivenGateWidget():
                 instr.params[4:6] = [q0, q1]
                 instr.params[-1] = Parameter(f't{i}')
                 i +=1
+            elif instr.params and instr.name == "2QSmushGate1QPhase":
+                instr.params[6:8] = [q0, q1]
+                instr.params[-1] = Parameter(f't{i}')
+                i +=1
+        self.prep_qc = out
+    
+    def prepare_parameters_nonuniform(self, g0_vector, g1_vector):
+        assert len(g0_vector) == len(g1_vector) == self.N
+        i = 0
+        out = self.qc.copy()
+        for instr, qargs, cargs in out:
+            if instr.params and instr.name =="2QSmushGate":
+                instr.params[4:6] = [g0_vector[i], g1_vector[i]]
+                instr.params[-1] = Parameter(f't{i}')
+                i +=1
+            elif instr.params and instr.name == "2QSmushGate1QPhase":
+                instr.params[6:8] = [g0_vector[i], g1_vector[i]]
+                instr.params[-1] = Parameter(f't{i}')
+                i +=1
         self.prep_qc = out
     
     def iterate_time(self):
         R = 5 # resolution
         endpoints = range(1, self.N+1)
         coordinate_list = []
+        end_segment_list = []
 
         for end in endpoints:
             temp_coords = [] 
@@ -84,5 +122,8 @@ class ParallelDrivenGateWidget():
                     c[0] = -1*c[0] + 1
                 temp_coords.append(c)
             coordinate_list.append(temp_coords)
+            end_segment_list.append(c)
         self.coordinate_list = coordinate_list
+        self.end_segment_list = end_segment_list
+        self.final_unitary = Operator(qc3).data
         # qc2.draw(output='mpl');
