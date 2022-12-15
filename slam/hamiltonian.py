@@ -131,6 +131,7 @@ class ConversionGainSmush(Hamiltonian):
         return totalUi
 
 class ConversionGainSmush1QPhase(Hamiltonian):
+    #TODO could make it so that the 1Q phase variables are vectors different at each time step
     def __init__(self):
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
@@ -140,7 +141,7 @@ class ConversionGainSmush1QPhase(Hamiltonian):
         # fmt: off
         def foo_H(phi_a, phi_b, phi_c, phi_g, gc, gg, gx, gy):
             H_x = (np.exp(1j * phi_a)*A + np.exp(-1j * phi_a)*A.dag())
-            H_y = (np.exp(1j * phi_b)*B + np.exp(-1j * phi_a)*B.dag())
+            H_y = (np.exp(1j * phi_b)*B + np.exp(-1j * phi_b)*B.dag())
             H_c = np.exp(1j * phi_c) * A * B.dag() + np.exp(-1j * phi_c) * A.dag() * B
             H_g = np.exp(1j * phi_g) * A * B + np.exp(-1j * phi_g) * A.dag() * B.dag()
             return gx* H_x + gy * H_y + gc * H_c + gg * H_g

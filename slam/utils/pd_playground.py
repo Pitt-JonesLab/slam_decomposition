@@ -29,6 +29,20 @@ class ParallelDrivenGateWidget():
         self.prepare_parameters(0,0)
         self.fig = None
 
+    def __add__(self, other):
+        if self.qc is None:
+            self.construct_basis()
+        if other.qc is None:
+            other.construct_basis()
+        # need to rename the parameters to avoid conflicts
+        for p in self.qc.parameters:
+            self.qc = self.qc.assign_parameters({p:Parameter(str(p)+'_')})
+        
+        ret = ParallelDrivenGateWidget()
+        ret.qc = self.qc.compose(other.qc)
+        ret.N = self.N + other.N
+        return ret
+
     def construct_basis(self):
 
         varg_offset = 0
@@ -97,8 +111,18 @@ class ParallelDrivenGateWidget():
                 i +=1
         self.prep_qc = out
     
-    def iterate_time(self):
-        R = 5 # resolution
+    def solve_end(self):
+        #bind each time to full duration and evalute
+        qc = QuantumCircuit(2)
+        #copying the circuit manually this way moves t parameters into the parameterview object
+        for gate in self.prep_qc:
+            qc.append(gate[0], gate[1])
+        for i in range(self.N):
+            qc = qc.bind_parameters({qc[i][0].params[-1] : self.duration_1q} )
+        return Operator(qc).data
+    
+    def iterate_time(self, R=5):
+        # R = 5 # resolution
         endpoints = range(1, self.N+1)
         coordinate_list = []
         end_segment_list = []
@@ -112,7 +136,7 @@ class ParallelDrivenGateWidget():
             qc2 = qc.copy()
             # for all prior 2Q gates, set time parameter to full length
             for i in [el for el in endpoints if el < end]:
-                qc2 = qc2.bind_parameters({qc2[i-1][0].params[-1] : self.duration_1q} )
+                qc2 = qc2.bind_parameters({qc2[i-1][0].params[-1] : self.duration_1q})
             # for current 2Q gate, iterate over time and append coordinate
             for t in np.linspace(0, self.duration_1q, R):
                 qc3 = qc2.bind_parameters({qc2[end-1][0].params[-1]: t})
