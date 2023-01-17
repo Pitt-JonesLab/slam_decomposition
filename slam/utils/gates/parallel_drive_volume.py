@@ -65,22 +65,24 @@ def get_circuit_polytope(*basis_gate):
     # return circuit_polytope
 
     return CircuitPolytope(
-        operations="gate",
-        cost=1,
+        operations=",".join([str(gate) for gate in basis_gate]),
+        cost=len(basis_gate),
         convex_subpolytopes=circuit_polytope.convex_subpolytopes,
     )
 
-monkey_patch_data = [
-    [1.35, 1, 2],
-    [1.87, 2, 3],
-    [2.10, 1, 3],
-    [3.05, 1, 6],
-    [1.51, 1, 2],
-    [2.33, 2, 4]
-]
+# monkey_patch_data = [
+#     [1.35, 1, 2],
+#     [1.87, 2, 3],
+#     [2.10, 1, 3],
+#     [3.05, 1, 6],
+#     [1.51, 1, 2],
+#     [2.33, 2, 4]
+# ]
 
 duration_1q = 0.25
 N = 3000
+run_monkey = False #bool to trigger monkey patch, ie load and resave, no data collection
+
 if __name__ == "__main__":
     # NOTE iters should be k when polytope is everything_polytope
     # gc, gg, t, str, iters
@@ -105,8 +107,7 @@ if __name__ == "__main__":
         )  # NOTE don't reset unitary list if want to stack between each K
         base_vol = None
         # needs to start with identity to match monodromy formatting
-        #coverage_set = [CircuitPolytope(convex_subpolytopes=[identity_polytope],cost=0,operations=gate_str)] 
-        coverage_set = [identity_polytope]
+        coverage_set = [CircuitPolytope(identity_polytope,cost=0,operations=gate_str)] 
         cnot_score = None
         swap_score = None
         haar_score = 0
@@ -121,7 +122,14 @@ if __name__ == "__main__":
             template = MixedOrderBasisCircuitTemplate(base_gates=[load_gate], use_smush_polytope=True)
             loaded_coverage_set = template.coverage
             loaded_hash = template.gate_hash
-            loaded_scores = monkey_patch_data[gate_iter]
+            # loaded_scores = monkey_patch_data[gate_iter]
+            #want to fix the first and last
+            loaded_coverage_set[0] = CircuitPolytope(identity_polytope,cost=0,operations="[]")
+            loaded_coverage_set[-1] = CircuitPolytope(everything_polytope,cost=iters,operations=[gate_str]*iters)
+            #preserve scores
+            loaded_scores = template.scores
+            #print loaded scores
+            print(loaded_scores)
             print("monkey patching")
         
         except Exception as e:
@@ -190,6 +198,9 @@ if __name__ == "__main__":
 
             # Extending points via randomization
             progress = tqdm(range(N))
+            if run_monkey:
+                #skip
+                progress = []
             unitary_list = []
             for i in progress:
                 params = basis.parameter_guess()
@@ -211,8 +222,13 @@ if __name__ == "__main__":
             # a simple idea is to train to each of the vertics of the weyl chamber
             # every point we hit along the way is a new point that is added to the extended points
             # NOTE the template will use exterior 1Q gates such that can use SquareCost rather than coordinate optimizer
-            
-            for target_vertex in [CPhaseGate(theta=0), CXGate(), SwapGate(), iSwapGate(), CanonicalGate(np.pi / 4, np.pi / 8, np.pi/8)]:
+            targets = [CPhaseGate(theta=0), CXGate(), SwapGate(), iSwapGate(), CanonicalGate(np.pi / 4, np.pi / 8, np.pi/8)]
+            targets = []
+            if run_monkey:
+                # skip
+                targets = []
+
+            for target_vertex in targets:
                 varg_offset = 0 #set to 4 if want to use phase, and change 0s to vargs in pp2 constructor below
                 pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , gc, gg, vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
                 basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], vz_only=False, param_vec_expand=[varg_offset,round(t/duration_1q),round(t/duration_1q)])
@@ -297,7 +313,7 @@ if __name__ == "__main__":
             circuit_poly = CircuitPolytope(
                 convex_subpolytopes=extended_poly_list,
                 cost=k,
-                operations=gate_str,
+                operations=[gate_str]*k,
             )
 
             logging.info("Done creating polytope")

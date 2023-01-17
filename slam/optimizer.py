@@ -7,7 +7,8 @@ from weylchamber import c1c2c3
 
 from slam.basisv2 import CircuitTemplateV2
 
-from slam.basis import CircuitTemplate, DataDictEntry, MixedOrderBasisCircuitTemplate, VariationalTemplate
+from slam.basis_abc import DataDictEntry, VariationalTemplate
+from slam.basis import CircuitTemplate, MixedOrderBasisCircuitTemplate
 from slam.cost_function import UnitaryCostFunction, EntanglementCostFunction, BasicCostInverse, LineSegmentDistanceCost
 from slam.sampler import SampleFunction
 

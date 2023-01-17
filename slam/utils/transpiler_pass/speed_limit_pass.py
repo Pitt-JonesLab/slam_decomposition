@@ -202,14 +202,29 @@ class SpeedGateSubstitute(TransformationPass):
 
 
 class OptimizedSqiswapSub(TransformationPass):
-    """Replace CX-family gates with iSwap-fam identity, and SWAP gates with iSwap-fam identity"""
+    """
+    Unoptimized code :(
+    Replace CX-family gates with iSwap-fam identity, and SWAP gates with iSwap-fam identity
+    This TransformationPass takes advantage of 2 main optimized:
+    1. The CX-family gates reduce from a. 2 Sqiswaps build all CX gates to b. iswap^n builds cx^n gates
+    For a linear SLF, this changes CX from .1+.5+.1+.5+.1 = 1.3 to .1+1+.1 = 1.2
+    For a linear SLF, this changes sqCX from .1+.5+.1+.5+.1 = 1.3 to .1+.5+.1 = 0.7
+    ...
+    2. The SWAP gates reduce from a. 3 sqiswaps to b. 1 iswap + 1 sqiswap
+    For a linear SLF, this changes SWAP from .1+.5+.1+.5+.1+.5+.1 = 1.9 to .1 + 1 + .1 + .5 + .1 = 1.8
+    We also believe it is possible to remove the last internal 1Q gate, which would give .1 + 1 +.5 + .1 = 1.7
+
+    3. It could be possible to remove the external gates if unitary equivalence >> local equivalence, but this is not implemented
+    This could have very large savings for SWAP gate, but for CX we expect in some cases the external gates to be simplified away
+    """
     def __init__(self, duration_1q=0, speed_method='linear'):
         super().__init__()
         self.duration_1q = duration_1q
         self.speed_method = speed_method
 
     def run(self, dag):
-        """Run the OptimizedSqiswapSub pass on `dag`."""        
+        """Run the OptimizedSqiswapSub pass on `dag`.
+        """        
         # first, we need to get a duration scaled iswap gate
         iswap = ConversionGainGate(0,0, np.pi/2, 0, t_el=1)
         scaled_iswap, _ = atomic_cost_scaling(params=iswap.params, scores=np.array([0]), speed_method=self.speed_method, duration_1q=self.duration_1q)
@@ -225,22 +240,28 @@ class OptimizedSqiswapSub(TransformationPass):
             sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
             sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)
 
-            # if target coord is a controlled unitary
+            # if target coord is a controlled unitary, use derivived 1-1 equivalency to iswap family (up to local equiv)
             if target_coord[1] == 0 and target_coord[2] == 0:
                 # with parallel drive, CX==iSwap, sqCX==sqiswap, etc
-                scale_factor = target_coord[0]/.5 #divide by .5 because is x coord of CX
+                scale_factor = target_coord[0]/.5 #divide by .5 to get x-coord of CX
                 sub_iswap = ConversionGainGate(*scaled_iswap.params[:-1], t_el=scaled_iswap.params[-1]*scale_factor)
                 sub_iswap.normalize_duration(1)
                 sub_iswap.duration = scaled_iswap.duration * scale_factor
                 sub_qc.append(sub_iswap, [0,1])
             
-            # if target coord is a swap
+            # if target coord is a swap, use derived equivalency to iswap family iswap_pd + 1Q + sqiswap (up to local equiv)
+            # NOTE the best we have found is 
             elif target_coord == (0.5, 0.5, 0.5):
                 #with parallel drive, SWAP is 1 parallel-driven iSwap followed by a sqiswap
                 sub_qc.append(scaled_iswap, [0,1])
+
+                # XXX we think these can go away if have a perfect decomposition, but hard to find with our approx methods
+                PERFECTED_DECOMP_SWAP = False
                 # add random 1Q gates
-                sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
-                sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)
+                if not PERFECTED_DECOMP_SWAP:
+                    sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
+                    sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 1)
+
                 # add sqiswap
                 scale_factor = 1/2
                 sub_iswap = ConversionGainGate(*scaled_iswap.params[:-1], t_el=scaled_iswap.params[-1]*scale_factor)
@@ -248,12 +269,9 @@ class OptimizedSqiswapSub(TransformationPass):
                 sub_iswap.duration = scaled_iswap.duration * scale_factor
                 sub_qc.append(sub_iswap, [0,1])
             
-            # target gate is some other gate
             else:
-                continue
-                # use monodromy coverage rules
-                # check for both iswap and sqiswap and take which ever is shorter
-                template = MixedOrderBasisCircuitTemplate(base_gates=[scaled_iswap], use_smush_polytope=True)
+                print(target_coord)
+                raise NotImplementedError("WIP")
                 reps = monodromy_range_from_target(template, target_u =target)[0]
                 template.build(reps, scaled_iswap)
                 #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
@@ -278,6 +296,8 @@ class OptimizedSqiswapSub(TransformationPass):
 
 # optimized sqiswap pass manager (with dummy substitution)
 class pass_manager_optimized_sqiswap(PassManager):
+    """Note, the sqiswap basis gate is a bit of a misnomer, because the basis gate we would calibrate is actually a smaller fraction of an iswap (whatever smallest fraction preserves fidelity)
+    For example, if we calibrate 1/16 of an iswap, we would build sqiswap and iswap gates by repeating the gate with no interleaving 1Q gates 8,16 times."""
     def __init__(self, duration_1q=0, speed_method='linear'):
         passes = []
         passes.extend([CountOps(), fooAnalysis(duration_1q)])

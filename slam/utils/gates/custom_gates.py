@@ -193,19 +193,19 @@ class ConversionGainSmushGate(Gate):
         return c
 
 class ConversionGainSmush1QPhaseGate(Gate):
-    def __init__(self, pa:ParameterValueType, pb: ParameterValueType, pc:ParameterValueType, pg: ParameterValueType, gc: ParameterValueType, gg: ParameterValueType, gx: List[ParameterValueType], gy: List[ParameterValueType], t_el: ParameterValueType=1):
+    def __init__(self, pa:ParameterValueType, pb: ParameterValueType, pc:ParameterValueType, pg: ParameterValueType, gc: ParameterValueType, gg: ParameterValueType, gz1:ParameterValueType, gz2:ParameterValueType, gx: List[ParameterValueType], gy: List[ParameterValueType], t_el: ParameterValueType=1):
         self.xy_len = len(gx)
         assert len(gx) == len(gy)
         self.t_el = t_el
-        super().__init__("2QSmushGate1QPhase", 2, [pa, pb, pc, pg, gc, gg, *gx, *gy, t_el], "2QSmushGate1QPhase")
+        super().__init__("2QSmushGate1QPhase", 2, [pa, pb, pc, pg, gc, gg, gz1, gz2, *gx, *gy, t_el], "2QSmushGate1QPhase")
         # XXX can only assign duration after init with real values
         # XXX vectors will break this type checking
         # XXX not checking if time is real valued!! 
-        if all([isinstance(p, (int, float)) for p in self.params[0:6]]):
+        if all([isinstance(p, (int, float)) for p in self.params[:8]]):
             self.duration = self.cost()
 
     def __array__(self, dtype=None):
-        self._array = ConversionGainSmush1QPhase.construct_U(float(self.params[0]), float(self.params[1]), float(self.params[2]), float(self.params[3]), float(self.params[4]), float(self.params[5]), [float(el) for el in self.params[6:6+self.xy_len]], [float(el) for el in self.params[6+self.xy_len:-1]], t= float(self.params[-1]))
+        self._array = ConversionGainSmush1QPhase.construct_U(float(self.params[0]), float(self.params[1]), float(self.params[2]), float(self.params[3]), float(self.params[4]), float(self.params[5]), float(self.params[6]), float(self.params[7]), [float(el) for el in self.params[8:8+self.xy_len]], [float(el) for el in self.params[8+self.xy_len:-1]], t= float(self.params[-1]))
         return self._array #don't need full() since multiplication happens inside the construct_U function
     
     def cost(self):

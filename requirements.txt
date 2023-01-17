@@ -12,3 +12,4 @@ h5py>=3.7.0
 # monodromy>=0.0.1 #use evm9 fork
 tqdm>=4.64.1
 pylatexenc>=2.10.0
+networkx>=2.8.8

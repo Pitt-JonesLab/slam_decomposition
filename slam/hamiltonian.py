@@ -139,17 +139,19 @@ class ConversionGainSmush1QPhase(Hamiltonian):
         B = qutip.tensor(I2, a)
         # construct Hamiltonian
         # fmt: off
-        def foo_H(phi_a, phi_b, phi_c, phi_g, gc, gg, gx, gy):
+        def foo_H(phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gx, gy):
             H_x = (np.exp(1j * phi_a)*A + np.exp(-1j * phi_a)*A.dag())
             H_y = (np.exp(1j * phi_b)*B + np.exp(-1j * phi_b)*B.dag())
+            H_z1 = A.dag()*A
+            H_z2 = B.dag()*B
             H_c = np.exp(1j * phi_c) * A * B.dag() + np.exp(-1j * phi_c) * A.dag() * B
             H_g = np.exp(1j * phi_g) * A * B + np.exp(-1j * phi_g) * A.dag() * B.dag()
-            return gx* H_x + gy * H_y + gc * H_c + gg * H_g
+            return gx* H_x + gy * H_y + gc * H_c + gg * H_g + gz1 * H_z1 + gz2 * H_z2
         # fmt: on
         self.H = foo_H
 
     @staticmethod
-    def construct_U(phi_a, phi_b, phi_c, phi_g, gc, gg, gxvector, gyvector, t=1):
+    def construct_U(phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gxvector, gyvector, t=1):
         h_instance = ConversionGainSmush1QPhase()
         assert len(gxvector) == len(gyvector)
         N = len(gxvector)
@@ -157,7 +159,7 @@ class ConversionGainSmush1QPhase(Hamiltonian):
         #timestep = 0.1 #1:10 1Q to 2Q gate duration
         totalUi = np.eye(4)
         for it in range(N):
-            Ui = h_instance._construct_U_lambda(phi_a, phi_b, phi_c, phi_g, gc, gg, gxvector[it], gyvector[it])(timestep).full()
+            Ui = h_instance._construct_U_lambda(phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gxvector[it], gyvector[it])(timestep).full()
             totalUi = Ui @ totalUi
         return totalUi
 
