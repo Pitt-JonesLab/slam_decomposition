@@ -1,12 +1,12 @@
 import logging
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import CXGate, XGate
-from qiskit.converters import circuit_to_dag
+from qiskit.converters import circuit_to_dag, dag_to_circuit
 from qiskit.dagcircuit import DAGCircuit, DAGOpNode
 from qiskit.quantum_info import Operator
 from qiskit.transpiler import PassManager
@@ -36,28 +36,62 @@ class fooAnalysis(AnalysisPass):
         self.duration_1q = duration_1q
 
     def run(self, dag):
-        d = 0 #tracking critical path duration
+        #XXX this probably didn't cause any issues, but problem in logic. The DAG longest path is not necessarily the duration longest path.
+        
+        """Start with overall longest path"""
         freq = {} #tracking frequency of gates
+        d = 0 #tracking critical path duration
         for gate in dag.longest_path():
             if isinstance(gate, DAGOpNode):
-                d += gate.op.duration if gate.op.duration is not None else 0
-                if gate.op.name in ['u', 'u1', 'u2', 'u3']:
+                if gate.op.duration is not None:
+                    d += gate.op.duration
+                elif gate.op.name in ['u', 'u1', 'u2', 'u3']:
                     d += self.duration_1q
-                if gate.op.name in ['cx']:
+                elif gate.op.name in ['cx']:
                     d += 1
                 # longest path frequency tracking
-                if gate.op.name in freq:
-                    freq[gate.op.name] += 1
-                else:
-                    freq[gate.op.name] = 1
+                freq[gate.op.name] = freq.get(gate.op.name, 0) + 1
 
-        self.property_set['duration'] = d
+        # self.property_set['duration'] = d
+        self.property_set['gate_counts'] = dag.count_ops()
         self.property_set['longest_path_counts'] = freq
 
+        """Next, look at longest path on each wire"""
+        # to calculate duration over each wire, start by putting measurements at the end of each wire
+        # then, use remove_nonancestors_of followed by longest_path, to find the critical path for each wire
+        tempc = dag_to_circuit(dag)
+        tempc.measure_all()
+        msmtdag = circuit_to_dag(tempc)
+        # now, we have a dag with measurements at the end of each wire
+        msmtnodes = msmtdag.named_nodes('measure')
+        for i in range(len(msmtnodes)):
+            wire_d = []
+            d = 0
+            # make a working copy of the dag
+            msmtdag = circuit_to_dag(tempc)
+            node = msmtdag.named_nodes('measure')[i] # have to remake such that the node is in the copy of the dag, bad code :(
+            msmtdag.remove_nonancestors_of(node)
+            # now all paths lead to the measurement
+            # find the longest path
+            path = msmtdag.longest_path()
+            for gate in path:
+                if isinstance(gate, DAGOpNode):
+                    if gate.op.duration is not None:
+                        d += gate.op.duration
+                    elif gate.op.name in ['u', 'u1', 'u2', 'u3']:
+                        d += self.duration_1q
+                    elif gate.op.name in ['cx']:
+                        d += 1
+            wire_d.append(d)
+        
+        self.property_set['wire_duration'] = wire_d     
+ 
         logging.info("\nTranspilation Results:")
         logging.info(f"Gate Counts: {dag.count_ops()}")
         logging.info(f"Longest Path Gate Counts: {freq}")
         logging.info(f"Duration: {d}")
+        logging.info(f"Wire Duration: {wire_d}")
+        return 1 #success
 
 class SpeedGateSubstitute(TransformationPass):
     def __init__(self, speed_method, duration_1q, strategy, basic_metric, coupling_map, lambda_weight=0.47, family_extension=False):
@@ -227,10 +261,17 @@ class OptimizedSqiswapSub(TransformationPass):
         """        
         # first, we need to get a duration scaled iswap gate
         iswap = ConversionGainGate(0,0, np.pi/2, 0, t_el=1)
+        sqiswap = ConversionGainGate(0,0,np.pi/2, 0, t_el=0.5)
         scaled_iswap, _ = atomic_cost_scaling(params=iswap.params, scores=np.array([0]), speed_method=self.speed_method, duration_1q=self.duration_1q)
+        scaled_sqiswap, _ = atomic_cost_scaling(params=sqiswap.params, scores=np.array([0]), speed_method=self.speed_method, duration_1q=self.duration_1q)
+        
+        # second load pd coverage of sqiswap
+        # we will use this for QV, and any other edge cases (non CX/SWAP gates)
+        template = MixedOrderBasisCircuitTemplate(base_gates=[sqiswap], use_smush_polytope=True)
 
-        # second, we iterate over the 2Q gates and replace them with the scaled iswap gate
+        # third, we iterate over the 2Q gates and replace them with the scaled iswap gate
         for node in dag.two_qubit_ops():
+
             # convert node to weyl coordinate
             target = Operator(node.op).data
             target_coord = c1c2c3(target)
@@ -270,18 +311,20 @@ class OptimizedSqiswapSub(TransformationPass):
                 sub_qc.append(sub_iswap, [0,1])
             
             else:
-                print(target_coord)
-                raise NotImplementedError("WIP")
-                reps = monodromy_range_from_target(template, target_u =target)[0]
-                template.build(reps, scaled_iswap)
-                #we should set all the U3 gates to be real valued - doesn't matter for sake of counting duration
-                sub_qc = template.assign_Xk(template.parameter_guess())
-                print(sub_qc[2][0].duration)
-                #TODO
-                raise NotImplementedError("WIP")
+                # this is edge case
+                # for example, in QFT there are some [SWAP+CX] => pSwap 
+                # pass this to standard monodromy template
+                # the idea is that we can still may get an improvement from the \
+                # parallel-drive extended coverage polytope
 
-                # requires continue so don't hit the remaining substitution code
-                continue
+                reps = monodromy_range_from_target(template, target_u =target)[0]
+                template.build(reps, scaled_sqiswap)
+                sub_qc = template.assign_Xk(template.parameter_guess()) #radom real values
+                # XXX
+                # this template is going to have an extra set of external 1Q gates, 
+                # because cases nested in this for loop have pre-, post- fixed gates
+                # its not a problem to have doubles, as long as Optimized1QGates removes them
+                # we need to make sure that when we simplify that they get cancelled out                
             
             # add random 1Q unitaries to the sub circuit with np.random.random()
             sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
@@ -300,7 +343,7 @@ class pass_manager_optimized_sqiswap(PassManager):
     For example, if we calibrate 1/16 of an iswap, we would build sqiswap and iswap gates by repeating the gate with no interleaving 1Q gates 8,16 times."""
     def __init__(self, duration_1q=0, speed_method='linear'):
         passes = []
-        passes.extend([CountOps(), fooAnalysis(duration_1q)])
+        passes.extend([CountOps()])
         # collapse 2Q gates
         passes.extend([Unroll3qOrMore(), Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
         # every CX-family gate is replaced using iSwap-fam identity
@@ -316,7 +359,7 @@ class pass_manager_optimized_sqiswap(PassManager):
 class pass_manager_slam(PassManager):
     def __init__(self, strategy='basic_overall', speed_method='linear', duration_1q=0, basic_metric=0, family_extension=0, coupling_map=None):
         passes = []
-        passes.extend([CountOps(), fooAnalysis(duration_1q)])
+        passes.extend([CountOps()])
         passes.extend([SpeedGateSubstitute(strategy=strategy, speed_method=speed_method, duration_1q=duration_1q, basic_metric=basic_metric, coupling_map=coupling_map, family_extension=family_extension)])
         #combine 1Q gates
         passes.extend([Optimize1qGates()])
@@ -326,7 +369,7 @@ class pass_manager_slam(PassManager):
 class pass_manager_basic(PassManager):
     def __init__(self, gate='sqiswap', duration_1q=0):
         passes = []
-        passes.extend([CountOps(), fooAnalysis(duration_1q)])
+        passes.extend([CountOps()])
         # collect 2Q blocks
         #FIXME, it is probably faster to not consolidate, and have some smarter means of duplicate target substitution
         passes.extend([Unroll3qOrMore(), Collect2qBlocks(), ConsolidateBlocks(force_consolidate=True)])
