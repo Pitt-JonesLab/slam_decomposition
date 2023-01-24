@@ -52,45 +52,47 @@ class fooAnalysis(AnalysisPass):
                 # longest path frequency tracking
                 freq[gate.op.name] = freq.get(gate.op.name, 0) + 1
 
-        # self.property_set['duration'] = d
+        self.property_set['duration'] = d
         self.property_set['gate_counts'] = dag.count_ops()
         self.property_set['longest_path_counts'] = freq
 
-        """Next, look at longest path on each wire"""
-        # to calculate duration over each wire, start by putting measurements at the end of each wire
-        # then, use remove_nonancestors_of followed by longest_path, to find the critical path for each wire
-        tempc = dag_to_circuit(dag)
-        tempc.measure_all()
-        msmtdag = circuit_to_dag(tempc)
-        # now, we have a dag with measurements at the end of each wire
-        msmtnodes = msmtdag.named_nodes('measure')
-        for i in range(len(msmtnodes)):
-            wire_d = []
-            d = 0
-            # make a working copy of the dag
-            msmtdag = circuit_to_dag(tempc)
-            node = msmtdag.named_nodes('measure')[i] # have to remake such that the node is in the copy of the dag, bad code :(
-            msmtdag.remove_nonancestors_of(node)
-            # now all paths lead to the measurement
-            # find the longest path
-            path = msmtdag.longest_path()
-            for gate in path:
-                if isinstance(gate, DAGOpNode):
-                    if gate.op.duration is not None:
-                        d += gate.op.duration
-                    elif gate.op.name in ['u', 'u1', 'u2', 'u3']:
-                        d += self.duration_1q
-                    elif gate.op.name in ['cx']:
-                        d += 1
-            wire_d.append(d)
+        # XXX for now, just assume all measurements take place together at the end of the circuit
+
+        # """Next, look at longest path on each wire"""
+        # # to calculate duration over each wire, start by putting measurements at the end of each wire
+        # # then, use remove_nonancestors_of followed by longest_path, to find the critical path for each wire
+        # tempc = dag_to_circuit(dag)
+        # tempc.measure_all()
+        # msmtdag = circuit_to_dag(tempc)
+        # # now, we have a dag with measurements at the end of each wire
+        # msmtnodes = msmtdag.named_nodes('measure')
+        # for i in range(len(msmtnodes)):
+        #     wire_d = []
+        #     d = 0
+        #     # make a working copy of the dag
+        #     msmtdag = circuit_to_dag(tempc)
+        #     node = msmtdag.named_nodes('measure')[i] # have to remake such that the node is in the copy of the dag, bad code :(
+        #     msmtdag.remove_nonancestors_of(node)
+        #     # now all paths lead to the measurement
+        #     # find the longest path
+        #     path = msmtdag.longest_path()
+        #     for gate in path:
+        #         if isinstance(gate, DAGOpNode):
+        #             if gate.op.duration is not None:
+        #                 d += gate.op.duration
+        #             elif gate.op.name in ['u', 'u1', 'u2', 'u3']:
+        #                 d += self.duration_1q
+        #             elif gate.op.name in ['cx']:
+        #                 d += 1
+        #     wire_d.append(d)
         
-        self.property_set['wire_duration'] = wire_d     
+        # self.property_set['wire_duration'] = wire_d     
  
         logging.info("\nTranspilation Results:")
         logging.info(f"Gate Counts: {dag.count_ops()}")
         logging.info(f"Longest Path Gate Counts: {freq}")
         logging.info(f"Duration: {d}")
-        logging.info(f"Wire Duration: {wire_d}")
+        # logging.info(f"Wire Duration: {wire_d}")
         return 1 #success
 
 class SpeedGateSubstitute(TransformationPass):
@@ -267,14 +269,20 @@ class OptimizedSqiswapSub(TransformationPass):
         
         # second load pd coverage of sqiswap
         # we will use this for QV, and any other edge cases (non CX/SWAP gates)
+        edge_iswap_template = MixedOrderBasisCircuitTemplate(base_gates=[iswap], use_smush_polytope=True)
         template = MixedOrderBasisCircuitTemplate(base_gates=[sqiswap], use_smush_polytope=True)
 
         # third, we iterate over the 2Q gates and replace them with the scaled iswap gate
         for node in dag.two_qubit_ops():
 
             # convert node to weyl coordinate
-            target = Operator(node.op).data
-            target_coord = c1c2c3(target)
+            try:
+                target = Operator(node.op).data
+                target_coord = c1c2c3(target)
+            except:
+                #XXX I'm not confident this is always the right thing to do
+                logging.warning("ValueError in c1c2c3, setting target to real part, issue likely due to imaginary numerical error on SWAP gate")
+                target = target.real
 
             sub_qc = QuantumCircuit(2)
             # add random 1Q unitaries to the sub circuit with np.random.random()
@@ -310,6 +318,9 @@ class OptimizedSqiswapSub(TransformationPass):
                 sub_iswap.duration = scaled_iswap.duration * scale_factor
                 sub_qc.append(sub_iswap, [0,1])
             
+            elif target_coord == (0.5, 0.5, 0): # iSwap may show up from CX+SWAP
+                # iswap is just iswap :)
+                sub_qc.append(scaled_iswap, [0,1])
             else:
                 # this is edge case
                 # for example, in QFT there are some [SWAP+CX] => pSwap 
@@ -317,14 +328,22 @@ class OptimizedSqiswapSub(TransformationPass):
                 # the idea is that we can still may get an improvement from the \
                 # parallel-drive extended coverage polytope
 
-                reps = monodromy_range_from_target(template, target_u =target)[0]
-                template.build(reps, scaled_sqiswap)
-                sub_qc = template.assign_Xk(template.parameter_guess()) #radom real values
-                # XXX
-                # this template is going to have an extra set of external 1Q gates, 
-                # because cases nested in this for loop have pre-, post- fixed gates
-                # its not a problem to have doubles, as long as Optimized1QGates removes them
-                # we need to make sure that when we simplify that they get cancelled out                
+                #XXX missing iSwap parallel driven, family-extension. This code is messy which is why it's not here yet
+                # hardcode the cases
+                # if its in extended iSwap in 1, do 2 sqiswaps no middle 1Q gate
+                reps = monodromy_range_from_target(edge_iswap_template, target_u =target)[0]
+
+                if reps == 1:
+                    sub_qc.append(scaled_sqiswap, [0,1])
+
+                else: # if its in extended iSwap in 2 more just use the regular extended sqiswap
+                    reps = monodromy_range_from_target(template, target_u =target)[0]
+                    template.build(reps, scaled_sqiswap)
+                    sub_qc = template.assign_Xk(template.parameter_guess()) #radom real values
+                    # this template is going to have an extra set of external 1Q gates, 
+                    # because cases nested in this for loop have pre-, post- fixed gates
+                    # its not a problem to have doubles, as long as Optimized1QGates removes them
+                    # we need to make sure that when we simplify that they get cancelled out                
             
             # add random 1Q unitaries to the sub circuit with np.random.random()
             sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)
