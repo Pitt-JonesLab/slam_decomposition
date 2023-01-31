@@ -13,3 +13,4 @@ h5py>=3.7.0
 tqdm>=4.64.1
 pylatexenc>=2.10.0
 networkx>=2.8.8
+pycddlib>=2.1.6

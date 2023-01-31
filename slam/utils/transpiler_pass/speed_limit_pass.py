@@ -305,7 +305,7 @@ class OptimizedSqiswapSub(TransformationPass):
                 sub_qc.append(scaled_iswap, [0,1])
 
                 # XXX we think these can go away if have a perfect decomposition, but hard to find with our approx methods
-                PERFECTED_DECOMP_SWAP = 1
+                PERFECTED_DECOMP_SWAP = 0
                 # add random 1Q gates
                 if not PERFECTED_DECOMP_SWAP:
                     sub_qc.u(np.random.random(), np.random.random(), np.random.random(), 0)

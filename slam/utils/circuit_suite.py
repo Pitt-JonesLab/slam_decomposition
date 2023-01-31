@@ -2,15 +2,16 @@
 import numpy as np
 from qiskit import QuantumCircuit
 
-depth = 2 #completely arbitary idk what to set this to
+depth = 1 # arbitary idk what to set this to
 
 # VQE
 # Entangling Ansatz
 from qiskit.circuit.library import EfficientSU2
 # need to set all 1Q params to random values
 def vqe_linear_lambda(q):
+    vqe_linear_lambda.__name__ = "VQE(Linear)"
     # set np random seed
-    np.random.seed(42)
+    # np.random.seed(42)
     # apply the ansatz depth times
     vqe_circuit_linear = EfficientSU2(num_qubits=q, entanglement="linear", reps=depth*2).decompose()
     for param in vqe_circuit_linear.parameters:
@@ -18,8 +19,9 @@ def vqe_linear_lambda(q):
     return vqe_circuit_linear
 
 def vqe_full_lambda(q):
+    vqe_full_lambda.__name__ = "VQE(Full)"
     # set np random seed
-    np.random.seed(42)
+    # np.random.seed(42)
     vqe_circuit_full = EfficientSU2(num_qubits=q, entanglement="full").decompose()
     for param in vqe_circuit_full.parameters:
         vqe_circuit_full.assign_parameters({param: np.random.rand()}, inplace=1)
@@ -29,26 +31,29 @@ def vqe_full_lambda(q):
 # Quantum Volume
 from qiskit.circuit.library import QuantumVolume
 def qv_lambda(q):
+    qv_lambda.__name__ = "QV"
     qv_qc = QuantumVolume(num_qubits=q, depth=q).decompose()
     return qv_qc
 
 # QFT
 from qiskit.circuit.library.basis_change import QFT
 def qft_lambda(q):
+    qft_lambda.__name__ = "QFT"
     qft_qc = QFT(q).decompose()
     return qft_qc
 
 # QAOA
 from qiskit.circuit.library import QAOAAnsatz
 def qaoa_lambda(q):
+    qaoa_lambda.__name__ = "QAOA"
     # set np random seed
-    np.random.seed(42)
+    # np.random.seed(42)
     qc_mix = QuantumCircuit(q)
     for i in range(0, q):
         qc_mix.rx(np.random.rand(), i)
     import networkx as nx
     # create a random Graph
-    G = nx.gnp_random_graph(q, 0.5, seed=42)
+    G = nx.gnp_random_graph(q, 0.5) #, seed=42)
     qc_p = QuantumCircuit(q)
     for pair in list(G.edges()):  # pairs of nodes
         qc_p.rzz(2 * np.random.rand(), pair[0], pair[1])
@@ -66,6 +71,7 @@ def qaoa_lambda(q):
 from qiskit.circuit.library.arithmetic.adders.cdkm_ripple_carry_adder import \
     CDKMRippleCarryAdder
 def adder_lambda(q):
+    adder_lambda.__name__ = "Adder"
     if q % 2 != 0:
         raise ValueError("q must be even")
     add_qc = (
@@ -80,6 +86,7 @@ def adder_lambda(q):
 # Multiplier
 from qiskit.circuit.library.arithmetic.multipliers import RGQFTMultiplier
 def multiplier_lambda(q):
+    multiplier_lambda.__name__ = "Multiplier"
     if q % 4 != 0:
         raise ValueError("q must be divisible by 4")
     mul_qc = (
@@ -94,6 +101,7 @@ def multiplier_lambda(q):
 # GHZ 
 # from qiskit.circuit.library import GHZState
 def ghz_lambda(q):
+    ghz_lambda.__name__ = "GHZ"
     ghz_qc = QuantumCircuit(q)
     ghz_qc.h(0)
     for i in range(1, q):
@@ -103,8 +111,9 @@ def ghz_lambda(q):
 # Hidden Linear Function
 from qiskit.circuit.library import HiddenLinearFunction
 def hlf_lambda(q):
+    hlf_lambda.__name__ = "HLF"
     # set np random seed
-    np.random.seed(42)
+    # np.random.seed(42)
     # create a random symmetric adjacency matrix
     adj_m = np.random.randint(2, size=(q, q))
     adj_m = adj_m + adj_m.T 

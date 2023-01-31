@@ -161,22 +161,41 @@ def unitary_2dlist_weyl(*unitary_list, no_bar=0, **kwargs):
     return fig
 
 
-def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, **kwargs):
+def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=None, **kwargs):
     plt.close()
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
+        axs = fig.add_subplot(111, projection="3d")
+    else: # case used for combining multiple plots
+        axs = fig.get_axes()[0]
     w = WeylChamber()
     w.elev = elev
     w.azim = azim
     if (elev, azim) == (90, -90):
         w.show_c3_label = False
     w.labels = {}
-    axs = fig.add_subplot(111, projection="3d")
+
+    #custom labels here
+    w.labels["I"] = np.array([-0.025,  0.   ,  0.02 ])
+    w.labels["CX"] = np.array([0.425, 0.   , 0.01 ])
+    w.labels[r"\sqrt{iSwap}"] = np.array([0.25, 0.26, 0.03])
+    
     for i, inner_list in enumerate(coordinate_list):
         if "c" not in kwargs:
-            col = ["c", "m", "y", "k", "r"][i % 5]
-            sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
+            col = ["c", "r"][i % 2]
+            # if everything in inner_list is the same, i.e. 1Q gate turning in place
+            if inner_list.count(inner_list[0]) == len(inner_list):
+                sp = w.scatter(*zip(*inner_list), c="k", **kwargs)
+            else:
+                sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
         else:
-            sp = axs.scatter3D(*zip(*inner_list), **kwargs)
+            # check if 1Q gate turning in place
+            if inner_list.count(inner_list[0]) == len(inner_list):
+                temp_kwargs = kwargs.copy()
+                temp_kwargs.pop("c")
+                sp = w.scatter(*zip(*inner_list), c="k", **temp_kwargs)
+            else:
+                sp = w.scatter(*zip(*inner_list), **kwargs)
 
     w.render(axs)
     if "c" in kwargs and not no_bar:
