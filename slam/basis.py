@@ -28,12 +28,19 @@ class HamiltonianTemplate(VariationalTemplate):
         self.filename = filename_encode(repr(h))
         self.h = h
         self.spanning_range = range(1)
+        self.using_bounds = False
+        self.using_constraints = False
+        self.bounds_list = None
+        self.constraint_func = None
         super().__init__(preseed=False, use_polytopes=False)
+    
+    def get_spanning_range(self, target_u):
+        return range(1,2) #only need to build once, in lieu of a circuit template
     
     def eval(self, Xk):
         return self.h.construct_U(*Xk).full()
     
-    def parameter_guess(self,t=0):
+    def parameter_guess(self,t=1):
         parent = super().parameter_guess(t)
         if parent is not None:
             return parent
@@ -286,14 +293,16 @@ class MixedOrderBasisCircuitTemplate(CircuitTemplate):
         that lets override the gate_2q_base generator"""
 
         assert self.circuit_polytope is not None
-        #convert circuit polytope into a qiskit circuit with variation 1q params
-        gate_list = [self.gate_hash[gate_key] for gate_key in self.circuit_polytope.operations]
 
-        # NOTE: overriding the 2Q gate if we want to use a speed limited gate (has a different duration attirbute)
+        # NOTE: overriding the 2Q gate if we want to use a speed limited gate
+        # used to manually set a duration attirbute
         if scaled_gate is not None:
             if not self.homogenous:
                 raise ValueError("Can't use this hacky substitute method for mixed basis sets")
-            gate_list = [scaled_gate]*len(gate_list)
+            gate_list = [scaled_gate]*n_repetitions
+        else:
+            #convert circuit polytope into a qiskit circuit with variation 1q params
+            gate_list = [self.gate_hash[gate_key] for gate_key in self.circuit_polytope.operations]
 
         self.gate_2q_base = cycle(gate_list)
         assert n_repetitions == len(gate_list)

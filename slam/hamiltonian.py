@@ -249,6 +249,42 @@ class CirculatorHamiltonian(Hamiltonian):
         h_instance = CirculatorHamiltonian()
         return h_instance._construct_U_lambda(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc)(t)
 
+class DeltaConversionGainHamiltonian(Hamiltonian):
+    """Searching for error parity detection gate"""
+    def __init__(self):
+        a = qutip.operators.create(N=2)
+        I2 = qutip.operators.identity(2)
+        A = qutip.tensor(a, I2, I2)
+        B = qutip.tensor(I2, a, I2)
+        C = qutip.tensor(I2, I2, a)
+
+        # construct circulator Hamiltonian
+        # fmt: off
+        def foo_H(gphi_ab, gphi_ac, gphi_bc, g_ab, g_ac, g_bc, cphi_ab, cphi_ac, cphi_bc, c_ab, c_ac, c_bc):
+            H_c = np.exp(1j * cphi_ac) * A * B.dag() + np.exp(-1j * cphi_ac) * A.dag() * B
+            H_g = np.exp(1j * gphi_ab) * A * B + np.exp(-1j * gphi_ab) * A.dag() * B.dag()
+            H_ab= c_ab * H_c + g_ab * H_g
+
+            H_c = np.exp(1j * cphi_ac) * A * C.dag() + np.exp(-1j * cphi_ac) * A.dag() * C
+            H_g = np.exp(1j * gphi_ac) * A * C + np.exp(-1j * gphi_ac) * A.dag() * C.dag()
+            H_ac = c_ac * H_c + g_ac * H_g
+
+            H_c = np.exp(1j * cphi_bc) * B * C.dag() + np.exp(-1j * cphi_bc) * B.dag() * C
+            H_g = np.exp(1j * gphi_bc) * B * C + np.exp(-1j * gphi_bc) * B.dag() * C.dag()
+            H_bc = c_bc * H_c + g_bc * H_g
+
+            return H_ab + H_ac + H_bc
+        # fmt: on
+
+        self.H = foo_H
+    
+    @staticmethod
+    def construct_U(gphi_ab, gphi_ac, gphi_bc, g_ab, g_ac, g_bc, cphi_ab, cphi_ac, cphi_bc, c_ab, c_ac, c_bc):
+        t = 1
+        h_instance = DeltaConversionGainHamiltonian()
+        return h_instance._construct_U_lambda(gphi_ab, gphi_ac, gphi_bc, g_ab, g_ac, g_bc, cphi_ab, cphi_ac, cphi_bc, c_ab, c_ac, c_bc)(t)
+
+
     # def gaussian(t, A, s):
     #     return A * np.exp(-((t / s) ** 2))
 

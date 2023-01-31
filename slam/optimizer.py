@@ -210,7 +210,7 @@ class TemplateOptimizer:
                 self.basis.build(n_repetitions=spanning_iter)
             else:
                 #XXX module reload might cause this to fail if basis.py has been changed and not reloaded
-                logging.warning("CircuitTemplate type checking failed")
+                logging.warning("CircuitTemplate type checking failed OR is HamiltonianTemplate(?)")
 
             #TODO if spanning range == 1, don't pass to optimizer
             #implement a mathematica cloud call?

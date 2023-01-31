@@ -107,7 +107,7 @@ if __name__ == "__main__":
         )  # NOTE don't reset unitary list if want to stack between each K
         base_vol = None
         # needs to start with identity to match monodromy formatting
-        coverage_set = [CircuitPolytope(identity_polytope,cost=0,operations=gate_str)] 
+        coverage_set = [ CircuitPolytope(identity_polytope,cost=0,operations="[]")] 
         cnot_score = None
         swap_score = None
         haar_score = 0

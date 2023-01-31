@@ -39,6 +39,15 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
         raise ValueError("monodromy only for 2Q templates")
 
     target_coords = unitary_to_monodromy_coordinate(target_u)
+
+    # XXX if the code was working everywhere this extra case would not be needed
+    # for some reason in the custom built circuit polytope sets we built using parallel_drive_volume.py
+    # the base case identity polytope has some broken attributes
+    # e.g. basis.coverage[0].has_element(target_coords) throws error
+    # so we need to check for this case and return a range of 0 manually
+    if target_coords == [0.0, 0.0, 0.0, 0.0]:
+        return range(0,1)
+
     #old method when polytopes not precomputed
     #NOTE possible deprecated not sure when this would ever be none
     if basis.coverage is None:
@@ -60,6 +69,11 @@ def monodromy_range_from_target(basis:CircuitTemplate, target_u) -> range:
         found_cover = -1
         sorted_polytopes = sorted(basis.coverage, key=lambda k: k.cost)
         for i, circuit_polytope in enumerate(sorted_polytopes):
+            
+            #XXX skip the identity polytope, see above
+            if circuit_polytope.cost == 0:
+                continue
+
             if circuit_polytope.has_element(target_coords):
                 #set polytope
                 basis.set_polytope(circuit_polytope)
