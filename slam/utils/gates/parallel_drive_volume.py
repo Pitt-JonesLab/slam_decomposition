@@ -2,7 +2,7 @@ import logging
 from typing import no_type_check
 
 logger = logging.getLogger()
-logging.basicConfig(filename="extended_vol.log", level=logging.INFO)
+logging.basicConfig(filename="extended_vol_2.log", level=logging.INFO)
 
 
 import pickle
@@ -93,7 +93,6 @@ if __name__ == "__main__":
     b = 3 * np.pi / 8, np.pi / 8, 1, "B", 2
     sqb = 3 * np.pi / 8, np.pi / 8, 1 / 2, "sqB", 4
     gate_list = [iswap, sqiswap, cnot, sqcnot, b, sqb]
-    gate_list = [iswap, sqiswap]
     no_save = 0
 
     results = {}

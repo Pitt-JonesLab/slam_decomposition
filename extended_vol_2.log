@@ -1,0 +1,282 @@
+INFO:root:=========================================
+INFO:root:Gate: iSwap
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.6939854981544666
+INFO:root:Unique Vol 0.6939854981544666
+INFO:root:Running Vol 0.6939854981544666
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.6939854981544666
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9638527808221473
+INFO:root:Unique Vol 0.2698672826676807
+INFO:root:Running Vol 0.9638527808221473
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9638527808221473
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Extended 1
+INFO:root:Haar Score: 1.342161721023386
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: sqiSwap
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.007489121898471342
+INFO:root:Unique Vol 0.007489121898471342
+INFO:root:Running Vol 0.007489121898471342
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.007489121898471342
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.7901173636843226
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.8262111699673274
+INFO:root:Unique Vol 0.818722048068856
+INFO:root:Running Vol 0.8262111699673274
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.8262111699673274
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Extended 1
+INFO:root:Haar Score: 2.1662997081342015
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: CNOT
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.027259728908854225
+INFO:root:Unique Vol 0.027259728908854225
+INFO:root:Running Vol 0.027259728908854225
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.027259728908854225
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.6431840878223598
+INFO:root:Unique Vol 0.6159243589135056
+INFO:root:Running Vol 0.6431840878223598
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.6431840878223598
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Extended 1
+INFO:root:Haar Score: 2.329556183268786
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: sqCNOT
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.0001277639544977343
+INFO:root:Unique Vol 0.0001277639544977343
+INFO:root:Running Vol 0.0001277639544977343
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.0001277639544977343
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.025103417956625677
+INFO:root:Unique Vol 0.024975654002127944
+INFO:root:Running Vol 0.025103417956625677
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.025103417956625677
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.49999999999999994
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.49999999999999994
+INFO:root:Unique Vol 0.47489658204337426
+INFO:root:Running Vol 0.49999999999999994
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.49999999999999994
+INFO:root:Done with k=3 analytics
+INFO:root:K = 4
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.9598826363156776
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9598826363156776
+INFO:root:Unique Vol 0.45988263631567766
+INFO:root:Running Vol 0.9598826363156776
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9598826363156776
+INFO:root:Done with k=4 analytics
+INFO:root:K = 5
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.9998625428762983
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9998625428762983
+INFO:root:Unique Vol 0.03997990656062067
+INFO:root:Running Vol 0.9998625428762983
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9998625428762983
+INFO:root:Done with k=5 analytics
+INFO:root:K = 6
+INFO:root:Extended 1
+INFO:root:Haar Score: 3.515023638896901
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: B
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.2496393274039504
+INFO:root:Unique Vol 0.2496393274039504
+INFO:root:Running Vol 0.2496393274039504
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.2496393274039504
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Extended 1
+INFO:root:Haar Score: 1.7503606725960497
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
+INFO:root:=========================================
+INFO:root:Gate: sqB
+INFO:root:K = 1
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.0024285034418790857
+INFO:root:Unique Vol 0.0024285034418790857
+INFO:root:Running Vol 0.0024285034418790857
+INFO:root:D[CNOT] False
+INFO:root:D[SWAP] False
+INFO:root:D[B] False
+INFO:root:Volume: 0.0024285034418790857
+INFO:root:Done with k=1 analytics
+INFO:root:K = 2
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.49999999999999994
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.49999999999999994
+INFO:root:Unique Vol 0.4975714965581209
+INFO:root:Running Vol 0.49999999999999994
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.49999999999999994
+INFO:root:Done with k=2 analytics
+INFO:root:K = 3
+INFO:root:Done with randomization
+INFO:root:Done with targeted search
+INFO:root:Done generating points via sy mmetry
+INFO:root:Done converting to monodromy coordinates
+INFO:root:Done generating unitary plot
+INFO:root:Base 0.9958104342810903
+INFO:root:Done creating polytope
+INFO:root:Extended volume 0.9958104342810903
+INFO:root:Unique Vol 0.49581043428109034
+INFO:root:Running Vol 0.9958104342810903
+INFO:root:D[CNOT] True
+INFO:root:D[SWAP] False
+INFO:root:D[B] True
+INFO:root:Volume: 0.9958104342810903
+INFO:root:Done with k=3 analytics
+INFO:root:K = 4
+INFO:root:Extended 1
+INFO:root:Haar Score: 2.5017610622770308
+WARNING:root:Assuming smush template is irreundant, see monodromy.coverage.build_coverage_set for more details
+INFO:root:saved polytope coverage to file
