@@ -334,7 +334,7 @@ class OptimizedSqiswapSub(TransformationPass):
                 reps = monodromy_range_from_target(edge_iswap_template, target_u =target)[0]
 
                 if reps == 1:
-                    sub_qc.append(scaled_sqiswap, [0,1])
+                    sub_qc.append(scaled_iswap, [0,1])
 
                 else: # if its in extended iSwap in 2 more just use the regular extended sqiswap
                     reps = monodromy_range_from_target(template, target_u =target)[0]

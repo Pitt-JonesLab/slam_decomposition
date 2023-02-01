@@ -26,6 +26,7 @@ def plot_coverage_set(coverage_set, save=False, filename=None, **kwargs):
         )  # , override_connect=index in kwargs.get("override_connect_indices", []))
     if save and filename is not None:
         plt.savefig(f"{fpath_images}/{filename}.pdf", format="pdf")
+    plt.show()
 
 
 def _plot_circuit_polytope(
