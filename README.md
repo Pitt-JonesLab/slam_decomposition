@@ -1,7 +1,9 @@
 # SLAM [Speed-Limit Analysis decoMposition]
 Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
 
-Example Usage [slighlty deprecated]:
+README & documentation is deprecated, come back soon :)
+
+Example Usage:
 
 ```python
 from basis import CircuitTemplate
