@@ -44,6 +44,7 @@ optimizer_training_plot(*ret)
 ![image](https://user-images.githubusercontent.com/47376937/172430812-33e6a9ec-0470-4cd0-b6b3-43eb5b3214d1.png)
 
 ___
+```
 @misc{mckinney2023parallel,
       title={Parallel Driving for Fast Quantum Computing Under Speed Limits}, 
       author={Evan McKinney and Chao Zhou and Mingkang Xia and Michael Hatridge and Alex K. Jones},
@@ -52,3 +53,4 @@ ___
       archivePrefix={arXiv},
       primaryClass={quant-ph}
 }
+```
