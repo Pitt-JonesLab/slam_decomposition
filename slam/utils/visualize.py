@@ -1,4 +1,5 @@
 """Helper functions for plotting"""
+import scienceplots
 import matplotlib.pyplot as plt
 import numpy as np
 from weylchamber import WeylChamber, c1c2c3
@@ -56,32 +57,32 @@ def plotHamiltonianSweep(
 # this are treated like 2d list over set of sampled targets
 def optimizer_training_plot(training_loss, coordinate_list, target_str=None, gate_str=None):
     """Plot to show convergence of loss and movement in chamber"""
-    plt.close()
+    # plt.close()
     n_samples = len(training_loss)
     # with science, ieee style
-    with plt.style.context(['science', 'ieee']):
-        fig = plt.figure(figsize=(4, 1.8 * n_samples))
-        for index, (sample_loss, sample_coords) in enumerate(
-            zip(training_loss, coordinate_list)
-        ):
-            axs = fig.add_subplot(n_samples, 2, 2 * index + 1)
-            training_loss_plot(axs, sample_loss)
+    # with plt.style.context(['science', 'ieee']):
+    fig = plt.figure(figsize=(4, 1.8 * n_samples))
+    for index, (sample_loss, sample_coords) in enumerate(
+        zip(training_loss, coordinate_list)
+    ):
+        axs = fig.add_subplot(n_samples, 2, 2 * index + 1)
+        training_loss_plot(axs, sample_loss)
 
-            axs = fig.add_subplot(n_samples, 2, 2 * index + 2, projection="3d")
-            weyl_training_plot(axs, sample_coords)
-            # set the numbber of ticks
-            axs.xaxis.set_ticks([0, 0.25, 0.5, 0.75, 1])
-            axs.xaxis.set_ticklabels(['0', '', r'$\pi/2$', '', r'$\pi$'])
-            axs.yaxis.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
-            axs.yaxis.set_ticklabels(['0', '', '', '', '', r'$\pi/2$'])
-            axs.zaxis.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
-            axs.zaxis.set_ticklabels(['0', '', '', '', '', r'$\pi/2$'])
-        # if target_str is not None and gate_str is not None:
-        #     fig.suptitle(f"{gate_str} Training Data, Target: {target_str}")
-        # else:
-        #     fig.suptitle(f"Training Data (N={len(training_loss)})")
-        fig.tight_layout()
-        return fig
+        axs = fig.add_subplot(n_samples, 2, 2 * index + 2, projection="3d")
+        weyl_training_plot(axs, sample_coords)
+        # set the numbber of ticks
+        axs.xaxis.set_ticks([0, 0.25, 0.5, 0.75, 1])
+        axs.xaxis.set_ticklabels(['0', '', r'$\pi/2$', '', r'$\pi$'])
+        axs.yaxis.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
+        axs.yaxis.set_ticklabels(['0', '', '', '', '', r'$\pi/2$'])
+        axs.zaxis.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
+        axs.zaxis.set_ticklabels(['0', '', '', '', '', r'$\pi/2$'])
+    # if target_str is not None and gate_str is not None:
+    #     fig.suptitle(f"{gate_str} Training Data, Target: {target_str}")
+    # else:
+    #     fig.suptitle(f"Training Data (N={len(training_loss)})")
+    fig.tight_layout()
+    return fig
 
 
 def training_loss_plot(axs, training_loss):

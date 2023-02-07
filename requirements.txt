@@ -14,3 +14,4 @@ tqdm>=4.64.1
 pylatexenc>=2.10.0
 networkx>=2.8.8
 pycddlib>=2.1.6 # if this fails, try  apt-get install  libgmp3-dev
+SciencePlots>=2.0.1

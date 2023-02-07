@@ -20,7 +20,7 @@ TRAINING_RESTARTS = 5
 Given a gate basis objects finds parameters which minimize cost function
 """
 class TemplateOptimizer:
-    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False, override_fail=False, success_threshold=None, training_restarts=None):
+    def __init__(self, basis:VariationalTemplate, objective:UnitaryCostFunction, use_callback=False, override_fail=False, success_threshold=None, training_restarts=None, override_method=None):
         self.basis = basis
         self.objective = objective
         self.preseeding = self.basis.preseeded
@@ -31,6 +31,7 @@ class TemplateOptimizer:
         #used for counting haar length
         self.best_cycle_list = []
         self.override_fail = override_fail
+        self.override_method = override_method
 
         if success_threshold is not None:
             self.success_threshold = success_threshold
@@ -228,6 +229,9 @@ class TemplateOptimizer:
                     #just use SLSQP instead
                     method_str = "SLSQP"
                 #method_str = "Nelder-Mead" #trying this out to debug
+                # if provided a custom optimizer, use that instead
+                if self.override_method is not None:
+                    method_str = self.override_method
 
                 result = opt.minimize(
                     fun=objective_func,
