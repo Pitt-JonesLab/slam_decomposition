@@ -81,7 +81,7 @@ def optimizer_training_plot(training_loss, coordinate_list, target_str=None, gat
     #     fig.suptitle(f"{gate_str} Training Data, Target: {target_str}")
     # else:
     #     fig.suptitle(f"Training Data (N={len(training_loss)})")
-    fig.tight_layout()
+    # fig.tight_layout()
     return fig
 
 
@@ -129,7 +129,8 @@ def training_loss_plot(axs, training_loss):
     axs.set_yscale("log")
     axs.set_xlabel("Training Steps")
     axs.set_ylabel("Training Loss")
-    axs.legend(title="Gate Applications")
+    # axs.legend(title="Gate Applications")
+    # axs.legend()
 
 
 """Generic Weyl Chamber plots"""
@@ -191,6 +192,7 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=No
                 sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
         else:
             # check if 1Q gate turning in place
+            #XXX idk how to fix this quickly, so just use False to skip
             if inner_list.count(inner_list[0]) == len(inner_list):
                 temp_kwargs = kwargs.copy()
                 temp_kwargs.pop("c")
