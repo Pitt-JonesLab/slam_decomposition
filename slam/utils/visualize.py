@@ -178,9 +178,9 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=No
     w.labels = {}
 
     #custom labels here
-    w.labels["I"] = np.array([-0.025,  0.   ,  0.02 ])
-    w.labels["CX"] = np.array([0.425, 0.   , 0.01 ])
-    w.labels[r"\sqrt{iSwap}"] = np.array([0.25, 0.26, 0.03])
+    # w.labels["I"] = np.array([-0.025,  0.   ,  0.02 ])
+    # w.labels["CX"] = np.array([0.425, 0.   , 0.01 ])
+    # w.labels[r"\sqrt{iSwap}"] = np.array([0.25, 0.26, 0.03])
     
     for i, inner_list in enumerate(coordinate_list):
         if "c" not in kwargs:

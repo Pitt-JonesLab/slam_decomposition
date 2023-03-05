@@ -27,6 +27,7 @@ def plot_coverage_set(coverage_set, save=False, filename=None, **kwargs):
     if save and filename is not None:
         plt.savefig(f"{fpath_images}/{filename}.pdf", format="pdf")
     plt.show()
+    return fig
 
 
 def _plot_circuit_polytope(
@@ -98,7 +99,8 @@ def _plot_circuit_polytope(
         w.labels = {}
         w.render(ax)
     else:
-        ax = fig.gca(projection="3d")
+        # ax = fig.gca(projection="3d") # deprecated
+        ax = fig.gca()
 
     color = [
         "red",
