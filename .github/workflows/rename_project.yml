@@ -1,0 +1,58 @@
+name: Rename the project from template
+
+on: [push]
+
+permissions: write-all
+
+jobs:
+  rename-project:
+    if: ${{ !contains(github.repository, '/python-template')}}
+    runs-on: ubuntu-latest
+    steps:
+      - run: test -f .github/template_flag.yml || exit 0
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/github-script@v6
+        id: fetch-repo-and-user-details
+        with:
+          script: |
+            const query = `query($owner:String!, $name:String!) {
+              repository(owner:$owner, name:$name) {
+                name
+                description
+                owner {
+                  login
+                  ... on User {
+                    name
+                  }
+                  ... on Organization {
+                    name
+                  }
+                }
+              }
+            }`;
+            const variables = {
+              owner: context.repo.owner,
+              name: context.repo.repo
+            }
+            const result = await github.graphql(query, variables)
+            console.log(result)
+            return result
+
+      - name: Rename the project
+        env:
+          INFO: ${{ steps.fetch-repo-and-user-details.outputs.result }}
+        run: |
+          export REPO_NAME=$(echo $INFO | jq -r '.repository.name')
+          .github/scripts/rename_project.sh -a "${{ github.actor }}" \
+                                    -n $REPO_NAME \
+                                    -u "$(echo $INFO | jq -r .repository.owner.login)" \
+                                    -d "$(echo $INFO | jq -r .repository.description)"
+
+      - name: Commit changes and push back to GitHub
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Initial template rename"
+          push_options: --force

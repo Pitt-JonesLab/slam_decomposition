@@ -1,4 +1,7 @@
-.vscode/
+.vscode
+
+#ruff
+.ruff_cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -58,7 +61,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-# *.log
+*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -106,13 +109,11 @@ celerybeat.pid
 # Environments
 .env
 .venv
-*_venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
-decomp_venv/
 
 # Spyder project settings
 .spyderproject
