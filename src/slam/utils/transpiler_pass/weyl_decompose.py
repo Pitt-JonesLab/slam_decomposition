@@ -148,7 +148,8 @@ class RootiSwapWeylDecomposition(TransformationPass):
         _ipy = np.array([[0, 1], [-1, 0]], dtype=complex)
         _ipz = np.array([[1j, 0], [0, -1j]], dtype=complex)
         _id = np.array([[1, 0], [0, 1]], dtype=complex)
-        """Perform the Weyl chamber decomposition, and optionally choose a specialized subclass.
+        """Perform the Weyl chamber decomposition, and optionally choose a
+        specialized subclass.
 
         The flip into the Weyl Chamber is described in B. Kraus and J. I. Cirac, Phys. Rev. A 63,
         062309 (2001).

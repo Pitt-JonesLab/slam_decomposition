@@ -12,6 +12,7 @@ from slam.hamiltonian import (
     ConversionGainSmush,
     ConversionGainSmush1QPhase,
 )
+
 """
 Library of useful gates that aren't defined natively in qiskit
 
