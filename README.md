@@ -1,7 +1,12 @@
 # SLAM [Speed-Limit Analysis decoMposition]
+
 Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
 
-README & documentation is deprecated, come back soon :)
+![Tests](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/tests.yml/badge.svg?branch=main)
+![Format Check](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/format-check.yml/badge.svg?branch=main)
+
+> :warning: **README & documentation is deprecated, come back soon :)
+> Current package refactor is breaking `main` with some relative import statemetns, use `isca_23` branch instead.**
 
 Example Usage:
 
@@ -41,12 +46,14 @@ INFO:root:Saving data back to file
 from utils.visualize import optimizer_training_plot
 optimizer_training_plot(*ret)
 ```
+
 ![image](https://user-images.githubusercontent.com/47376937/172430812-33e6a9ec-0470-4cd0-b6b3-43eb5b3214d1.png)
 
-___
+---
+
 ```
 @misc{mckinney2023parallel,
-      title={Parallel Driving for Fast Quantum Computing Under Speed Limits}, 
+      title={Parallel Driving for Fast Quantum Computing Under Speed Limits},
       author={Evan McKinney and Chao Zhou and Mingkang Xia and Michael Hatridge and Alex K. Jones},
       year={2023},
       eprint={2302.01252},
