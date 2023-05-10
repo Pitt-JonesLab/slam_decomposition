@@ -1,18 +1,28 @@
 import logging
+
 logger = logging.getLogger()
 
-from slam.utils.gates.custom_gates import ConversionGainGate
-from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
-from slam.basis import MixedOrderBasisCircuitTemplate
-from slam.utils.visualize import unitary_to_weyl
-from slam.utils.gates.snail_death_gate import SpeedLimitedGate
-from tqdm import tqdm
-from slam.utils.gates.bare_candidates import filename, get_group_name, get_method_duration
 import h5py
 import numpy as np
-from slam.utils.gates.duraton_scaling import atomic_cost_scaling
+from tqdm import tqdm
 
-def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True, smush_bool=False, family_extension=False):
+from slam.basis import MixedOrderBasisCircuitTemplate
+from slam.utils.gates.bare_candidates import filename, get_method_duration
+from slam.utils.gates.custom_gates import ConversionGainGate
+from slam.utils.gates.duraton_scaling import atomic_cost_scaling
+from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target
+from slam.utils.visualize import unitary_to_weyl
+
+
+def pick_winner(
+    group_name,
+    metric=0,
+    target_ops=None,
+    tqdm_bool=True,
+    plot=True,
+    smush_bool=False,
+    family_extension=False,
+):
     # TODO add a tiebreaker between any ties
     """pick the gate with the lowest score for the given metric
     params:
@@ -28,21 +38,25 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
         winner = None
 
         for v in tqdm(g.values()) if tqdm_bool else g.values():
-
             base_gate = ConversionGainGate(*v[0])
             try:
                 template = MixedOrderBasisCircuitTemplate(
-                    base_gates=[base_gate], chatty_build=0, bare_cost=True, use_smush_polytope=smush_bool
+                    base_gates=[base_gate],
+                    chatty_build=0,
+                    bare_cost=True,
+                    use_smush_polytope=smush_bool,
                 )
-            except Exception as e: # this would fail if we we tried to load a smush gate but wasn't precomputed
-                if 'Polytope not in memory' in str(e):
-                    continue # this is expected since we only precomputed for the 6 main gates, so just skip
+            except (
+                Exception
+            ) as e:  # this would fail if we we tried to load a smush gate but wasn't precomputed
+                if "Polytope not in memory" in str(e):
+                    continue  # this is expected since we only precomputed for the 6 main gates, so just skip
                 else:
                     raise e
 
-            if np.any(np.array(template.scores) == None):
+            if np.any(np.array(template.scores) is None):
                 continue
- 
+
             candidate_score = 0
             scaled_gate = None  # used for skipping reconstruction in the atomic cost scaling function
 
@@ -59,7 +73,7 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     scaled_gate=scaled_gate,
                     family_extension=family_extension,
                     use_smush=smush_bool,
-                    metric = metric
+                    metric=metric,
                 )
                 candidate_score = scaled_score
 
@@ -83,7 +97,7 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                     scaled_gate=scaled_gate,
                     family_extension=family_extension,
                     use_smush=smush_bool,
-                    metric=metric
+                    metric=metric,
                 )
                 candidate_score = scaled_score
 
@@ -100,7 +114,7 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
                         scaled_gate=scaled_gate,
                         family_extension=family_extension,
                         use_smush=smush_bool,
-                        metric=metric
+                        metric=metric,
                     )
                     candidate_score += scaled_score
 
@@ -115,7 +129,7 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
         logging.info(
             f"winner: {winner_gate}, scores: {winner[1][:-2]}, cost: {winner_gate.cost()}"
         )
-        if not target_ops is None:
+        if target_ops is not None:
             # log weigted score and normalized score
             logging.info(
                 f"winner score: {winner_score}, normalized score: {winner_score/len(target_ops)}"
@@ -128,4 +142,3 @@ def pick_winner(group_name, metric=0, target_ops=None, tqdm_bool=True, plot=True
             unitary_to_weyl(winner_gate.to_matrix())
             # uncomment to see the gate in weyl space
         return winner_gate, winner_scaled_gate
-

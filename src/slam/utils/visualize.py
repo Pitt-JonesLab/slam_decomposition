@@ -1,12 +1,10 @@
-"""Helper functions for plotting"""
-import scienceplots
+"""Helper functions for plotting."""
 import matplotlib.pyplot as plt
 import numpy as np
 from weylchamber import WeylChamber, c1c2c3
-import scipy.spatial as ss
-from tqdm import tqdm
 
 from config import srcpath
+
 fpath_images = srcpath + "/images"
 
 
@@ -53,10 +51,14 @@ def plotHamiltonianSweep(
 
 
 """Optimizer plot"""
+
+
 # self.training_loss, self.coordinate_list
 # this are treated like 2d list over set of sampled targets
-def optimizer_training_plot(training_loss, coordinate_list, target_str=None, gate_str=None):
-    """Plot to show convergence of loss and movement in chamber"""
+def optimizer_training_plot(
+    training_loss, coordinate_list, target_str=None, gate_str=None
+):
+    """Plot to show convergence of loss and movement in chamber."""
     # plt.close()
     n_samples = len(training_loss)
     # with science, ieee style
@@ -72,11 +74,11 @@ def optimizer_training_plot(training_loss, coordinate_list, target_str=None, gat
         weyl_training_plot(axs, sample_coords)
         # set the numbber of ticks
         axs.xaxis.set_ticks([0, 0.25, 0.5, 0.75, 1])
-        axs.xaxis.set_ticklabels(['0', '', r'$\pi/2$', '', r'$\pi$'])
+        axs.xaxis.set_ticklabels(["0", "", r"$\pi/2$", "", r"$\pi$"])
         axs.yaxis.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
-        axs.yaxis.set_ticklabels(['0', '', '', '', '', r'$\pi/2$'])
+        axs.yaxis.set_ticklabels(["0", "", "", "", "", r"$\pi/2$"])
         axs.zaxis.set_ticks([0, 0.1, 0.2, 0.3, 0.4, 0.5])
-        axs.zaxis.set_ticklabels(['0', '', '', '', '', r'$\pi/2$'])
+        axs.zaxis.set_ticklabels(["0", "", "", "", "", r"$\pi/2$"])
     # if target_str is not None and gate_str is not None:
     #     fig.suptitle(f"{gate_str} Training Data, Target: {target_str}")
     # else:
@@ -163,12 +165,14 @@ def unitary_2dlist_weyl(*unitary_list, no_bar=0, **kwargs):
     return fig
 
 
-def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=None, **kwargs):
+def coordinate_2dlist_weyl(
+    *coordinate_list, no_bar=0, elev=20, azim=-50, fig=None, **kwargs
+):
     plt.close()
     if fig is None:
         fig = plt.figure()
         axs = fig.add_subplot(111, projection="3d")
-    else: # case used for combining multiple plots
+    else:  # case used for combining multiple plots
         axs = fig.get_axes()[0]
     w = WeylChamber()
     w.elev = elev
@@ -177,11 +181,11 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=No
         w.show_c3_label = False
     w.labels = {}
 
-    #custom labels here
+    # custom labels here
     # w.labels["I"] = np.array([-0.025,  0.   ,  0.02 ])
     # w.labels["CX"] = np.array([0.425, 0.   , 0.01 ])
     # w.labels[r"\sqrt{iSwap}"] = np.array([0.25, 0.26, 0.03])
-    
+
     for i, inner_list in enumerate(coordinate_list):
         if "c" not in kwargs:
             col = ["c", "r"][i % 2]
@@ -192,7 +196,7 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=No
                 sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
         else:
             # check if 1Q gate turning in place
-            #XXX idk how to fix this quickly, so just use False to skip
+            # XXX idk how to fix this quickly, so just use False to skip
             if inner_list.count(inner_list[0]) == len(inner_list):
                 temp_kwargs = kwargs.copy()
                 temp_kwargs.pop("c")
@@ -206,20 +210,21 @@ def coordinate_2dlist_weyl(*coordinate_list, no_bar=0, elev=20, azim=-50, fig=No
         fig.colorbar(sp, shrink=0.4)
     return fig
 
+
 def update_coordinate_2dlist_weyl(fig, *coordinate_list, **kwargs):
     # same as above but updates existing figure
     axs = fig.get_axes()[0]
-    #clear axs
+    # clear axs
     axs.cla()
     w = WeylChamber()
-    w.labels= {}
+    w.labels = {}
     for i, inner_list in enumerate(coordinate_list):
         if "c" not in kwargs:
             col = ["c", "m", "y", "k", "r"][i % 5]
-            sp = w.scatter(*zip(*inner_list), c=col, **kwargs)
+            w.scatter(*zip(*inner_list), c=col, **kwargs)
         else:
-            sp = axs.scatter3D(*zip(*inner_list), **kwargs)
-#    fig.colorbar(sp, shrink=0.4)
+            axs.scatter3D(*zip(*inner_list), **kwargs)
+    #    fig.colorbar(sp, shrink=0.4)
     w.render(axs)
     return fig
 

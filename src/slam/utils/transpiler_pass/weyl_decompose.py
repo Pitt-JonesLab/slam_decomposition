@@ -1,5 +1,6 @@
-"""File taken from transpilation repo"""
-"""Weyl decomposition of two-qubit gates in terms of echoed cross-resonance gates."""
+"""File taken from transpilation repo."""
+"""Weyl decomposition of two-qubit gates in terms of echoed cross-resonance
+gates."""
 
 import cmath
 
@@ -10,23 +11,28 @@ from qiskit.circuit.library import IGate, RXGate, RYGate, RZGate
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGCircuit
 from qiskit.extensions.unitary import UnitaryGate
+
+# from utils.qiskit_patch.two_qubit_decompose import TwoQubitBasisDecomposer
+# I made this patched version but I don't remember what difference is from original
 from qiskit.quantum_info.synthesis.two_qubit_decompose import *
+from qiskit.quantum_info.synthesis.two_qubit_decompose import TwoQubitBasisDecomposer
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.transpiler.exceptions import TranspilerError
-#from utils.qiskit_patch.two_qubit_decompose import TwoQubitBasisDecomposer
-# I made this patched version but I don't remember what difference is from original
-from qiskit.quantum_info.synthesis.two_qubit_decompose import TwoQubitBasisDecomposer
-from slam.utils.gates.custom_gates import RiSwapGate, FSim
+
+from slam.utils.gates.custom_gates import FSim, RiSwapGate
 
 
 class RootiSwapWeylDecomposition(TransformationPass):
     """Rewrite two-qubit gates using the Weyl decomposition.
-    This transpiler pass rewrites two-qubit gates in terms of root iswap gates according
-    to the Weyl decomposition. A two-qubit gate will be replaced with at most 3 root i swap gates.
+
+    This transpiler pass rewrites two-qubit gates in terms of root iswap
+    gates according to the Weyl decomposition. A two-qubit gate will be
+    replaced with at most 3 root i swap gates.
     """
 
     def __init__(self, basis_gate=False):
         """RootiSwapWeylDecomposition pass.
+
         Args:
             instruction_schedule_map (InstructionScheduleMap): the mapping from circuit
                 :class:`~.circuit.Instruction` names and arguments to :class:`.Schedule`\\ s.
@@ -142,7 +148,6 @@ class RootiSwapWeylDecomposition(TransformationPass):
         _ipy = np.array([[0, 1], [-1, 0]], dtype=complex)
         _ipz = np.array([[1j, 0], [0, -1j]], dtype=complex)
         _id = np.array([[1, 0], [0, 1]], dtype=complex)
-
         """Perform the Weyl chamber decomposition, and optionally choose a specialized subclass.
 
         The flip into the Weyl Chamber is described in B. Kraus and J. I. Cirac, Phys. Rev. A 63,
@@ -274,7 +279,7 @@ class RootiSwapWeylDecomposition(TransformationPass):
 
     # Reference: https://arxiv.org/pdf/2105.06074.pdf
     def riswapWeylDecomp(self, U):
-        """Decompose U into single qubit gates and the SQiSW gates"""
+        """Decompose U into single qubit gates and the SQiSW gates."""
         qc = QuantumCircuit(2)
 
         _, (x, y, z), A1, A2, B1, B2 = self.KAKDecomp(U)
@@ -320,7 +325,8 @@ class RootiSwapWeylDecomposition(TransformationPass):
         return qc.decompose()
 
     def interleavingSingleQubitRotations(self, x, y, z):
-        """Output the single qubit rotations given the interaction coefficients (x,y,z) \in W' when sandiwched by two SQiSW gates"""
+        """Output the single qubit rotations given the interaction coefficients
+        (x,y,z) \in W' when sandiwched by two SQiSW gates."""
         C = (
             np.sin(x + y - z)
             * np.sin(x - y + z)
@@ -342,7 +348,9 @@ class RootiSwapWeylDecomposition(TransformationPass):
         )
 
     def canonicalize(self, x, y, z):
-        """Decompose an arbitrary gate into one SQISW and one L(x,y',z) where (x',y',z') \in W' and output the coefficients (x',y',z') and the interleaving single qubit rotations"""
+        """Decompose an arbitrary gate into one SQISW and one L(x,y',z) where
+        (x',y',z') \in W' and output the coefficients (x',y',z') and the
+        interleaving single qubit rotations."""
         A1 = IGate().to_matrix()
         A2 = IGate().to_matrix()
         B1 = RYGate(-np.pi / 2).to_matrix()
@@ -380,6 +388,7 @@ class RootiSwapWeylDecomposition(TransformationPass):
 
     def run(self, dag: DAGCircuit):
         """Run the RootiSwapWeylDecomposition pass on `dag`.
+
         Rewrites two-qubit gates in an arbitrary circuit in terms of echoed cross-resonance
         gates by computing the Weyl decomposition of the corresponding unitary. Modifies the
         input dag.
@@ -392,8 +401,6 @@ class RootiSwapWeylDecomposition(TransformationPass):
         """
         # pylint: disable=cyclic-import
         from qiskit.quantum_info import Operator
-        from qiskit.quantum_info.synthesis.two_qubit_decompose import \
-            TwoQubitControlledUDecomposer
 
         if len(dag.qregs) > 1:
             raise TranspilerError(
@@ -402,7 +409,6 @@ class RootiSwapWeylDecomposition(TransformationPass):
             )
 
         # trivial_layout = Layout.generate_trivial_layout(*dag.qregs.values())
-        from qiskit.circuit.library import CXGate
 
         if isinstance(self.basis_gate, RiSwapGate):
             self.decomposer = self.riswapWeylDecomp
@@ -411,7 +417,7 @@ class RootiSwapWeylDecomposition(TransformationPass):
         else:
             self.decomposer = TwoQubitBasisDecomposer(self.basis_gate)
 
-        #add something which caches the result to SWAP so we don't have to do it every time
+        # add something which caches the result to SWAP so we don't have to do it every time
         swap_sub = None
         cnot_sub = None
 
@@ -429,14 +435,14 @@ class RootiSwapWeylDecomposition(TransformationPass):
 
                 dag.substitute_node_with_dag(node, swap_sub)
                 continue
-            
+
             if node.name == "cx":
                 if cnot_sub is None:
                     cnot_sub = circuit_to_dag(self.decomposer(unitary))
 
                 dag.substitute_node_with_dag(node, cnot_sub)
                 continue
-            
+
             # special_unitary = unitary
             dag_sub = circuit_to_dag(self.decomposer(unitary))
             dag.substitute_node_with_dag(node, dag_sub)

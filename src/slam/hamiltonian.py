@@ -1,19 +1,24 @@
 from abc import ABC
 from ast import Pass
+from hashlib import sha1
 
 import numpy as np
 import qutip
 
-from hashlib import sha1
 from config import srcpath
+
+
 def filename_encode(arg):
-    hash = sha1(arg.encode()).hexdigest() 
+    hash = sha1(arg.encode()).hexdigest()
     return f"{srcpath}/data/{hash}.pkl"
+
 
 """
 Hamiltonians defined in terms of raising/lowering operators
 Modifications to coefficients realize different unitaries
 """
+
+
 class Hamiltonian(ABC):
     def __init__(self):
         self.H = lambda: None
@@ -30,13 +35,16 @@ class Hamiltonian(ABC):
     @staticmethod
     def construct_U(*args):
         raise NotImplementedError
-    
+
+
 class FluxQubitHamiltonian(Hamiltonian):
     Pass
 
+
 class SnailEffectiveHamiltonian(Hamiltonian):
-    """Used to find iSwap family gates"""
-    #same as conversion gain but H_g=0
+    """Used to find iSwap family gates."""
+
+    # same as conversion gain but H_g=0
     def __init__(self):
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
@@ -44,16 +52,17 @@ class SnailEffectiveHamiltonian(Hamiltonian):
         B = qutip.tensor(I2, a)
         H_int = A * B.dag() + A.dag() * B
         self.H = lambda geff: geff * H_int
-    
-    #static method creates an instance of class, acting like a factory
+
+    # static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(geff):#, t=1):
-        t=1
+    def construct_U(geff):  # , t=1):
+        t = 1
         h_instance = SnailEffectiveHamiltonian()
         return h_instance._construct_U_lambda(geff)(t)
 
+
 class ConversionGainHamiltonian(Hamiltonian):
-    """Used to find B Gate"""
+    """Used to find B Gate."""
 
     def __init__(self):
         a = qutip.operators.create(N=2)
@@ -63,13 +72,14 @@ class ConversionGainHamiltonian(Hamiltonian):
         H_c = A * B.dag() + A.dag() * B
         H_g = A * B + A.dag() * B.dag()
         self.H = lambda gc, gg: gc * H_c + gg * H_g
-    
-    #static method creates an instance of class, acting like a factory
+
+    # static method creates an instance of class, acting like a factory
     @staticmethod
-    def construct_U(gc, gg):#, t=1):
-        t=1
+    def construct_U(gc, gg):  # , t=1):
+        t = 1
         h_instance = ConversionGainHamiltonian()
         return h_instance._construct_U_lambda(gc, gg)(t)
+
 
 class ConversionGainPhaseHamiltonian(Hamiltonian):
     def __init__(self):
@@ -79,7 +89,7 @@ class ConversionGainPhaseHamiltonian(Hamiltonian):
         B = qutip.tensor(I2, a)
         # H_c = A * B.dag() + A.dag() * B
         # H_g = A * B + A.dag() * B.dag()
- 
+
         # construct Hamiltonian
         # fmt: off
         def foo_H(phi_c, phi_g, gc, gg):
@@ -93,12 +103,13 @@ class ConversionGainPhaseHamiltonian(Hamiltonian):
 
         self.H = foo_H
 
-    #static method creates an instance of class, acting like a factory
+    # static method creates an instance of class, acting like a factory
     @staticmethod
     def construct_U(gc, gg, phi_c, phi_g, t=1):
-        t=float(t)
+        t = float(t)
         h_instance = ConversionGainPhaseHamiltonian()
         return h_instance._construct_U_lambda(gc, gg, phi_c, phi_g)(t)
+
 
 class ConversionGainSmush(Hamiltonian):
     def __init__(self):
@@ -123,15 +134,18 @@ class ConversionGainSmush(Hamiltonian):
         assert len(gxvector) == len(gyvector)
         N = len(gxvector)
         timestep = t / N
-        #timestep = 0.1 #1:10 1Q to 2Q gate duration
+        # timestep = 0.1 #1:10 1Q to 2Q gate duration
         totalUi = np.eye(4)
         for it in range(N):
-            Ui = h_instance._construct_U_lambda(phi_c, phi_g, gc, gg, gxvector[it], gyvector[it])(timestep).full()
+            Ui = h_instance._construct_U_lambda(
+                phi_c, phi_g, gc, gg, gxvector[it], gyvector[it]
+            )(timestep).full()
             totalUi = Ui @ totalUi
         return totalUi
 
+
 class ConversionGainSmush1QPhase(Hamiltonian):
-    #TODO could make it so that the 1Q phase variables are vectors different at each time step
+    # TODO could make it so that the 1Q phase variables are vectors different at each time step
     def __init__(self):
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
@@ -151,15 +165,19 @@ class ConversionGainSmush1QPhase(Hamiltonian):
         self.H = foo_H
 
     @staticmethod
-    def construct_U(phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gxvector, gyvector, t=1):
+    def construct_U(
+        phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gxvector, gyvector, t=1
+    ):
         h_instance = ConversionGainSmush1QPhase()
         assert len(gxvector) == len(gyvector)
         N = len(gxvector)
         timestep = t / N
-        #timestep = 0.1 #1:10 1Q to 2Q gate duration
+        # timestep = 0.1 #1:10 1Q to 2Q gate duration
         totalUi = np.eye(4)
         for it in range(N):
-            Ui = h_instance._construct_U_lambda(phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gxvector[it], gyvector[it])(timestep).full()
+            Ui = h_instance._construct_U_lambda(
+                phi_a, phi_b, phi_c, phi_g, gc, gg, gz1, gz2, gxvector[it], gyvector[it]
+            )(timestep).full()
             totalUi = Ui @ totalUi
         return totalUi
 
@@ -198,23 +216,25 @@ class ConversionGainSmush1QPhase(Hamiltonian):
 #             totalUi = Ui @ totalUi
 #         return totalUi
 
+
 class FSimHamiltonian(Hamiltonian):
     """https://arxiv.org/pdf/1910.11333.pdf"""
+
     def __init__(self):
-        #a = qutip.operators.create(N=2)
+        # a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
         sp1 = qutip.tensor(qutip.operators.sigmap(), I2)
-        sp2 = qutip.tensor(I2,qutip.operators.sigmap())
+        sp2 = qutip.tensor(I2, qutip.operators.sigmap())
         sm1 = qutip.tensor(qutip.operators.sigmam(), I2)
-        sm2 = qutip.tensor(I2,qutip.operators.sigmam())
+        sm2 = qutip.tensor(I2, qutip.operators.sigmam())
         sz1 = qutip.tensor(qutip.operators.sigmaz(), I2)
         sz2 = qutip.tensor(I2, qutip.operators.sigmaz())
 
-        H_1 = sp1*sm2 + sm1*sp2
-        H_2 = sz1*sz2
-        self.H = lambda g, eta: g * H_1 + (g**2/np.abs(eta)) * H_2
+        H_1 = sp1 * sm2 + sm1 * sp2
+        H_2 = sz1 * sz2
+        self.H = lambda g, eta: g * H_1 + (g**2 / np.abs(eta)) * H_2
 
-    #static method creates an instance of class, acting like a factory
+    # static method creates an instance of class, acting like a factory
     @staticmethod
     def construct_U(g, eta, t=1):
         h_instance = FSimHamiltonian()
@@ -222,7 +242,7 @@ class FSimHamiltonian(Hamiltonian):
 
 
 class CirculatorHamiltonian(Hamiltonian):
-    """Use to find VSwap and CParitySwap"""
+    """Use to find VSwap and CParitySwap."""
 
     def __init__(self):
         a = qutip.operators.create(N=2)
@@ -245,12 +265,16 @@ class CirculatorHamiltonian(Hamiltonian):
     @staticmethod
     def construct_U(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc, t):
         # t=1
-        t = float(t) #convert from ParameterExpression
+        t = float(t)  # convert from ParameterExpression
         h_instance = CirculatorHamiltonian()
-        return h_instance._construct_U_lambda(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc)(t)
+        return h_instance._construct_U_lambda(phi_ab, phi_ac, phi_bc, g_ab, g_ac, g_bc)(
+            t
+        )
+
 
 class DeltaConversionGainHamiltonian(Hamiltonian):
-    """Searching for error parity detection gate"""
+    """Searching for error parity detection gate."""
+
     def __init__(self):
         a = qutip.operators.create(N=2)
         I2 = qutip.operators.identity(2)
@@ -277,13 +301,38 @@ class DeltaConversionGainHamiltonian(Hamiltonian):
         # fmt: on
 
         self.H = foo_H
-    
+
     @staticmethod
-    def construct_U(gphi_ab, gphi_ac, gphi_bc, g_ab, g_ac, g_bc, cphi_ab, cphi_ac, cphi_bc, c_ab, c_ac, c_bc):
+    def construct_U(
+        gphi_ab,
+        gphi_ac,
+        gphi_bc,
+        g_ab,
+        g_ac,
+        g_bc,
+        cphi_ab,
+        cphi_ac,
+        cphi_bc,
+        c_ab,
+        c_ac,
+        c_bc,
+    ):
         t = 1
         h_instance = DeltaConversionGainHamiltonian()
-        return h_instance._construct_U_lambda(gphi_ab, gphi_ac, gphi_bc, g_ab, g_ac, g_bc, cphi_ab, cphi_ac, cphi_bc, c_ab, c_ac, c_bc)(t)
-
+        return h_instance._construct_U_lambda(
+            gphi_ab,
+            gphi_ac,
+            gphi_bc,
+            g_ab,
+            g_ac,
+            g_bc,
+            cphi_ab,
+            cphi_ac,
+            cphi_bc,
+            c_ab,
+            c_ac,
+            c_bc,
+        )(t)
 
     # def gaussian(t, A, s):
     #     return A * np.exp(-((t / s) ** 2))
@@ -322,10 +371,11 @@ class DeltaConversionGainHamiltonian(Hamiltonian):
     #     )
     #     return build_time_dependent_U
 
+
 # class FluxQubit(Hamiltonian):
 #     """https://arxiv.org/pdf/2107.02343.pdf"""
 #     def __init__(self):
-        
+
 #         a = qutip.operators.destroy(N=2)
 #         I2 = qutip.operators.identity(2)
 #         A = qutip.tensor(a, I2, I2) #qubit1
@@ -333,7 +383,7 @@ class DeltaConversionGainHamiltonian(Hamiltonian):
 #         C = qutip.tensor(I2, I2, a) #coupler
 #         alpha = 0 #coupler anharmonicity
 
-#         H_a = lambda wa: wa * A.dag() * A 
+#         H_a = lambda wa: wa * A.dag() * A
 #         #self.H = lambda t: H_a + H_b + H_c(t) + H_g
 
 #     def __repr__(self):

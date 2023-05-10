@@ -59,11 +59,11 @@ def iterate_time(self, R=5):
         end_segment_list = []
 
         for end in endpoints:
-            temp_coords = [] 
+            temp_coords = []
             qc = QuantumCircuit(2)
             for gate in self.prep_qc[0:end]:
                 qc.append(gate[0], gate[1])
-            
+
             qc2 = qc.copy()
             # for all prior 2Q gates, set time parameter to full length
             for i in [el for el in endpoints if el < end]:
@@ -83,4 +83,4 @@ def iterate_time(self, R=5):
         self.final_unitary = Operator(qc3).data
 ```
 
-[^1]: 
+[^1]:

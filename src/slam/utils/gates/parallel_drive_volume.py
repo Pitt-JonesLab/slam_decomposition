@@ -1,5 +1,4 @@
 import logging
-from typing import no_type_check
 
 logger = logging.getLogger()
 logging.basicConfig(filename="extended_vol_2.log", level=logging.INFO)
@@ -8,37 +7,37 @@ logging.basicConfig(filename="extended_vol_2.log", level=logging.INFO)
 import pickle
 from fractions import Fraction
 
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.spatial as ss
-from slam.basis import MixedOrderBasisCircuitTemplate
 from monodromy.backend.lrs import LRSBackend
-from monodromy.coordinates import (monodromy_to_positive_canonical_coordinate,
-                                   monodromy_to_positive_canonical_polytope,
-                                   positive_canonical_to_monodromy_coordinate,
-                                   unitary_to_monodromy_coordinate)
+from monodromy.coordinates import (
+    positive_canonical_to_monodromy_coordinate,
+    unitary_to_monodromy_coordinate,
+)
 from monodromy.coverage import CircuitPolytope, deduce_qlr_consequences
 from monodromy.haar import distance_polynomial_integrals
-from monodromy.static.examples import (everything_polytope, exactly,
-                                       identity_polytope)
-from qiskit.circuit.library import (CPhaseGate, CXGate, IGate, SwapGate,
-                                    iSwapGate)
+from monodromy.static.examples import everything_polytope, exactly, identity_polytope
+from qiskit.circuit.library import CPhaseGate, CXGate, SwapGate, iSwapGate
 from qiskit.quantum_info import Operator
 from tqdm import tqdm
 from tqdm.notebook import tqdm as tqdm
-from weylchamber import WeylChamber, c1c2c3
+from weylchamber import c1c2c3
 
+from config import srcpath
+from slam.basis import MixedOrderBasisCircuitTemplate
 from slam.basisv2 import CircuitTemplateV2
 from slam.cost_function import SquareCost
 from slam.optimizer import TemplateOptimizer
 from slam.sampler import GateSample
-from slam.utils.gates.custom_gates import (BerkeleyGate, ConversionGainGate,
-                                    ConversionGainSmushGate, CanonicalGate)
-# from slam.utils.visualize import _plot_circuit_polytope as debug_plot
-from slam.utils.visualize import coordinate_2dlist_weyl, unitary_2dlist_weyl
+from slam.utils.gates.custom_gates import (
+    BerkeleyGate,
+    CanonicalGate,
+    ConversionGainGate,
+    ConversionGainSmushGate,
+)
 
-from slam.utils.visualize import fpath_images
-from config import srcpath
+# from slam.utils.visualize import _plot_circuit_polytope as debug_plot
+from slam.utils.visualize import fpath_images, unitary_2dlist_weyl
+
 
 # super hacky because haar_volume wasn't working
 # XXX this works because function only uses convex_subpolytopes attribute which we use
@@ -70,6 +69,7 @@ def get_circuit_polytope(*basis_gate):
         convex_subpolytopes=circuit_polytope.convex_subpolytopes,
     )
 
+
 # monkey_patch_data = [
 #     [1.35, 1, 2],
 #     [1.87, 2, 3],
@@ -81,7 +81,9 @@ def get_circuit_polytope(*basis_gate):
 
 duration_1q = 0.25
 N = 3000
-run_monkey = False #bool to trigger monkey patch, ie load and resave, no data collection
+run_monkey = (
+    False  # bool to trigger monkey patch, ie load and resave, no data collection
+)
 
 if __name__ == "__main__":
     # NOTE iters should be k when polytope is everything_polytope
@@ -106,43 +108,46 @@ if __name__ == "__main__":
         )  # NOTE don't reset unitary list if want to stack between each K
         base_vol = None
         # needs to start with identity to match monodromy formatting
-        coverage_set = [ CircuitPolytope(identity_polytope,cost=0,operations="[]")] 
+        coverage_set = [CircuitPolytope(identity_polytope, cost=0, operations="[]")]
         cnot_score = None
         swap_score = None
         haar_score = 0
         running_vol = 0
 
-
         # try loading from previous runs the coverage set
         # NOT IMPLEMENTED
-        load_gate = ConversionGainGate(0,0, gc, gg, t)
+        load_gate = ConversionGainGate(0, 0, gc, gg, t)
         loaded_coverage_set = None
         try:
-            template = MixedOrderBasisCircuitTemplate(base_gates=[load_gate], use_smush_polytope=True)
+            template = MixedOrderBasisCircuitTemplate(
+                base_gates=[load_gate], use_smush_polytope=True
+            )
             loaded_coverage_set = template.coverage
             loaded_hash = template.gate_hash
             # loaded_scores = monkey_patch_data[gate_iter]
-            #want to fix the first and last
-            loaded_coverage_set[0] = CircuitPolytope(identity_polytope,cost=0,operations="[]")
-            loaded_coverage_set[-1] = CircuitPolytope(everything_polytope,cost=iters,operations=[gate_str]*iters)
-            #preserve scores
+            # want to fix the first and last
+            loaded_coverage_set[0] = CircuitPolytope(
+                identity_polytope, cost=0, operations="[]"
+            )
+            loaded_coverage_set[-1] = CircuitPolytope(
+                everything_polytope, cost=iters, operations=[gate_str] * iters
+            )
+            # preserve scores
             loaded_scores = template.scores
-            #print loaded scores
+            # print loaded scores
             print(loaded_scores)
             print("monkey patching")
-        
+
         except Exception as e:
             if "Smush Polytope not in memory" in str(e):
                 pass
                 # print("not here")
             else:
                 raise e
-    
 
         for k in range(1, iters + 1):
-
             logging.info(f"K = {k}")
-            
+
             # if k is at end, set it to full coverage and skip the rest
             # if full coverage, parallel drive of course can't extend volume
             if k == iters:
@@ -152,11 +157,13 @@ if __name__ == "__main__":
                 logging.info(f"Extended {extended_vol}")
                 # coverage_set.append(CircuitPolytope(convex_subpolytopes=[everything_polytope],cost=k,operations=gate_str))
                 # coverage_set.append(everything_polytope)
-                # I don't know why but using everything_polytope breaks things 
+                # I don't know why but using everything_polytope breaks things
                 # so just manually build with 4 vertices
-                circuit_poly = get_circuit_polytope(*([ConversionGainGate(0, 0, gc, gg, t)] * k))
+                circuit_poly = get_circuit_polytope(
+                    *([ConversionGainGate(0, 0, gc, gg, t)] * k)
+                )
                 coverage_set.append(circuit_poly)
-                # I forgot to add this line 
+                # I forgot to add this line
                 if cnot_score is None:
                     cnot_score = iters
                 if swap_score is None:
@@ -170,15 +177,18 @@ if __name__ == "__main__":
                 round(t / duration_1q),
                 round(t / duration_1q),
             ]  # NOTE first variable is tracking an offset)
-            pp2 = lambda *vargs: ConversionGainSmushGate(
-                vargs[0],
-                vargs[1],
-                gc,
-                gg,
-                vargs[2 : 2 + round(t / duration_1q)],
-                vargs[2 + round(t / duration_1q) :],
-                t_el=t,
-            )
+
+            def pp2(*vargs):
+                return ConversionGainSmushGate(
+                    vargs[0],
+                    vargs[1],
+                    gc,
+                    gg,
+                    vargs[2 : 2 + round(t / duration_1q)],
+                    vargs[2 + round(t / duration_1q) :],
+                    t_el=t,
+                )
+
             basis = CircuitTemplateV2(
                 n_qubits=2,
                 base_gates=[pp2],
@@ -198,7 +208,7 @@ if __name__ == "__main__":
             # Extending points via randomization
             progress = tqdm(range(N))
             if run_monkey:
-                #skip
+                # skip
                 progress = []
             unitary_list = []
             for i in progress:
@@ -221,25 +231,59 @@ if __name__ == "__main__":
             # a simple idea is to train to each of the vertics of the weyl chamber
             # every point we hit along the way is a new point that is added to the extended points
             # NOTE the template will use exterior 1Q gates such that can use SquareCost rather than coordinate optimizer
-            targets = [CPhaseGate(theta=0), CXGate(), SwapGate(), iSwapGate(), CanonicalGate(np.pi / 4, np.pi / 8, np.pi/8)]
+            targets = [
+                CPhaseGate(theta=0),
+                CXGate(),
+                SwapGate(),
+                iSwapGate(),
+                CanonicalGate(np.pi / 4, np.pi / 8, np.pi / 8),
+            ]
             targets = []
             if run_monkey:
                 # skip
                 targets = []
 
             for target_vertex in targets:
-                varg_offset = 0 #set to 4 if want to use phase, and change 0s to vargs in pp2 constructor below
-                pp2 =lambda *vargs: ConversionGainSmushGate(0,0 , gc, gg, vargs[varg_offset:varg_offset+round(t/duration_1q)], vargs[varg_offset+round(t/duration_1q):], t_el=t)
-                basis = CircuitTemplateV2(n_qubits=2, base_gates = [pp2], edge_params=[[(0,1)]], vz_only=False, param_vec_expand=[varg_offset,round(t/duration_1q),round(t/duration_1q)])
-                basis.build(k)
-                basis.spanning_range = range(k, k+1)
-                sampler = GateSample(gate = target_vertex)
-                s = [s for s in sampler][0]
-                optimizer3 = TemplateOptimizer(basis=basis, objective=SquareCost(), use_callback=True, override_fail=True, success_threshold = 1e-10, training_restarts=3)
-                ret3 = optimizer3.approximate_from_distribution(sampler) 
-                coordinate_list += ret3[1][0] #get coordinate list
+                varg_offset = 0  # set to 4 if want to use phase, and change 0s to vargs in pp2 constructor below
 
-            logging.info(f"Done with targeted search")
+                def pp2(*vargs):
+                    return ConversionGainSmushGate(
+                        0,
+                        0,
+                        gc,
+                        gg,
+                        vargs[varg_offset : varg_offset + round(t / duration_1q)],
+                        vargs[varg_offset + round(t / duration_1q) :],
+                        t_el=t,
+                    )
+
+                basis = CircuitTemplateV2(
+                    n_qubits=2,
+                    base_gates=[pp2],
+                    edge_params=[[(0, 1)]],
+                    vz_only=False,
+                    param_vec_expand=[
+                        varg_offset,
+                        round(t / duration_1q),
+                        round(t / duration_1q),
+                    ],
+                )
+                basis.build(k)
+                basis.spanning_range = range(k, k + 1)
+                sampler = GateSample(gate=target_vertex)
+                s = [s for s in sampler][0]
+                optimizer3 = TemplateOptimizer(
+                    basis=basis,
+                    objective=SquareCost(),
+                    use_callback=True,
+                    override_fail=True,
+                    success_threshold=1e-10,
+                    training_restarts=3,
+                )
+                ret3 = optimizer3.approximate_from_distribution(sampler)
+                coordinate_list += ret3[1][0]  # get coordinate list
+
+            logging.info("Done with targeted search")
 
             if coordinate_list == []:
                 logging.info("No points found")
@@ -247,44 +291,52 @@ if __name__ == "__main__":
 
             # third, extend points via symmetry
             # TODO, take every coordinate and add its conjugate reflection to the unitary_list
-            # the effect should be 
+            # the effect should be
             left_coord_list = []
             right_coord_list = []
             for coordinate in coordinate_list:
-                x,y,z = coordinate
+                x, y, z = coordinate
                 if x <= 0.5:
-                    left_coord_list.append([x,y,z])
-                    right_coord_list.append([1-x,y,z])
+                    left_coord_list.append([x, y, z])
+                    right_coord_list.append([1 - x, y, z])
                 elif x > 0.5:
-                    left_coord_list.append([1-x, y, z])  
-                    right_coord_list.append([x, y, z])              
+                    left_coord_list.append([1 - x, y, z])
+                    right_coord_list.append([x, y, z])
 
             # keep coordinate lists separate so union doesn't include volume between them
-            coordinate_list = [left_coord_list,right_coord_list]
+            coordinate_list = [left_coord_list, right_coord_list]
             logging.info("Done generating points via sy mmetry")
 
             # convert coordinates to monodromy
-            coordinate_list = [list(
-                map(lambda x: np.array(x) * np.pi / 2, coord_side)
-            ) for coord_side in coordinate_list]  # weylchamber package normalization
-            coordinate_list = [list(
-                map(
-                    lambda x: positive_canonical_to_monodromy_coordinate(*x),
-                    coord_side,
+            coordinate_list = [
+                list(map(lambda x: np.array(x) * np.pi / 2, coord_side))
+                for coord_side in coordinate_list
+            ]  # weylchamber package normalization
+            coordinate_list = [
+                list(
+                    map(
+                        lambda x: positive_canonical_to_monodromy_coordinate(*x),
+                        coord_side,
+                    )
                 )
-            ) for coord_side in coordinate_list]
+                for coord_side in coordinate_list
+            ]
 
             logging.info("Done converting to monodromy coordinates")
 
             # save fig as svg and pdf
             color = ["black", "red", "blue"][(k - 1) % 3]
-            
+
             # fig.show()
             if not no_save:
                 fig = unitary_2dlist_weyl(unitary_list, c=color, no_bar=1)
                 name = f"smush_{k}_k_{t}_t_{gc}_gc_{gg}_gg"
-                fig.savefig(f"{fpath_images}/extended_{gate_str}_k{k}.svg", format="svg")
-                fig.savefig(f"{fpath_images}/extended_{gate_str}_k{k}.pdf", format="pdf")
+                fig.savefig(
+                    f"{fpath_images}/extended_{gate_str}_k{k}.svg", format="svg"
+                )
+                fig.savefig(
+                    f"{fpath_images}/extended_{gate_str}_k{k}.pdf", format="pdf"
+                )
                 logging.info("Done generating unitary plot")
 
             """Solve for volumes"""
@@ -296,9 +348,8 @@ if __name__ == "__main__":
             logging.info(f"Base {base_vol}")
 
             # then, convert coordinates to fractions
-            convert_frac = lambda x: [
-                Fraction(xi).limit_denominator(10_000) for xi in x
-            ]
+            def convert_frac(x):
+                return [Fraction(xi).limit_denominator(10000) for xi in x]
 
             extended_poly_list = circuit_poly.convex_subpolytopes
             for coord_side in coordinate_list:
@@ -312,7 +363,7 @@ if __name__ == "__main__":
             circuit_poly = CircuitPolytope(
                 convex_subpolytopes=extended_poly_list,
                 cost=k,
-                operations=[gate_str]*k,
+                operations=[gate_str] * k,
             )
 
             logging.info("Done creating polytope")
@@ -364,7 +415,6 @@ if __name__ == "__main__":
         # save coverage set
         # matching syntax from mixedbasistemplate, need to create a gate hash for reconstruction
         if not no_save:
-            
             if gc < gg:
                 gate = ConversionGainGate(0, 0, gc, gg, t)
             else:
@@ -386,14 +436,16 @@ if __name__ == "__main__":
                 with open(filepath, "wb") as f:
                     pickle.dump(loaded_coverage_set, loaded_hash, loaded_scores)
                     logging.info("No new coverage, saving old coverage")
-            
+
             with open(filepath, "wb") as f:
-                pickle.dump((coverage_set, gate_hash, [haar_score, cnot_score, swap_score]), f)
+                pickle.dump(
+                    (coverage_set, gate_hash, [haar_score, cnot_score, swap_score]), f
+                )
                 logging.info("saved polytope coverage to file")
 
     # save results
     if not no_save:
         import json
 
-        with open(f"extended_results.json", "w") as fp:
+        with open("extended_results.json", "w") as fp:
             json.dump(results, fp)

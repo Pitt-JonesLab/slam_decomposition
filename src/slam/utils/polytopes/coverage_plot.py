@@ -1,18 +1,20 @@
-"""Helper functions for plotting"""
+"""Helper functions for plotting."""
 import matplotlib.pyplot as plt
 import numpy as np
-from weylchamber import WeylChamber, c1c2c3
 import scipy.spatial as ss
-from tqdm import tqdm
 from monodromy.coordinates import monodromy_to_positive_canonical_polytope
+from tqdm import tqdm
+from weylchamber import WeylChamber
 
 from config import srcpath
+
 fpath_images = f"{srcpath}/images"
 
 
 def plot_coverage_set(coverage_set, save=False, filename=None, **kwargs):
-    """NOTE Forcing to print subpoly hulls for now until I figure out convex hull intersection
-    this is nontrivial because the intersection creates concave polyhedra, i.e. the gap between 2 intersecting pyramids"""
+    """NOTE Forcing to print subpoly hulls for now until I figure out convex
+    hull intersection this is nontrivial because the intersection creates
+    concave polyhedra, i.e. the gap between 2 intersecting pyramids."""
     plt.close()
     fig = None
     # skip the first convex polytope in the set, which is the identity
@@ -33,7 +35,8 @@ def plot_coverage_set(coverage_set, save=False, filename=None, **kwargs):
 def _plot_circuit_polytope(
     circuit_poly, fig=None, index=0, save=False, filename=None, override_connect=True
 ):
-    """If override_connect is True, then use the subpoly lists to build shapes rather than total_coords"""
+    """If override_connect is True, then use the subpoly lists to build shapes
+    rather than total_coords."""
 
     def _make_shape(total_coords, ax, override=False):
         hull_flag = 0
@@ -125,7 +128,9 @@ def _plot_circuit_polytope(
         ]  # convert from fraction to floats
         total_coords += subpoly_coords
         if override_connect or 1:
-            f, ret = _make_shape(subpoly_coords, ax, override=True) #setting override to go back to old method
+            f, ret = _make_shape(
+                subpoly_coords, ax, override=True
+            )  # setting override to go back to old method
             if f:  # means ax is an edgelist
                 total_edges += ret
             else:

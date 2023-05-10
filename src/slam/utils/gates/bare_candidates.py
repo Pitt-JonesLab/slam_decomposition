@@ -1,19 +1,24 @@
 import logging
+
 logger = logging.getLogger()
 
-import numpy as np
-from slam.utils.gates.custom_gates import ConversionGainGate
-from slam.utils.polytopes.polytope_wrap import monodromy_range_from_target, coverage_to_haar_expectation
-from slam.basis import MixedOrderBasisCircuitTemplate
-from slam.utils.gates.custom_gates import ConversionGainGate
-from qiskit.circuit.library import CXGate, SwapGate
-from weylchamber import c1c2c3
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 import time
 
 import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+from qiskit.circuit.library import CXGate, SwapGate
+from tqdm import tqdm
+from weylchamber import c1c2c3
+
 from config import srcpath
+from slam.basis import MixedOrderBasisCircuitTemplate
+from slam.utils.gates.custom_gates import ConversionGainGate
+from slam.utils.polytopes.polytope_wrap import (
+    coverage_to_haar_expectation,
+    monodromy_range_from_target,
+)
+
 filename = f"{srcpath}/data/cg_gates.h5"
 
 # # verifying that relative phase doesn't change 2Q gate location
@@ -31,7 +36,7 @@ def get_group_name(speed_method="linear", duration_1q=0):
 
 
 def get_method_duration(group_name):
-    """returns the speed_method and duration_1q from the group name"""
+    """Returns the speed_method and duration_1q from the group name."""
     speed_method = group_name.split("_")[0]
     duration_1q = float(group_name.split("_")[-1].replace("1q", ""))
     return speed_method, duration_1q
@@ -50,11 +55,11 @@ def build_gates(elim_extra_weyl=True):
 
             if elim_extra_weyl:
                 if c[0] > 0.5:
-                    c[0] = -1 * c[0] + 1 #1-x
+                    c[0] = -1 * c[0] + 1  # 1-x
 
             if c in inner_list or any(c in inner for inner in coordinate_list):
                 continue
-    
+
             inner_list.append(c)
             unitary_list.append(gate)
 
@@ -64,6 +69,7 @@ def build_gates(elim_extra_weyl=True):
 
 # unitary_list, coordinate_list = build_gates()
 # coordinate_2dlist_weyl(*coordinate_list);
+
 
 def collect_data(unitary_list, overwrite=False):
     """Using bare costs in mixedorderbasis template - this means the costs are in terms of number of gates
@@ -118,6 +124,7 @@ def collect_data(unitary_list, overwrite=False):
                 ),
             )
 
+
 def plot_eharr(group_name, metric=0):
     with h5py.File(filename, "r") as hf:
         g = hf.require_group(group_name)
@@ -139,6 +146,7 @@ def plot_eharr(group_name, metric=0):
         plt.xlabel("conv")
         cbar = plt.colorbar()
         cbar.set_label("E[haar]", rotation=90)
+
 
 if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
