@@ -52,12 +52,12 @@ optimizer_training_plot(*ret)
 ---
 
 ```
-@misc{mckinney2023parallel,
-      title={Parallel Driving for Fast Quantum Computing Under Speed Limits},
-      author={Evan McKinney and Chao Zhou and Mingkang Xia and Michael Hatridge and Alex K. Jones},
-      year={2023},
-      eprint={2302.01252},
-      archivePrefix={arXiv},
-      primaryClass={quant-ph}
+@inproceedings{mckinney2023co,
+  title={Co-Designed Architectures for Modular Superconducting Quantum Computers},
+  author={McKinney, Evan and Xia, Mingkang and Zhou, Chao and Lu, Pinlei and Hatridge, Michael and Jones, Alex K},
+  booktitle={2023 IEEE International Symposium on High-Performance Computer Architecture (HPCA)},
+  pages={759--772},
+  year={2023},
+  organization={IEEE}
 }
 ```
