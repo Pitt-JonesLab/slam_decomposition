@@ -1,10 +1,16 @@
 # SLAM [Speed-Limit Analysis decoMposition]
-
 Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
-
+```
+@inproceedings{mckinney2023parallel,
+  title={Parallel Driving for Fast Quantum Computing Under Speed Limits},
+  author={McKinney, Evan and Zhou, Chao and Xia, Mingkang and Hatridge, Michael and Jones, Alex K},
+  booktitle={Proceedings of the 50th Annual International Symposium on Computer Architecture},
+  year={2023}
+}
+```
 ![Tests](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/tests.yml/badge.svg?branch=main)
 ![Format Check](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/format-check.yml/badge.svg?branch=main)
-
+___
 > :warning: **README & documentation is deprecated, come back soon :)
 > Current package refactor is breaking `main` with some relative import statemetns, use `isca_23` branch instead.**
 
@@ -50,14 +56,3 @@ optimizer_training_plot(*ret)
 ![image](https://user-images.githubusercontent.com/47376937/172430812-33e6a9ec-0470-4cd0-b6b3-43eb5b3214d1.png)
 
 ---
-
-```
-@inproceedings{mckinney2023co,
-  title={Co-Designed Architectures for Modular Superconducting Quantum Computers},
-  author={McKinney, Evan and Xia, Mingkang and Zhou, Chao and Lu, Pinlei and Hatridge, Michael and Jones, Alex K},
-  booktitle={2023 IEEE International Symposium on High-Performance Computer Architecture (HPCA)},
-  pages={759--772},
-  year={2023},
-  organization={IEEE}
-}
-```
