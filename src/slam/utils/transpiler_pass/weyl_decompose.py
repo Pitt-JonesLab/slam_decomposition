@@ -7,6 +7,7 @@ import cmath
 import numpy as np
 import scipy.linalg as la
 from qiskit import QuantumCircuit
+from qiskit.circuit.gate import Gate
 from qiskit.circuit.library import IGate, RXGate, RYGate, RZGate
 from qiskit.converters import circuit_to_dag
 from qiskit.dagcircuit import DAGCircuit
@@ -19,7 +20,67 @@ from qiskit.quantum_info.synthesis.two_qubit_decompose import TwoQubitBasisDecom
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.transpiler.exceptions import TranspilerError
 
-from slam.utils.gates.custom_gates import FSim, RiSwapGate
+from slam.utils.gates.custom_gates import FSim
+
+
+class SiSwapGate(Gate):
+    r"""Sqrt(iSWAP) gate.
+
+    A 2-qubit symmetric gate from the iSWAP (or XY) family.
+    It has Weyl chamber coordinates (π/8, π/8, 0).
+    Can be applied to a :class:`~qiskit.circuit.QuantumCircuit`
+    with the :meth:`~qiskit.circuit.QuantumCircuit.SiSwap` method.
+    .. parsed-literal::
+                 ┌────────────┐┌────────────┐
+            q_0: ┤0           ├┤0           ├
+                 │  Rxx(-π/4) ││  Ryy(-π/4) │
+            q_1: ┤1           ├┤1           ├
+                 └────────────┘└────────────┘
+    .. math::
+        \sqrt{\mathrm{iSwap}}\ q_0, q_1 =
+            \begin{pmatrix}
+                1       & 0                  & 0                     & 0     \\
+                0       & \frac{1}{\sqrt{2}} & \frac{i}{\sqrt{2}}     & 0     \\
+                0       & \frac{i}{\sqrt{2}} & \frac{1}{\sqrt{2}}     & 0     \\
+                0       & 0                  & 0                     & 1
+            \end{pmatrix}
+    """
+
+    def __init__(self, _=None):
+        """Create new SiSwap gate."""
+        super().__init__("siswap", 2, [])
+
+    def _define(self):
+        """Gate siswap a, b { rxx(-pi/4) a, b; ryy(-pi/4) a, b; }"""
+        # pylint: disable=cyclic-import
+        from qiskit.circuit.quantumcircuit import QuantumCircuit, QuantumRegister
+
+        # from .rxx import RXXGate
+        # from .ryy import RYYGate
+
+        q = QuantumRegister(2, "q")
+        qc = QuantumCircuit(q, name=self.name)
+        rules = [
+            (RXXGate(-np.pi / 4), [q[0], q[1]], []),
+            (RYYGate(-np.pi / 4), [q[0], q[1]], []),
+        ]
+        for instr, qargs, cargs in rules:
+            qc._append(instr, qargs, cargs)
+
+    def __array__(self, dtype=None):
+        """Return a numpy.array for the DCX gate."""
+        return np.array(
+            [
+                [1, 0, 0, 0],
+                [0, 1 / np.sqrt(2), 1j / np.sqrt(2), 0],
+                [0, 1j / np.sqrt(2), 1 / np.sqrt(2), 0],
+                [0, 0, 0, 1],
+            ],
+            dtype=dtype,
+        )
+
+
+RiSwapGate = SiSwapGate
 
 
 class RootiSwapWeylDecomposition(TransformationPass):
