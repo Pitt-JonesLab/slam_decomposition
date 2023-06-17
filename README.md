@@ -2,10 +2,20 @@
 Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
 ```
 @inproceedings{mckinney2023parallel,
-  title={Parallel Driving for Fast Quantum Computing Under Speed Limits},
-  author={McKinney, Evan and Zhou, Chao and Xia, Mingkang and Hatridge, Michael and Jones, Alex K},
-  booktitle={Proceedings of the 50th Annual International Symposium on Computer Architecture},
-  year={2023}
+  author = {McKinney, Evan and Zhou, Chao and Xia, Mingkang and Hatridge, Michael and Jones, Alex K.},
+  title = {Parallel Driving for Fast Quantum Computing Under Speed Limits},
+  year = {2023},
+  isbn = {9798400700958},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3579371.3589075},
+  doi = {10.1145/3579371.3589075},
+  booktitle = {Proceedings of the 50th Annual International Symposium on Computer Architecture},
+  articleno = {40},
+  numpages = {13},
+  keywords = {basis gate, transpilation, weyl chamber},
+  location = {Orlando, FL, USA},
+  series = {ISCA '23}
 }
 ```
 ![Tests](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/tests.yml/badge.svg?branch=main)
