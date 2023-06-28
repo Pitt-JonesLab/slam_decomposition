@@ -1,6 +1,10 @@
 # SLAM [Speed-Limit Analysis decoMposition]
-Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping
-```
+Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweeping. 
+
+> ☠️ This repository is no longer maintained
+
+
+```bibtex
 @inproceedings{mckinney2023parallel,
   author = {McKinney, Evan and Zhou, Chao and Xia, Mingkang and Hatridge, Michael and Jones, Alex K.},
   title = {Parallel Driving for Fast Quantum Computing Under Speed Limits},
@@ -21,7 +25,7 @@ Numerical optimizers for decomposing unitary ops, or Hamiltonian parameter sweep
 ![Tests](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/tests.yml/badge.svg?branch=main)
 ![Format Check](https://github.com/Pitt-JonesLab/slam_decomposition/actions/workflows/format-check.yml/badge.svg?branch=main)
 ___
-> :warning: **README & documentation is deprecated, come back soon :)
+> :warning: **README & documentation is deprecated
 > Current package refactor is breaking `main` with some relative import statemetns, use `isca_23` branch instead.**
 
 Example Usage:
